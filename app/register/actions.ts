@@ -1,9 +1,19 @@
 "use server";
 
-import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { isValidPassword, PASSWORD_REQUIREMENTS } from "@/lib/password";
+import { getSiteUrl } from "@/lib/supabase/env";
 import { createClient } from "@/lib/supabase/server";
+
+function isNextRedirectError(error: unknown): boolean {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "digest" in error &&
+    typeof (error as { digest?: unknown }).digest === "string" &&
+    String((error as { digest: string }).digest).startsWith("NEXT_REDIRECT")
+  );
+}
 
 function registerError(message: string, invite: string): never {
   const inviteQuery = invite
@@ -38,22 +48,14 @@ export async function registerUser(formData: FormData) {
     registerError(PASSWORD_REQUIREMENTS, invite);
   }
 
-  const supabase = await createClient();
-  const requestHeaders = await headers();
-  const origin =
-    requestHeaders.get("origin") ??
-    process.env.NEXT_PUBLIC_SITE_URL ??
-    "http://localhost:3000";
-  const emailRedirectTo = invite
-    ? `${origin.replace(/\/$/, "")}/auth/callback?invite=${encodeURIComponent(
-        invite
-      )}`
-    : undefined;
-
-  let error: { message: string } | null = null;
-
   try {
-    const result = await supabase.auth.signUp({
+    const supabase = await createClient();
+    const siteUrl = getSiteUrl();
+    const emailRedirectTo = invite
+      ? `${siteUrl}/auth/callback?invite=${encodeURIComponent(invite)}`
+      : `${siteUrl}/auth/callback`;
+
+    const { error } = await supabase.auth.signUp({
       email,
       password,
       options: {
@@ -65,53 +67,69 @@ export async function registerUser(formData: FormData) {
         emailRedirectTo,
       },
     });
-    error = result.error;
+
+    if (error) {
+      const message = error.message.toLowerCase();
+
+      if (
+        message.includes("fetch failed") ||
+        message.includes("network") ||
+        message.includes("failed to fetch") ||
+        message.includes("unable_to_verify_leaf_signature")
+      ) {
+        registerError(
+          "Verbindung zu Supabase fehlgeschlagen. Bitte später erneut versuchen.",
+          invite
+        );
+      }
+
+      if (
+        message.includes("already registered") ||
+        message.includes("already been registered") ||
+        message.includes("user already exists")
+      ) {
+        registerError(
+          "Diese E-Mail ist bereits registriert. Bitte melde dich an.",
+          invite
+        );
+      }
+
+      if (
+        message.includes("database error") ||
+        message.includes("user_plans") ||
+        message.includes("profiles") ||
+        message.includes("duplicate") ||
+        message.includes("unique")
+      ) {
+        registerError(
+          "Die Registrierung ist an der Datenbank gescheitert. Benutzername ggf. schon vergeben, oder fehlende Migrationen in Supabase prüfen.",
+          invite
+        );
+      }
+
+      registerError(error.message, invite);
+    }
   } catch (caught) {
-    console.error("registerUser network:", caught);
+    if (isNextRedirectError(caught)) {
+      throw caught;
+    }
+
+    console.error("registerUser:", caught);
+
+    if (
+      caught instanceof Error &&
+      caught.message.startsWith("MISSING_SUPABASE_ENV")
+    ) {
+      registerError(
+        "Server-Konfiguration unvollständig (Supabase-Env). Bitte Administrator kontaktieren.",
+        invite
+      );
+    }
+
     registerError(
-      "Verbindung zu Supabase fehlgeschlagen (TLS). Bei Norton Antivirus: HTTPS-Scanning für localhost deaktivieren oder npm run certs:norton ausführen und den Server neu starten.",
+      "Die Registrierung ist fehlgeschlagen. Bitte später erneut versuchen.",
       invite
     );
-  }
-
-  if (error) {
-    const message = error.message.toLowerCase();
-
-    if (
-      message.includes("fetch failed") ||
-      message.includes("network") ||
-      message.includes("failed to fetch") ||
-      message.includes("unable_to_verify_leaf_signature")
-    ) {
-      registerError(
-        "Verbindung zu Supabase fehlgeschlagen (TLS). Bei Norton Antivirus: HTTPS-Scanning für localhost deaktivieren oder npm run certs:norton ausführen und den Server neu starten.",
-        invite
-      );
-    }
-
-    if (
-      message.includes("already registered") ||
-      message.includes("already been registered") ||
-      message.includes("user already exists")
-    ) {
-      registerError(
-        "Diese E-Mail ist bereits registriert. Melde dich an oder lösche den Benutzer zuerst unter Authentication → Users.",
-        invite
-      );
-    }
-
-    if (
-      message.includes("database error") ||
-      message.includes("user_plans") ||
-      message.includes("profiles")
-    ) {
-      registerError(
-        "Die Registrierung ist an der Datenbank gescheitert. Bitte führe database/009_user_plans.sql in Supabase aus und versuche es erneut.",
-        invite
-      );
-    }
-
-    registerError(error.message, invite);
   }
 
   redirect(

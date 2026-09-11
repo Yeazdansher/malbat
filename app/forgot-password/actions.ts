@@ -2,6 +2,7 @@
 
 import { redirect } from "next/navigation";
 
+import { getSiteUrl } from "@/lib/supabase/env";
 import { createClient } from "@/lib/supabase/server";
 
 export async function requestPasswordReset(formData: FormData) {
@@ -17,10 +18,9 @@ export async function requestPasswordReset(formData: FormData) {
     );
   }
 
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "");
-
-  if (!siteUrl) {
-    console.error("NEXT_PUBLIC_SITE_URL is missing.");
+  const siteUrl = getSiteUrl();
+  if (siteUrl.includes("localhost") && process.env.NODE_ENV === "production") {
+    console.error("NEXT_PUBLIC_SITE_URL is missing in production.");
     redirect(
       `/forgot-password?error=${encodeURIComponent(
         "Die Anfrage konnte nicht verarbeitet werden. Bitte wende dich an den Administrator."
