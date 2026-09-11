@@ -439,6 +439,48 @@ export function buildTreeLayout(graph: TreeGraph): TreeLayout {
       return;
     }
 
+    // Geschwistergruppe ohne Eltern: nebeneinander in einer Generation.
+    if (
+      family.kind === "sibling-group" ||
+      (family.partners.length === 0 && family.children.length > 0)
+    ) {
+      placedFamilies.add(family.id);
+
+      const kids = childIdsOf(family);
+      if (kids.length === 0) {
+        return;
+      }
+
+      const stack = new Set<string>([family.id]);
+      const childWidths = kids.map((id) => measurePersonSubtree(id, stack));
+      const offsets: number[] = [];
+      let offset = 0;
+
+      for (let index = 0; index < kids.length; index++) {
+        offsets.push(offset);
+        offset += childWidths[index] + SIBLING_GAP;
+      }
+
+      const totalWidth = offset - SIBLING_GAP;
+      const blockLeft = boxLeft + Math.max(0, (measureFamily(family, new Set()) - totalWidth) / 2);
+      const childCenterSum = offsets.reduce(
+        (sum, childOffset) => sum + childOffset + CARD_WIDTH / 2,
+        0
+      );
+      const familyCenterX = blockLeft + childCenterSum / kids.length;
+      const familyCenterY = y - 48;
+
+      addFamilyNode(family, familyCenterX, familyCenterY);
+
+      for (let index = 0; index < kids.length; index++) {
+        const childId = kids[index];
+        placePersonWithPartners(childId, blockLeft + offsets[index], y);
+        addEdge(family.familyNodeId, childId);
+      }
+
+      return;
+    }
+
     placedFamilies.add(family.id);
 
     const width = measureFamily(family, new Set());

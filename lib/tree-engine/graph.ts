@@ -51,6 +51,7 @@ export function buildTreeGraph(
           partners,
           children: [],
           familyNodeId: `family-node:${familyId}`,
+          kind: "union",
         });
 
         partnerIndex.set(key, familyId);
@@ -99,6 +100,7 @@ export function buildTreeGraph(
       partners,
       children: [],
       familyNodeId: `family-node:${familyId}`,
+      kind: "union",
     });
 
     partnerIndex.set(key, familyId);
@@ -119,6 +121,16 @@ export function buildTreeGraph(
     return [...familyMap.values()].filter((family) =>
       family.partners.includes(personId)
     );
+  }
+
+  function familyOfChild(childId: string): Family | undefined {
+    for (const family of familyMap.values()) {
+      if (family.children.includes(childId)) {
+        return family;
+      }
+    }
+
+    return undefined;
   }
 
   // --------------------------------------------------
@@ -145,6 +157,115 @@ export function buildTreeGraph(
     }
 
     addChildToFamily(ensureFamily(parents), childId);
+  }
+
+  // --------------------------------------------------
+  // Geschwister ohne gemeinsame Eltern verknüpfen
+  // --------------------------------------------------
+
+  const siblingParent = new Map<string, string>();
+
+  function findSiblingRoot(id: string): string {
+    const parent = siblingParent.get(id) ?? id;
+
+    if (parent === id) {
+      return id;
+    }
+
+    const root = findSiblingRoot(parent);
+    siblingParent.set(id, root);
+    return root;
+  }
+
+  function linkSiblings(a: string, b: string): void {
+    const rootA = findSiblingRoot(a);
+    const rootB = findSiblingRoot(b);
+
+    if (rootA !== rootB) {
+      siblingParent.set(rootB, rootA);
+    }
+  }
+
+  for (const relation of relationships) {
+    if (relation.relationship_type !== "sibling") {
+      continue;
+    }
+
+    if (
+      !personMap.has(relation.person1_id) ||
+      !personMap.has(relation.person2_id)
+    ) {
+      continue;
+    }
+
+    linkSiblings(relation.person1_id, relation.person2_id);
+  }
+
+  const siblingClusters = new Map<string, string[]>();
+
+  for (const personId of personMap.keys()) {
+    const inSiblingRelation = relationships.some(
+      (relation) =>
+        relation.relationship_type === "sibling" &&
+        (relation.person1_id === personId ||
+          relation.person2_id === personId)
+    );
+
+    if (!inSiblingRelation) {
+      continue;
+    }
+
+    const root = findSiblingRoot(personId);
+    const cluster = siblingClusters.get(root);
+
+    if (cluster) {
+      cluster.push(personId);
+    } else {
+      siblingClusters.set(root, [personId]);
+    }
+  }
+
+  for (const cluster of siblingClusters.values()) {
+    if (cluster.length < 2) {
+      continue;
+    }
+
+    const uniqueFamilies = new Set<string>();
+
+    for (const personId of cluster) {
+      const family = familyOfChild(personId);
+      if (family && family.kind !== "sibling-group") {
+        uniqueFamilies.add(family.id);
+      }
+    }
+
+    if (uniqueFamilies.size === 1) {
+      const [familyId] = uniqueFamilies;
+      for (const personId of cluster) {
+        addChildToFamily(familyId, personId);
+      }
+      continue;
+    }
+
+    if (uniqueFamilies.size > 1) {
+      // Uneindeutig: unterschiedliche Elternfamilien — nicht zusammenzwingen.
+      continue;
+    }
+
+    const members = [...cluster].sort();
+    const familyId = `sibling-group:${members.join("|")}`;
+
+    if (familyMap.has(familyId)) {
+      continue;
+    }
+
+    familyMap.set(familyId, {
+      id: familyId,
+      partners: [],
+      children: members,
+      familyNodeId: `family-node:${familyId}`,
+      kind: "sibling-group",
+    });
   }
 
   return {

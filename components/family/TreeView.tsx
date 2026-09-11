@@ -188,9 +188,16 @@ export default function TreeView({
             return;
           }
 
-          const parentIds = (node.data as { parentIds?: string[] })
-            .parentIds ?? [];
+          const data = node.data as {
+            parentIds?: string[];
+            kind?: "union" | "sibling-group";
+          };
 
+          if (data.kind === "sibling-group") {
+            return;
+          }
+
+          const parentIds = data.parentIds ?? [];
           onAddChild(parentIds);
         }}
       >

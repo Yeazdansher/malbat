@@ -60,6 +60,9 @@ export interface Family {
   children: string[];
 
   familyNodeId: string;
+
+  /** Parentless sibling cluster (no partners). */
+  kind?: "union" | "sibling-group";
 }
 
 /* ----------------------------------------------------------

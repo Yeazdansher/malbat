@@ -109,6 +109,7 @@ export function buildReactFlowGraph(
       data: {
         parentIds: family?.partners ?? [],
         canEdit,
+        kind: family?.kind ?? "union",
       },
     });
   }
