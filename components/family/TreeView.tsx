@@ -182,6 +182,9 @@ export default function TreeView({
         elementsSelectable={true}
         panOnDrag
         fitView
+        fitViewOptions={{ padding: 0.2, minZoom: 0.1, maxZoom: 1.5 }}
+        minZoom={0.1}
+        maxZoom={2}
         onInit={setFlowInstance}
         onNodeClick={(_event, node) => {
           if (!canEdit || node.type !== "family") {
