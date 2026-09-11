@@ -47,6 +47,7 @@ Im Supabase SQL Editor **streng nacheinander** ausführen:
 | `010_full_data_reset.sql` | **Nur Entwicklung** — löscht alle Daten |
 | `011_downgrade_to_free.sql` | Free-Wechsel und Baumsperren |
 | `012_update_family_details.sql` | RPC zum Speichern von Baumdetails |
+| `013_editor_can_invite.sql` | Bearbeiter dürfen Einladungen erstellen |
 
 ## Sicherheitshinweise
 

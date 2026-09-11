@@ -24,7 +24,9 @@ Personen ohne jede Verbindung sind im laufenden Betrieb nicht vorgesehen
 ## Bearbeitung
 
 - Nur `owner` und `editor` dürfen Personen und Beziehungen ändern.
-- `viewer` darf den Baum nur betrachten.
+- `owner` und `editor` dürfen Einladungslinks erstellen und exportieren.
+- Mitglieder verwalten und Stammbaum löschen: nur `owner`.
+- `viewer` darf den Baum nur betrachten (Export ist erlaubt).
 - Gesperrte Bäume (`plan_locked`) sind durch den Free-Tarif blockiert und
   können nach Premium-Upgrade wieder geöffnet werden.
 

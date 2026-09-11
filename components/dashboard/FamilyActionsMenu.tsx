@@ -36,6 +36,7 @@ export default function FamilyActionsMenu({
   const [membersOpen, setMembersOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const isOwner = role === "owner";
+  const canInvite = role === "owner" || role === "editor";
 
   useEffect(() => {
     if (!menuOpen) {
@@ -82,35 +83,39 @@ export default function FamilyActionsMenu({
           }
         >
           {isOwner && (
-            <>
-              <EditFamilyButton
-                familyId={familyId}
-                initialName={familyName}
-                initialDescription={familyDescription}
-                buttonClassName={menuItemClass}
-                onClose={closeMenu}
-              />
-              <button
-                type="button"
-                onClick={() => {
-                  closeMenu();
-                  setInviteOpen(true);
-                }}
-                className={menuItemClass}
-              >
-                Einladen
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  closeMenu();
-                  setMembersOpen(true);
-                }}
-                className={menuItemClass}
-              >
-                Mitglieder ansehen
-              </button>
-            </>
+            <EditFamilyButton
+              familyId={familyId}
+              initialName={familyName}
+              initialDescription={familyDescription}
+              buttonClassName={menuItemClass}
+              onClose={closeMenu}
+            />
+          )}
+
+          {canInvite && (
+            <button
+              type="button"
+              onClick={() => {
+                closeMenu();
+                setInviteOpen(true);
+              }}
+              className={menuItemClass}
+            >
+              Einladen
+            </button>
+          )}
+
+          {isOwner && (
+            <button
+              type="button"
+              onClick={() => {
+                closeMenu();
+                setMembersOpen(true);
+              }}
+              className={menuItemClass}
+            >
+              Mitglieder ansehen
+            </button>
           )}
 
           <div className="relative">

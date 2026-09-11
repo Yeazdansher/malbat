@@ -160,6 +160,13 @@ export async function createFamilyInvitation(
 
   if (error || !data) {
     console.error("createFamilyInvitation:", error);
+    const message = error?.message?.toLowerCase() ?? "";
+    if (message.includes("not_owner") || message.includes("not_allowed")) {
+      return {
+        ok: false,
+        error: "Du hast keine Berechtigung, Einladungen zu erstellen.",
+      };
+    }
     return {
       ok: false,
       error: "Der Einladungslink konnte nicht erstellt werden.",
