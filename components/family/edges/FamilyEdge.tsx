@@ -108,6 +108,7 @@ export default function FamilyEdge({
 
     const byId = new Map(nodes.map((node) => [node.id, node]));
     const geometries: EdgeGeometry[] = [];
+    const selfEdge = edges.find((candidate) => candidate.id === id);
 
     for (const edge of edges) {
       if (edge.id === id) {
@@ -123,6 +124,12 @@ export default function FamilyEdge({
 
       // Geschwister-Sammelschienen nicht in Hop-Berechnung einbeziehen.
       if (edgeRouting === "sibling-bus") {
+        continue;
+      }
+
+      // Kanten derselben Familie (gleicher Quellknoten) sind T-Verbindungen,
+      // keine Fremdkreuzungen — kein Hop.
+      if (selfEdge && edge.source === selfEdge.source) {
         continue;
       }
 

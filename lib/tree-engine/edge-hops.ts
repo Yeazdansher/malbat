@@ -319,23 +319,15 @@ function hopYsOnVertical(
     }
   }
 
-  const byY = new Map<number, HorizHit[]>();
+  // Nur echte Durchkreuzungen (Schiene links UND rechts der Senkrechten).
+  // T-Verbindungen (Schiene endet an der Senkrechten) erzeugen keinen Hop —
+  // wichtig für Geschwister-Sammelschienen derselben Familie.
   for (const hit of hits) {
-    const key = Math.round(hit.y);
-    const list = byY.get(key) ?? [];
-    list.push(hit);
-    byY.set(key, list);
-  }
-
-  for (const [yKey, list] of byY) {
-    const y = list[0]?.y ?? yKey;
-    const minX = Math.min(...list.map((hit) => hit.minX));
-    const maxX = Math.max(...list.map((hit) => hit.maxX));
     const crossesThrough =
-      minX < x - HOP_RADIUS && maxX > x + HOP_RADIUS;
+      hit.minX < x - HOP_RADIUS && hit.maxX > x + HOP_RADIUS;
 
     if (crossesThrough) {
-      hopYs.push(y);
+      hopYs.push(hit.y);
     }
   }
 
