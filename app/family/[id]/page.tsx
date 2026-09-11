@@ -3,7 +3,6 @@ import { redirect } from "next/navigation";
 
 import Header from "@/components/Header";
 import FamilyTree from "@/components/family/FamilyTree";
-import DeleteFamilyButton from "@/components/family/DeleteFamilyButton";
 import { canEditFamily } from "@/lib/family-permissions";
 import type { FamilyRole } from "@/lib/invitations";
 import { getFamilyPlanUsage } from "@/lib/plans";
@@ -122,9 +121,6 @@ export default async function FamilyPage({
                 Tarif verwalten
               </Link>
             )}
-            {isOwner && (
-              <DeleteFamilyButton familyId={family.id} />
-            )}
           </div>
         </div>
       </main>
@@ -141,22 +137,16 @@ export default async function FamilyPage({
 
       <div className="mx-auto mt-8 max-w-7xl px-6">
 
-        <div className="mb-8 flex items-start justify-between gap-4">
-          <div>
-            <h1 className="text-4xl font-bold text-green-700">
-              {family.name}
-            </h1>
+        <div className="mb-8">
+          <h1 className="text-4xl font-bold text-green-700">
+            {family.name}
+          </h1>
 
-            {planUsage?.ownerPlanCode === "free" &&
-              planUsage.maxPersons !== null && (
-              <p className="mt-1 text-sm text-gray-500">
-                {planUsage.personCount}/{planUsage.maxPersons} Personen
-              </p>
-            )}
-          </div>
-
-          {isOwner && (
-            <DeleteFamilyButton familyId={family.id} />
+          {planUsage?.ownerPlanCode === "free" &&
+            planUsage.maxPersons !== null && (
+            <p className="mt-1 text-sm text-gray-500">
+              {planUsage.personCount}/{planUsage.maxPersons} Personen
+            </p>
           )}
         </div>
 
