@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
-import { APP_VERSION } from "@/lib/version";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -14,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: `MALBAT v${APP_VERSION}`,
+  title: "MALBAT",
   description: "Familienstammbäume gemeinsam erstellen und verwalten.",
 };
 
