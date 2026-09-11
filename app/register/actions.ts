@@ -17,6 +17,10 @@ function registerError(message: string, invite: string): never {
 function mapSignUpErrorMessage(message: string): string {
   const lower = message.toLowerCase();
 
+  if (lower.includes("invalid supabaseurl") || lower.includes("must be a valid http")) {
+    return "NEXT_PUBLIC_SUPABASE_URL in Vercel ist ungültig. Bitte https://dein-projekt.supabase.co ohne Anführungszeichen setzen und neu deployen.";
+  }
+
   if (
     lower.includes("fetch failed") ||
     lower.includes("network") ||
@@ -105,6 +109,12 @@ export async function registerUser(formData: FormData) {
     ) {
       failureMessage =
         "Server-Konfiguration unvollständig (Supabase-Env). Bitte Administrator kontaktieren.";
+    } else if (
+      caught instanceof Error &&
+      caught.message.startsWith("INVALID_SUPABASE_URL")
+    ) {
+      failureMessage =
+        "NEXT_PUBLIC_SUPABASE_URL in Vercel ist ungültig. Bitte https://dein-projekt.supabase.co ohne Anführungszeichen setzen und neu deployen.";
     } else if (caught instanceof Error && caught.message) {
       failureMessage = mapSignUpErrorMessage(caught.message);
     } else {
