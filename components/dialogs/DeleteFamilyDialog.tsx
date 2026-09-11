@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { deleteFamilyTree } from "@/app/family/[id]/actions";
+import { PasswordInput } from "@/components/PasswordInput";
 
 type Props = {
   open: boolean;
@@ -88,8 +89,7 @@ export default function DeleteFamilyDialog({
         </p>
 
         <label className="mt-6 mb-2 block font-medium">Passwort</label>
-        <input
-          type="password"
+        <PasswordInput
           autoComplete="current-password"
           className="w-full rounded-lg border p-3"
           value={password}

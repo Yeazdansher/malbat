@@ -3,6 +3,7 @@
 import { useState } from "react";
 
 import { deleteAccount } from "@/app/profile/actions";
+import { PasswordInput } from "@/components/PasswordInput";
 
 type Props = {
   error?: string;
@@ -106,10 +107,9 @@ export default function DeleteAccountButton({ error }: Props) {
                   >
                     Aktuelles Passwort
                   </label>
-                  <input
+                  <PasswordInput
                     id="delete_account_password"
                     name="password"
-                    type="password"
                     autoComplete="current-password"
                     className="w-full rounded-lg border p-3"
                     required

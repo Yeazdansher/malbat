@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { PasswordInput } from "@/components/PasswordInput";
 import { PASSWORD_REQUIREMENTS } from "@/lib/password";
 import { registerUser } from "./actions";
 
@@ -68,9 +69,8 @@ export default async function RegisterPage({ searchParams }: PageProps) {
             required
           />
 
-          <input
+          <PasswordInput
             name="password"
-            type="password"
             placeholder="Passwort"
             autoComplete="new-password"
             minLength={8}
@@ -80,9 +80,8 @@ export default async function RegisterPage({ searchParams }: PageProps) {
 
           <p className="text-sm text-gray-600">{PASSWORD_REQUIREMENTS}</p>
 
-          <input
+          <PasswordInput
             name="confirmPassword"
-            type="password"
             placeholder="Passwort wiederholen"
             autoComplete="new-password"
             minLength={8}

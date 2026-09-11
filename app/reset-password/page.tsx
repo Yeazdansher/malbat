@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
+import { PasswordInput } from "@/components/PasswordInput";
 import { PASSWORD_REQUIREMENTS } from "@/lib/password";
 import { createClient } from "@/lib/supabase/server";
 
@@ -51,10 +52,9 @@ export default async function ResetPasswordPage({
             <label htmlFor="password" className="mb-2 block font-medium">
               Neues Passwort
             </label>
-            <input
+            <PasswordInput
               id="password"
               name="password"
-              type="password"
               autoComplete="new-password"
               minLength={8}
               className="w-full rounded-lg border p-3"
@@ -70,10 +70,9 @@ export default async function ResetPasswordPage({
             >
               Neues Passwort bestätigen
             </label>
-            <input
+            <PasswordInput
               id="password_confirmation"
               name="password_confirmation"
-              type="password"
               autoComplete="new-password"
               minLength={8}
               className="w-full rounded-lg border p-3"

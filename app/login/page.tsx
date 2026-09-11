@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { PasswordInput } from "@/components/PasswordInput";
 import { login } from "./actions";
 
 type LoginPageProps = {
@@ -66,9 +67,8 @@ export default async function LoginPage({
             required
           />
 
-          <input
+          <PasswordInput
             name="password"
-            type="password"
             placeholder="Passwort"
             className="w-full rounded-lg border p-3"
             required

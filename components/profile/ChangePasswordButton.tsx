@@ -3,6 +3,7 @@
 import { useState } from "react";
 
 import { updatePassword } from "@/app/profile/actions";
+import { PasswordInput } from "@/components/PasswordInput";
 import { PASSWORD_REQUIREMENTS } from "@/lib/password";
 
 type Props = {
@@ -66,10 +67,9 @@ export default function ChangePasswordButton({ error }: Props) {
                 >
                   Aktuelles Passwort
                 </label>
-                <input
+                <PasswordInput
                   id="current_password"
                   name="current_password"
-                  type="password"
                   autoComplete="current-password"
                   className="w-full rounded-lg border p-3"
                   required
@@ -84,10 +84,9 @@ export default function ChangePasswordButton({ error }: Props) {
                 >
                   Neues Passwort
                 </label>
-                <input
+                <PasswordInput
                   id="new_password"
                   name="new_password"
-                  type="password"
                   autoComplete="new-password"
                   minLength={8}
                   className="w-full rounded-lg border p-3"
@@ -102,10 +101,9 @@ export default function ChangePasswordButton({ error }: Props) {
                 >
                   Neues Passwort bestätigen
                 </label>
-                <input
+                <PasswordInput
                   id="confirm_password"
                   name="confirm_password"
-                  type="password"
                   autoComplete="new-password"
                   minLength={8}
                   className="w-full rounded-lg border p-3"
