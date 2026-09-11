@@ -38,6 +38,10 @@ function mapSignUpErrorMessage(message: string): string {
     return "Diese E-Mail ist bereits registriert. Bitte melde dich an.";
   }
 
+  if (lower.includes("rate limit") || lower.includes("email rate limit")) {
+    return "Zu viele E-Mail-Anfragen. Bitte warte einige Minuten und versuche es erneut.";
+  }
+
   if (
     lower.includes("database error") ||
     lower.includes("user_plans") ||

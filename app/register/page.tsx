@@ -1,7 +1,5 @@
 import Link from "next/link";
-import { PasswordInput } from "@/components/PasswordInput";
-import { PASSWORD_REQUIREMENTS } from "@/lib/password";
-import { registerUser } from "./actions";
+import RegisterForm from "@/components/RegisterForm";
 
 type PageProps = {
   searchParams: Promise<{
@@ -34,68 +32,7 @@ export default async function RegisterPage({ searchParams }: PageProps) {
           </p>
         )}
 
-        <form action={registerUser} className="mt-8 space-y-4">
-          {invite && <input type="hidden" name="invite" value={invite} />}
-
-          <input
-            name="firstName"
-            type="text"
-            placeholder="Vorname"
-            className="w-full rounded-lg border border-gray-300 p-3 focus:border-green-700 focus:outline-none"
-            required
-          />
-
-          <input
-            name="lastName"
-            type="text"
-            placeholder="Nachname"
-            className="w-full rounded-lg border border-gray-300 p-3 focus:border-green-700 focus:outline-none"
-            required
-          />
-
-          <input
-            name="username"
-            type="text"
-            placeholder="Benutzername"
-            className="w-full rounded-lg border border-gray-300 p-3 focus:border-green-700 focus:outline-none"
-            required
-          />
-
-          <input
-            name="email"
-            type="email"
-            placeholder="E-Mail"
-            className="w-full rounded-lg border border-gray-300 p-3 focus:border-green-700 focus:outline-none"
-            required
-          />
-
-          <PasswordInput
-            name="password"
-            placeholder="Passwort"
-            autoComplete="new-password"
-            minLength={8}
-            className="w-full rounded-lg border border-gray-300 p-3 focus:border-green-700 focus:outline-none"
-            required
-          />
-
-          <p className="text-sm text-gray-600">{PASSWORD_REQUIREMENTS}</p>
-
-          <PasswordInput
-            name="confirmPassword"
-            placeholder="Passwort wiederholen"
-            autoComplete="new-password"
-            minLength={8}
-            className="w-full rounded-lg border border-gray-300 p-3 focus:border-green-700 focus:outline-none"
-            required
-          />
-
-          <button
-            type="submit"
-            className="w-full rounded-lg bg-green-700 py-3 text-white transition hover:bg-green-800"
-          >
-            Registrieren
-          </button>
-        </form>
+        <RegisterForm invite={invite} />
 
         <div className="mt-6 flex justify-between text-sm">
           <Link href="/" className="text-green-700 hover:underline">
