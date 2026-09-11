@@ -5,16 +5,6 @@ import { isValidPassword, PASSWORD_REQUIREMENTS } from "@/lib/password";
 import { getSiteUrl } from "@/lib/supabase/env";
 import { createClient } from "@/lib/supabase/server";
 
-function isNextRedirectError(error: unknown): boolean {
-  return (
-    typeof error === "object" &&
-    error !== null &&
-    "digest" in error &&
-    typeof (error as { digest?: unknown }).digest === "string" &&
-    String((error as { digest: string }).digest).startsWith("NEXT_REDIRECT")
-  );
-}
-
 function registerError(message: string, invite: string): never {
   const inviteQuery = invite
     ? `&invite=${encodeURIComponent(invite)}`
@@ -22,6 +12,39 @@ function registerError(message: string, invite: string): never {
   redirect(
     `/register?error=${encodeURIComponent(message)}${inviteQuery}`
   );
+}
+
+function mapSignUpErrorMessage(message: string): string {
+  const lower = message.toLowerCase();
+
+  if (
+    lower.includes("fetch failed") ||
+    lower.includes("network") ||
+    lower.includes("failed to fetch") ||
+    lower.includes("unable_to_verify_leaf_signature")
+  ) {
+    return "Verbindung zu Supabase fehlgeschlagen. Bitte später erneut versuchen.";
+  }
+
+  if (
+    lower.includes("already registered") ||
+    lower.includes("already been registered") ||
+    lower.includes("user already exists")
+  ) {
+    return "Diese E-Mail ist bereits registriert. Bitte melde dich an.";
+  }
+
+  if (
+    lower.includes("database error") ||
+    lower.includes("user_plans") ||
+    lower.includes("profiles") ||
+    lower.includes("duplicate") ||
+    lower.includes("unique")
+  ) {
+    return "Die Registrierung ist an der Datenbank gescheitert. Benutzername ggf. schon vergeben, oder fehlende Migrationen in Supabase prüfen.";
+  }
+
+  return message;
 }
 
 export async function registerUser(formData: FormData) {
@@ -48,6 +71,8 @@ export async function registerUser(formData: FormData) {
     registerError(PASSWORD_REQUIREMENTS, invite);
   }
 
+  let failureMessage: string | null = null;
+
   try {
     const supabase = await createClient();
     const siteUrl = getSiteUrl();
@@ -69,67 +94,27 @@ export async function registerUser(formData: FormData) {
     });
 
     if (error) {
-      const message = error.message.toLowerCase();
-
-      if (
-        message.includes("fetch failed") ||
-        message.includes("network") ||
-        message.includes("failed to fetch") ||
-        message.includes("unable_to_verify_leaf_signature")
-      ) {
-        registerError(
-          "Verbindung zu Supabase fehlgeschlagen. Bitte später erneut versuchen.",
-          invite
-        );
-      }
-
-      if (
-        message.includes("already registered") ||
-        message.includes("already been registered") ||
-        message.includes("user already exists")
-      ) {
-        registerError(
-          "Diese E-Mail ist bereits registriert. Bitte melde dich an.",
-          invite
-        );
-      }
-
-      if (
-        message.includes("database error") ||
-        message.includes("user_plans") ||
-        message.includes("profiles") ||
-        message.includes("duplicate") ||
-        message.includes("unique")
-      ) {
-        registerError(
-          "Die Registrierung ist an der Datenbank gescheitert. Benutzername ggf. schon vergeben, oder fehlende Migrationen in Supabase prüfen.",
-          invite
-        );
-      }
-
-      registerError(error.message, invite);
+      failureMessage = mapSignUpErrorMessage(error.message);
     }
   } catch (caught) {
-    if (isNextRedirectError(caught)) {
-      throw caught;
-    }
-
     console.error("registerUser:", caught);
 
     if (
       caught instanceof Error &&
       caught.message.startsWith("MISSING_SUPABASE_ENV")
     ) {
-      registerError(
-        "Server-Konfiguration unvollständig (Supabase-Env). Bitte Administrator kontaktieren.",
-        invite
-      );
+      failureMessage =
+        "Server-Konfiguration unvollständig (Supabase-Env). Bitte Administrator kontaktieren.";
+    } else if (caught instanceof Error && caught.message) {
+      failureMessage = mapSignUpErrorMessage(caught.message);
+    } else {
+      failureMessage =
+        "Die Registrierung ist fehlgeschlagen. Bitte später erneut versuchen.";
     }
+  }
 
-    registerError(
-      "Die Registrierung ist fehlgeschlagen. Bitte später erneut versuchen.",
-      invite
-    );
+  if (failureMessage) {
+    registerError(failureMessage, invite);
   }
 
   redirect(
