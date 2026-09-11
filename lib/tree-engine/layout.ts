@@ -468,7 +468,8 @@ export function buildTreeLayout(graph: TreeGraph): TreeLayout {
         0
       );
       const familyCenterX = blockLeft + childCenterSum / kids.length;
-      const familyCenterY = y - 48;
+      // Sammelschiene knapp über den Karten; Knoten sitzt auf der Schiene.
+      const familyCenterY = y - 36;
 
       addFamilyNode(family, familyCenterX, familyCenterY);
 

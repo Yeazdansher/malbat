@@ -67,6 +67,19 @@ function handleAnchor(
   }
 }
 
+function siblingBusPath(
+  sourceX: number,
+  sourceY: number,
+  targetX: number,
+  targetY: number
+): [string, number, number] {
+  // Eine gemeinsame horizontale Sammelschiene auf Höhe des Familienknotens,
+  // dann senkrecht zur Person — ohne Smooth-Step-Zacken.
+  const railY = sourceY;
+  const path = `M ${sourceX} ${sourceY} L ${targetX} ${railY} L ${targetX} ${targetY}`;
+  return [path, (sourceX + targetX) / 2, railY];
+}
+
 export default function FamilyEdge({
   id,
   sourceX,
@@ -79,16 +92,37 @@ export default function FamilyEdge({
   markerEnd,
   markerStart,
   interactionWidth,
+  data,
 }: EdgeProps) {
   const nodes = useNodes();
   const edges = useEdges();
+  const routing =
+    data && typeof data === "object" && "routing" in data
+      ? String((data as { routing?: string }).routing)
+      : "default";
 
   const otherGeometries = useMemo(() => {
+    if (routing === "sibling-bus") {
+      return [];
+    }
+
     const byId = new Map(nodes.map((node) => [node.id, node]));
     const geometries: EdgeGeometry[] = [];
 
     for (const edge of edges) {
       if (edge.id === id) {
+        continue;
+      }
+
+      const edgeRouting =
+        edge.data &&
+        typeof edge.data === "object" &&
+        "routing" in edge.data
+          ? String((edge.data as { routing?: string }).routing)
+          : "default";
+
+      // Geschwister-Sammelschienen nicht in Hop-Berechnung einbeziehen.
+      if (edgeRouting === "sibling-bus") {
         continue;
       }
 
@@ -116,9 +150,13 @@ export default function FamilyEdge({
     }
 
     return geometries;
-  }, [edges, id, nodes]);
+  }, [edges, id, nodes, routing]);
 
   const [path, labelX, labelY] = useMemo(() => {
+    if (routing === "sibling-bus") {
+      return siblingBusPath(sourceX, sourceY, targetX, targetY);
+    }
+
     const points = getSmoothStepPoints({
       sourceX,
       sourceY,
@@ -138,6 +176,7 @@ export default function FamilyEdge({
   }, [
     id,
     otherGeometries,
+    routing,
     sourcePosition,
     sourceX,
     sourceY,

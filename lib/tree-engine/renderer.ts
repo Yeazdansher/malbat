@@ -148,6 +148,13 @@ export function buildReactFlowGraph(
       targetHandle = personOnLeft ? "left" : "right";
     }
 
+    const sourceFamily =
+      sourceLayout?.type === "family"
+        ? graph.families.get(
+            (sourceLayout as FamilyLayoutNode).familyId
+          )
+        : undefined;
+
     if (
       sourceLayout?.type === "family" &&
       targetLayout?.type === "person"
@@ -179,6 +186,13 @@ export function buildReactFlowGraph(
       focusable: false,
 
       animated: false,
+
+      data: {
+        routing:
+          sourceFamily?.kind === "sibling-group"
+            ? "sibling-bus"
+            : "default",
+      },
 
       style: {
         stroke: "#1f2937",
