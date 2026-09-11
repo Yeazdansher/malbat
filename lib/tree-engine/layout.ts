@@ -125,7 +125,27 @@ export function buildTreeLayout(graph: TreeGraph): TreeLayout {
   }
 
   function childIdsOf(family: Family): string[] {
-    return family.children.filter((id) => graph.persons.has(id));
+    return family.children
+      .filter((id) => graph.persons.has(id))
+      .sort((a, b) => {
+        const birthA = graph.persons.get(a)?.birth_date ?? null;
+        const birthB = graph.persons.get(b)?.birth_date ?? null;
+
+        if (birthA && birthB && birthA !== birthB) {
+          // Ältere Kinder (früher geboren) links.
+          return birthA.localeCompare(birthB);
+        }
+
+        if (birthA && !birthB) {
+          return -1;
+        }
+
+        if (!birthA && birthB) {
+          return 1;
+        }
+
+        return a.localeCompare(b);
+      });
   }
 
   function otherPartnersOf(family: Family, personId: string): string[] {
