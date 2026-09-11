@@ -3,7 +3,6 @@ import { redirect } from "next/navigation";
 
 import Header from "@/components/Header";
 import FamilyActionsMenu from "@/components/dashboard/FamilyActionsMenu";
-import DeleteFamilyButton from "@/components/family/DeleteFamilyButton";
 import { roleLabel } from "@/lib/invitations";
 import { getCurrentPlanUsage } from "@/lib/plans";
 import { getCurrentProfile } from "@/lib/profile";
@@ -208,28 +207,22 @@ export default async function DashboardPage({
                       )}
                     </div>
 
-                    {item.role === "owner" && !item.families.plan_locked && (
-                      <FamilyActionsMenu
-                        familyId={item.families.id}
-                        familyName={item.families.name}
-                        familyDescription={item.families.description}
-                      />
-                    )}
+                    <FamilyActionsMenu
+                      familyId={item.families.id}
+                      familyName={item.families.name}
+                      familyDescription={item.families.description}
+                      role={item.role}
+                    />
                   </div>
 
                   <div className="mt-8 flex flex-wrap gap-3">
                     {item.families.plan_locked ? (
-                      <>
-                        <Link
-                          href="/profile#plan"
-                          className="inline-block rounded-lg border border-amber-300 bg-amber-50 px-5 py-3 text-amber-900 hover:bg-amber-100"
-                        >
-                          Tarif verwalten
-                        </Link>
-                        {item.role === "owner" && (
-                          <DeleteFamilyButton familyId={item.families.id} />
-                        )}
-                      </>
+                      <Link
+                        href="/profile#plan"
+                        className="inline-block rounded-lg border border-amber-300 bg-amber-50 px-5 py-3 text-amber-900 hover:bg-amber-100"
+                      >
+                        Tarif verwalten
+                      </Link>
                     ) : (
                       <Link
                         href={`/family/${item.families.id}`}

@@ -17,6 +17,7 @@ Stack: **Next.js**, **Supabase Auth**, **PostgreSQL**, **React Flow**.
 - Einladungen mit Rollen: Besitzer, Bearbeiter, Betrachter
 - Free-Limits: 1 eigener Stammbaum, max. 50 Personen
 - Dashboard mit Personenanzahl und Geburtstagen im aktuellen Monat
+- Export: GEDCOM, MALBAT JSON und Excel (Dashboard → Drei Punkte)
 
 ## Schnellstart
 
@@ -70,6 +71,8 @@ npm run build
 | [docs/Datenbank.md](docs/Datenbank.md) | Schema, Migrationen, Sicherheit |
 | [docs/Stammbaum-Regeln.md](docs/Stammbaum-Regeln.md) | Fachliche Regeln im Baum |
 | [docs/Roadmap.md](docs/Roadmap.md) | Geplante Schritte nach v1.0.0 |
+
+Export eines Stammbaums: Dashboard → ⋯ → **Exportieren** (GEDCOM / JSON / Excel).
 
 ## Hinweise
 

@@ -10,6 +10,7 @@ Stand: MALBAT **v1.0.0** (stabile Basis).
 - Free-/Premium-Tarife mit Limits
 - Passwort zurücksetzen und Konto löschen
 - Dashboard-Kennzahlen (Personen, Geburtstage)
+- Export: GEDCOM, MALBAT JSON, Excel
 
 ## Geplant nach v1.0.0
 
@@ -25,7 +26,17 @@ Stand: MALBAT **v1.0.0** (stabile Basis).
 - Echtes Premium-Billing (z. B. Stripe)
 - Medien (Fotos) an Personen
 - Suche/Filter ausbauen
-- Export (z. B. GEDCOM/PDF)
+- Import (GEDCOM / JSON / Excel)
 - Mehrsprachigkeit
 
 Priorität und Reihenfolge können sich mit dem Soft Launch ändern.
+
+## Export (v1)
+
+Stammbaum-Karten im Dashboard (Drei-Punkte-Menü → **Exportieren**):
+
+- GEDCOM (`.ged`) — Austausch mit Genealogie-Software
+- MALBAT JSON (`.json`) — verlustfreies Backup
+- Excel (`.xlsx`) — Personen- und Beziehungsblätter
+
+Import folgt in einem späteren Schritt.
