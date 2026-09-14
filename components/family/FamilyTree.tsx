@@ -5,7 +5,10 @@ import PersonDetailsDialog from "@/components/dialogs/PersonDetailsDialog";
 import EditPersonDialog from "@/components/dialogs/EditPersonDialog";
 import EmptyTree from "@/components/family/EmptyTree";
 import { calculateAge } from "@/lib/dates";
-import { personHasChildren } from "@/lib/relationships";
+import {
+  getPersonRelationNames,
+  personHasChildren,
+} from "@/lib/relationships";
 import TreeView from "@/components/family/TreeView";
 import AddPartnerDialog from "@/components/dialogs/AddPartnerDialog";
 import AddChildDialog from "@/components/dialogs/AddChildDialog";
@@ -85,6 +88,23 @@ const [deleteOpen, setDeleteOpen] =
   const [searchOpen, setSearchOpen] = useState(false);
   const [focusedPersonId, setFocusedPersonId] = useState<string>();
   const [focusRequest, setFocusRequest] = useState(0);
+
+  const selectedRelations = useMemo(() => {
+    if (!selectedPerson) {
+      return {
+        fatherName: null as string | null,
+        motherName: null as string | null,
+        partnerNames: [] as string[],
+        childNames: [] as string[],
+      };
+    }
+
+    return getPersonRelationNames(
+      selectedPerson.id,
+      persons,
+      relationships
+    );
+  }, [selectedPerson, persons, relationships]);
 
   const searchResults = useMemo(() => {
     const query = normalizeSearchText(searchQuery);
@@ -215,18 +235,20 @@ onAddChild={(parentIds) => {
             firstName={selectedPerson.first_name}
             lastName={selectedPerson.last_name}
             gender={selectedPerson.gender}
-            age={
-              calculateAge(
-                selectedPerson.birth_date,
-                selectedPerson.death_date
-              ) ?? 0
-            }
+            age={calculateAge(
+              selectedPerson.birth_date,
+              selectedPerson.death_date
+            )}
             birthDate={selectedPerson.birth_date}
             birthPlace={selectedPerson.birth_place}
             isDeceased={selectedPerson.is_deceased}
             deathDate={selectedPerson.death_date}
             deathPlace={selectedPerson.death_place}
             notes={selectedPerson.notes}
+            fatherName={selectedRelations.fatherName}
+            motherName={selectedRelations.motherName}
+            partnerNames={selectedRelations.partnerNames}
+            childNames={selectedRelations.childNames}
           />
 
           <EditPersonDialog
