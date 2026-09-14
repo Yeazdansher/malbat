@@ -45,6 +45,8 @@ type Relationship = {
 
 type Props = {
   familyId: string;
+  familyName: string;
+  personLimitLabel?: string | null;
   persons: Person[];
   relationships: Relationship[];
   canEdit: boolean;
@@ -53,6 +55,8 @@ type Props = {
 
 export default function FamilyTree({
   familyId,
+  familyName,
+  personLimitLabel,
   persons,
   relationships,
   canEdit,
@@ -132,92 +136,107 @@ const [deleteOpen, setDeleteOpen] =
 
   if (persons.length === 0) {
     return (
-      <EmptyTree
-        familyId={familyId}
-        canEdit={canEdit}
-      />
+      <div className="flex min-h-0 flex-1 items-center justify-center bg-[#f3f4f6] p-6">
+        <EmptyTree familyId={familyId} canEdit={canEdit} />
+      </div>
     );
   }
 
   return (
-    <>
-      <div className="relative mb-6 w-full max-w-sm">
-        <label htmlFor="person-search" className="sr-only">
-          Person suchen
-        </label>
-        <input
-          id="person-search"
-          type="search"
-          value={searchQuery}
-          onChange={(event) => {
-            setSearchQuery(event.target.value);
-            setFocusedPersonId(undefined);
-            setSearchOpen(true);
-          }}
-          onFocus={() => setSearchOpen(true)}
-          onKeyDown={(event) => {
-            if (event.key === "Enter" && searchResults[0]) {
-              event.preventDefault();
-              focusPerson(searchResults[0]);
-            }
+    <div className="flex min-h-0 flex-1 flex-col bg-[#f3f4f6]">
+      <div className="flex shrink-0 flex-wrap items-center gap-3 border-b border-gray-200 bg-white px-4 py-3">
+        <div className="min-w-0 flex-1">
+          <h1
+            className="truncate text-2xl font-semibold text-gray-900"
+            style={{ fontFamily: "var(--font-malbat), serif" }}
+          >
+            {familyName}
+          </h1>
+          {personLimitLabel && (
+            <p className="text-sm text-gray-500">{personLimitLabel}</p>
+          )}
+        </div>
 
-            if (event.key === "Escape") {
-              setSearchOpen(false);
-            }
-          }}
-          placeholder="🔍 Person suchen..."
-          className="w-full rounded-lg border px-4 py-2 focus:border-green-700 focus:outline-none"
-        />
+        <div className="relative w-full max-w-sm sm:w-80">
+          <label htmlFor="person-search" className="sr-only">
+            Person suchen
+          </label>
+          <input
+            id="person-search"
+            type="search"
+            value={searchQuery}
+            onChange={(event) => {
+              setSearchQuery(event.target.value);
+              setFocusedPersonId(undefined);
+              setSearchOpen(true);
+            }}
+            onFocus={() => setSearchOpen(true)}
+            onKeyDown={(event) => {
+              if (event.key === "Enter" && searchResults[0]) {
+                event.preventDefault();
+                focusPerson(searchResults[0]);
+              }
 
-        {searchOpen && searchQuery.trim() && (
-          <div className="absolute z-20 mt-2 max-h-72 w-full overflow-y-auto rounded-xl border bg-white py-2 shadow-lg">
-            {searchResults.length > 0 ? (
-              searchResults.map((person) => (
-                <button
-                  key={person.id}
-                  type="button"
-                  onClick={() => focusPerson(person)}
-                  className="block w-full px-4 py-3 text-left hover:bg-gray-100"
-                >
-                  {person.first_name} {person.last_name}
-                </button>
-              ))
-            ) : (
-              <p className="px-4 py-3 text-sm text-gray-500">
-                Keine Person gefunden.
-              </p>
-            )}
-          </div>
-        )}
+              if (event.key === "Escape") {
+                setSearchOpen(false);
+              }
+            }}
+            placeholder="Person suchen..."
+            className="w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-green-700 focus:outline-none"
+          />
+
+          {searchOpen && searchQuery.trim() && (
+            <div className="absolute z-20 mt-2 max-h-72 w-full overflow-y-auto rounded-xl border bg-white py-2 shadow-lg">
+              {searchResults.length > 0 ? (
+                searchResults.map((person) => (
+                  <button
+                    key={person.id}
+                    type="button"
+                    onClick={() => focusPerson(person)}
+                    className="block w-full px-4 py-3 text-left hover:bg-gray-100"
+                  >
+                    {person.first_name} {person.last_name}
+                  </button>
+                ))
+              ) : (
+                <p className="px-4 py-3 text-sm text-gray-500">
+                  Keine Person gefunden.
+                </p>
+              )}
+            </div>
+          )}
+        </div>
       </div>
 
-<TreeView
-  persons={persons}
-  relationships={relationships}
-  canEdit={canEdit}
-  focusPersonId={focusedPersonId}
-  focusRequest={focusRequest}
-  onOpenDetails={(person) => {
-    setSelectedPerson(person);
-    setDetailsOpen(true);
-  }}
-onOpenRelationship={(person) => {
-  setSelectedPerson(person);
-  setPartnerOpen(true);
-}}
-onOpenParents={(person) => {
-  setSelectedPerson(person);
-  setParentsOpen(true);
-}}
-onOpenSiblings={(person) => {
-  setSelectedPerson(person);
-  setSiblingOpen(true);
-}}
-onAddChild={(parentIds) => {
-  setChildParentIds(parentIds);
-  setChildOpen(true);
-}}
-/>
+      <div className="min-h-0 flex-1">
+        <TreeView
+          persons={persons}
+          relationships={relationships}
+          canEdit={canEdit}
+          focusPersonId={focusedPersonId}
+          focusRequest={focusRequest}
+          onOpenDetails={(person) => {
+            setSelectedPerson(person);
+            setDetailsOpen(true);
+          }}
+          onOpenRelationship={(person) => {
+            setSelectedPerson(person);
+            setPartnerOpen(true);
+          }}
+          onOpenParents={(person) => {
+            setSelectedPerson(person);
+            setParentsOpen(true);
+          }}
+          onOpenSiblings={(person) => {
+            setSelectedPerson(person);
+            setSiblingOpen(true);
+          }}
+          onAddChild={(parentIds) => {
+            setChildParentIds(parentIds);
+            setChildOpen(true);
+          }}
+        />
+      </div>
 
       {selectedPerson && (
         <>
@@ -273,44 +292,44 @@ onAddChild={(parentIds) => {
             )}
           />
 
-<AddPartnerDialog
-  open={partnerOpen}
-  onClose={() => setPartnerOpen(false)}
-  familyId={familyId}
-  relatedPersonId={selectedPerson.id}
-  canCreateNew={canAddPerson}
-  persons={persons.map((p) => ({
-    id: p.id,
-    first_name: p.first_name,
-    last_name: p.last_name,
-  }))}
-/>
+          <AddPartnerDialog
+            open={partnerOpen}
+            onClose={() => setPartnerOpen(false)}
+            familyId={familyId}
+            relatedPersonId={selectedPerson.id}
+            canCreateNew={canAddPerson}
+            persons={persons.map((p) => ({
+              id: p.id,
+              first_name: p.first_name,
+              last_name: p.last_name,
+            }))}
+          />
 
-<AddParentDialog
-  open={parentsOpen}
-  onClose={() => setParentsOpen(false)}
-  familyId={familyId}
-  relatedPersonId={selectedPerson.id}
-  canCreateNew={canAddPerson}
-  persons={persons.map((p) => ({
-    id: p.id,
-    first_name: p.first_name,
-    last_name: p.last_name,
-  }))}
-/>
+          <AddParentDialog
+            open={parentsOpen}
+            onClose={() => setParentsOpen(false)}
+            familyId={familyId}
+            relatedPersonId={selectedPerson.id}
+            canCreateNew={canAddPerson}
+            persons={persons.map((p) => ({
+              id: p.id,
+              first_name: p.first_name,
+              last_name: p.last_name,
+            }))}
+          />
 
-<AddSiblingDialog
-  open={siblingOpen}
-  onClose={() => setSiblingOpen(false)}
-  familyId={familyId}
-  relatedPersonId={selectedPerson.id}
-  canCreateNew={canAddPerson}
-  persons={persons.map((p) => ({
-    id: p.id,
-    first_name: p.first_name,
-    last_name: p.last_name,
-  }))}
-/>
+          <AddSiblingDialog
+            open={siblingOpen}
+            onClose={() => setSiblingOpen(false)}
+            familyId={familyId}
+            relatedPersonId={selectedPerson.id}
+            canCreateNew={canAddPerson}
+            persons={persons.map((p) => ({
+              id: p.id,
+              first_name: p.first_name,
+              last_name: p.last_name,
+            }))}
+          />
         </>
       )}
 
@@ -326,7 +345,7 @@ onAddChild={(parentIds) => {
           last_name: p.last_name,
         }))}
       />
-    </>
+    </div>
   );
 }
 

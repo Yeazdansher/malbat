@@ -68,7 +68,6 @@ export default async function FamilyPage({
   const isOwner = role === "owner";
   const canEdit = role ? canEditFamily(role) : false;
 
-  // Fehlende Vater/Mutter-Links bei Geschwistern nachziehen (alte Daten).
   if (canEdit && relationships && relationships.length > 0) {
     const missing = findMissingSiblingParentLinks(id, relationships);
     if (missing.length > 0) {
@@ -94,10 +93,9 @@ export default async function FamilyPage({
             backHref="/dashboard"
             backLabel="Dashboard"
             profile={profile}
-            glass
           />
 
-          <div className="mx-auto mt-10 max-w-5xl rounded-2xl border border-white/40 bg-white/95 p-10 shadow-lg backdrop-blur-sm">
+          <div className="mx-auto mt-10 max-w-5xl rounded-2xl border bg-white p-10 shadow-lg">
             <h1 className="text-2xl font-bold text-red-600">
               Familie nicht gefunden
             </h1>
@@ -108,11 +106,12 @@ export default async function FamilyPage({
   }
 
   const planUsage = await getFamilyPlanUsage(id);
-  const planLocked = family.plan_locked || planUsage?.planLocked === true;
-  const canAddPerson = !planLocked && (planUsage?.canAddPerson ?? true);
-  const canEditTree = canEdit && !planLocked;
+  const locked =
+    family.plan_locked || planUsage?.planLocked === true;
+  const canAddPerson = !locked && (planUsage?.canAddPerson ?? true);
+  const canEditTree = canEdit && !locked;
 
-  if (planLocked) {
+  if (locked) {
     return (
       <AppBackdrop>
         <main className="min-h-screen">
@@ -120,10 +119,9 @@ export default async function FamilyPage({
             backHref="/dashboard"
             backLabel="Dashboard"
             profile={profile}
-            glass
           />
 
-          <div className="mx-auto mt-10 max-w-3xl rounded-2xl border border-white/40 bg-white/95 p-10 shadow-lg backdrop-blur-sm">
+          <div className="mx-auto mt-10 max-w-3xl rounded-2xl border bg-white p-10 shadow-lg">
             <h1 className="text-3xl font-bold text-green-700">
               {family.name}
             </h1>
@@ -155,43 +153,27 @@ export default async function FamilyPage({
   }
 
   return (
-    <AppBackdrop imageSrc="/landing/tree-bg.jpg" muted>
-      <FamilyTreeEntrance familyName={family.name}>
-        <main className="min-h-screen pb-10">
-          <Header
-            backHref="/dashboard"
-            backLabel="Dashboard"
-            profile={profile}
-            glass
-          />
+    <FamilyTreeEntrance familyName={family.name}>
+      <div className="flex h-dvh flex-col overflow-hidden bg-white">
+        <Header
+          backHref="/dashboard"
+          backLabel="Dashboard"
+          profile={profile}
+        />
 
-          <div className="mx-auto mt-8 max-w-7xl px-6">
-            <div className="mb-8">
-              <h1
-                className="text-4xl font-semibold text-white"
-                style={{ fontFamily: "var(--font-malbat), serif" }}
-              >
-                {family.name}
-              </h1>
-
-              {planUsage?.ownerPlanCode === "free" &&
-                planUsage.maxPersons !== null && (
-                  <p className="mt-1 text-sm text-white/75">
-                    {planUsage.personCount}/{planUsage.maxPersons} Personen
-                  </p>
-                )}
-            </div>
-
+        {(actionError === "person-limit" ||
+          personsError ||
+          relationshipsError) && (
+          <div className="shrink-0 space-y-2 px-4 pt-3">
             {actionError === "person-limit" && (
-              <div className="mb-6 rounded-lg border border-amber-200 bg-amber-50/95 px-4 py-3 text-amber-900 shadow-sm">
+              <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-amber-900">
                 {isOwner
                   ? "Personenlimit erreicht. Weitere Personen sind mit Premium möglich."
                   : "Das Personenlimit des Besitzers ist erreicht."}
               </div>
             )}
-
             {(personsError || relationshipsError) && (
-              <div className="mb-6 rounded-lg border border-red-200 bg-red-50/95 px-4 py-3 text-red-900 shadow-sm">
+              <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-900">
                 Stammbaum-Daten konnten nicht geladen werden
                 {personsError ? `: ${personsError.message}` : ""}
                 {relationshipsError
@@ -199,19 +181,26 @@ export default async function FamilyPage({
                   : ""}
               </div>
             )}
-
-            <div className="rounded-2xl border border-white/30 bg-white/92 p-4 shadow-xl backdrop-blur-sm sm:p-6">
-              <FamilyTree
-                familyId={family.id}
-                persons={persons ?? []}
-                relationships={relationships ?? []}
-                canEdit={canEditTree}
-                canAddPerson={canAddPerson}
-              />
-            </div>
           </div>
-        </main>
-      </FamilyTreeEntrance>
-    </AppBackdrop>
+        )}
+
+        <div className="flex min-h-0 flex-1 flex-col">
+          <FamilyTree
+            familyId={family.id}
+            familyName={family.name}
+            personLimitLabel={
+              planUsage?.ownerPlanCode === "free" &&
+              planUsage.maxPersons !== null
+                ? `${planUsage.personCount}/${planUsage.maxPersons} Personen`
+                : null
+            }
+            persons={persons ?? []}
+            relationships={relationships ?? []}
+            canEdit={canEditTree}
+            canAddPerson={canAddPerson}
+          />
+        </div>
+      </div>
+    </FamilyTreeEntrance>
   );
 }
