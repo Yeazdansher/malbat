@@ -1,5 +1,8 @@
 /**
- * Personen-Ast fÃ¼r die Suche: Vorfahren, Nachkommen und Partner.
+ * Such-Hervorhebung (wie Skizze):
+ * - Vorfahren (+ deren Partner) und Fokus ? rot
+ * - Kinder / Enkel / weitere Nachkommen ? grün
+ * - Geschwister und andere Seitenlinien ? nicht markiert
  */
 
 type Rel = {
@@ -15,10 +18,19 @@ const PARENT_TYPES = new Set([
   "adoptive-parent",
 ]);
 
+export type SearchHighlightSets = {
+  /** Fokus + Vorfahren(+Partner) + Nachkommen */
+  branch: Set<string>;
+  /** Nur Vorfahren inkl. Partner der Vorfahren (ohne Fokus) */
+  ancestors: Set<string>;
+  /** Nur Nachkommen (ohne Fokus, ohne Partner) */
+  descendants: Set<string>;
+};
+
 export function collectSearchBranch(
   personId: string,
   relationships: Rel[]
-): Set<string> {
+): SearchHighlightSets {
   const parentsOf = new Map<string, string[]>();
   const childrenOf = new Map<string, string[]>();
   const partnersOf = new Map<string, string[]>();
@@ -47,16 +59,24 @@ export function collectSearchBranch(
     }
   }
 
-  const branch = new Set<string>([personId]);
+  const ancestors = new Set<string>();
+  const descendants = new Set<string>();
 
   const ancestorQueue = [personId];
   while (ancestorQueue.length > 0) {
     const current = ancestorQueue.pop()!;
     for (const parentId of parentsOf.get(current) ?? []) {
-      if (!branch.has(parentId)) {
-        branch.add(parentId);
-        ancestorQueue.push(parentId);
-      }
+      if (parentId === personId || ancestors.has(parentId)) continue;
+      ancestors.add(parentId);
+      ancestorQueue.push(parentId);
+    }
+  }
+
+  // Partner nur der Vorfahren (nicht der Fokusperson) ? rot, wie Elternpaar oben
+  for (const ancestorId of [...ancestors]) {
+    for (const partnerId of partnersOf.get(ancestorId) ?? []) {
+      if (partnerId === personId || descendants.has(partnerId)) continue;
+      ancestors.add(partnerId);
     }
   }
 
@@ -64,18 +84,18 @@ export function collectSearchBranch(
   while (descendantQueue.length > 0) {
     const current = descendantQueue.pop()!;
     for (const childId of childrenOf.get(current) ?? []) {
-      if (!branch.has(childId)) {
-        branch.add(childId);
-        descendantQueue.push(childId);
+      if (
+        childId === personId ||
+        descendants.has(childId) ||
+        ancestors.has(childId)
+      ) {
+        continue;
       }
+      descendants.add(childId);
+      descendantQueue.push(childId);
     }
   }
 
-  for (const id of [...branch]) {
-    for (const partnerId of partnersOf.get(id) ?? []) {
-      branch.add(partnerId);
-    }
-  }
-
-  return branch;
+  const branch = new Set<string>([personId, ...ancestors, ...descendants]);
+  return { branch, ancestors, descendants };
 }
