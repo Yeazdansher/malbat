@@ -186,33 +186,42 @@ export function buildTreeLayout(graph: TreeGraph): TreeLayout {
       return 0;
     }
 
-    const unions = (familiesByPartner.get(personId) ?? []).filter(
-      (family) => !placedFamilies.has(family.id)
-    );
+    const unions = unionsForPerson(personId);
 
     if (unions.length === 0) {
       return CARD_WIDTH;
     }
 
-    // Gleiche horizontale Ausdehnung wie placePersonWithPartners + placeExtraUnions.
-    let rowWidth = CARD_WIDTH;
+    // Erste Union rechts vom Anker; weitere Unions links — wie placePersonWithPartners.
     const visited = new Set<string>([personId]);
+    let leftWidth = 0;
+    let rightWidth = CARD_WIDTH;
 
-    for (const union of unions) {
+    const first = unions[0];
+    const firstOthers = otherPartnersOf(first, personId);
+
+    for (const partnerId of firstOthers) {
+      rightWidth += PARTNER_GAP + CARD_WIDTH;
+      visited.add(partnerId);
+      rightWidth += measureExtraUnionsOwnGen(partnerId, first.id, visited);
+    }
+
+    if (firstOthers.length === 0) {
+      rightWidth += PARTNER_GAP;
+    }
+
+    for (let index = 1; index < unions.length; index++) {
+      const union = unions[index];
       const others = otherPartnersOf(union, personId);
 
       for (const partnerId of others) {
-        rowWidth += PARTNER_GAP + CARD_WIDTH;
+        leftWidth += PARTNER_GAP + CARD_WIDTH;
         visited.add(partnerId);
-        rowWidth += measureExtraUnionsOwnGen(partnerId, union.id, visited);
-      }
-
-      if (others.length === 0) {
-        rowWidth += PARTNER_GAP;
+        leftWidth += measureExtraUnionsOwnGen(partnerId, union.id, visited);
       }
     }
 
-    return rowWidth;
+    return leftWidth + rightWidth;
   }
 
   function measurePersonSubtree(
@@ -518,47 +527,101 @@ export function buildTreeLayout(graph: TreeGraph): TreeLayout {
     recenterSiblingBlock(subtreeNodeIds, familyCenterX, y);
   }
 
+  function preferredExtraDirection(personId: string): "left" | "right" {
+    const origin = personPositions.get(personId);
+    if (!origin) {
+      return "right";
+    }
+
+    for (const family of familiesByPartner.get(personId) ?? []) {
+      if (!placedFamilies.has(family.id)) {
+        continue;
+      }
+
+      for (const partnerId of otherPartnersOf(family, personId)) {
+        const partnerPos = personPositions.get(partnerId);
+        if (!partnerPos) {
+          continue;
+        }
+
+        // Bestehender Partner rechts → weitere Partner links (und umgekehrt).
+        if (partnerPos.x >= origin.x) {
+          return "left";
+        }
+
+        return "right";
+      }
+    }
+
+    return "right";
+  }
+
+  function unionsForPerson(personId: string): Family[] {
+    return (familiesByPartner.get(personId) ?? [])
+      .filter((family) => !placedFamilies.has(family.id))
+      .sort((a, b) => a.id.localeCompare(b.id));
+  }
+
   function placePersonWithPartners(
     personId: string,
     x: number,
     y: number
   ): void {
-    placePerson(personId, x, y);
+    const unions = unionsForPerson(personId);
 
-    const unions = (familiesByPartner.get(personId) ?? []).filter(
-      (family) => !placedFamilies.has(family.id)
-    );
-
-    let cursorX = x + CARD_WIDTH;
-
-    for (const union of unions) {
-      placedFamilies.add(union.id);
-
-      const others = otherPartnersOf(union, personId);
-      const familyCenterX = cursorX + PARTNER_GAP / 2;
-      const familyCenterY = y + CARD_HEIGHT / 2;
-
-      addFamilyNode(union, familyCenterX, familyCenterY);
-      addEdge(personId, union.familyNodeId);
-
-      cursorX += PARTNER_GAP;
-
-      for (const partnerId of others) {
-        placePerson(partnerId, cursorX, y);
-        addEdge(partnerId, union.familyNodeId);
-        cursorX += CARD_WIDTH + PARTNER_GAP;
-      }
-
-      if (others.length === 0) {
-        cursorX += PARTNER_GAP;
-      }
-
-      placeChildren(union, familyCenterX, y + GENERATION_GAP);
-
-      for (const partnerId of others) {
-        placeExtraUnions(partnerId, "right");
+    // Weitere Unions links vom Anker reservieren, damit Geschwister-Packing stimmt.
+    let leftWidth = 0;
+    if (unions.length > 1) {
+      const visited = new Set<string>([personId]);
+      for (let index = 1; index < unions.length; index++) {
+        const union = unions[index];
+        for (const partnerId of otherPartnersOf(union, personId)) {
+          leftWidth += PARTNER_GAP + CARD_WIDTH;
+          visited.add(partnerId);
+          leftWidth += measureExtraUnionsOwnGen(partnerId, union.id, visited);
+        }
       }
     }
+
+    const personX = x + leftWidth;
+    placePerson(personId, personX, y);
+
+    if (unions.length === 0) {
+      return;
+    }
+
+    // Nur die erste Union rechts vom Anker — weitere über placeExtraUnions links.
+    const first = unions[0];
+    placedFamilies.add(first.id);
+
+    const others = otherPartnersOf(first, personId);
+    let cursorX = personX + CARD_WIDTH;
+    const familyCenterX = cursorX + PARTNER_GAP / 2;
+    const familyCenterY = y + CARD_HEIGHT / 2;
+
+    addFamilyNode(first, familyCenterX, familyCenterY);
+    addEdge(personId, first.familyNodeId);
+
+    cursorX += PARTNER_GAP;
+
+    for (const partnerId of others) {
+      placePerson(partnerId, cursorX, y);
+      addEdge(partnerId, first.familyNodeId);
+      cursorX += CARD_WIDTH + PARTNER_GAP;
+    }
+
+    if (others.length === 0) {
+      cursorX += PARTNER_GAP;
+    }
+
+    placeChildren(first, familyCenterX, y + GENERATION_GAP);
+
+    for (const partnerId of others) {
+      placeExtraUnions(partnerId, "right");
+    }
+
+    // Zweite und weitere Partnerschaften links am Anker (nicht hinter Partner 1).
+    placeExtraUnions(personId, "left");
   }
 
   function extraUnionsOf(personId: string): Family[] {
@@ -680,6 +743,13 @@ export function buildTreeLayout(graph: TreeGraph): TreeLayout {
       return;
     }
 
+    // Familie hängt schon an einer platzierten Person → außen anhängen, keine neue Reihe.
+    const placedAnchor = family.partners.find((id) => placedPersons.has(id));
+    if (placedAnchor && family.kind !== "sibling-group") {
+      placeExtraUnions(placedAnchor, preferredExtraDirection(placedAnchor));
+      return;
+    }
+
     // Geschwistergruppe ohne Eltern: nebeneinander in einer Generation.
     if (
       family.kind === "sibling-group" ||
@@ -754,6 +824,7 @@ export function buildTreeLayout(graph: TreeGraph): TreeLayout {
             extraStack
           )
         : 0;
+
     const innerWidth = width - extraLeft - extraRight;
     const rowLeft = boxLeft + extraLeft + (innerWidth - rowWidth) / 2;
 
@@ -830,7 +901,7 @@ export function buildTreeLayout(graph: TreeGraph): TreeLayout {
     );
 
     if (placedPartner) {
-      placeExtraUnions(placedPartner, "right");
+      placeExtraUnions(placedPartner, preferredExtraDirection(placedPartner));
       continue;
     }
 
