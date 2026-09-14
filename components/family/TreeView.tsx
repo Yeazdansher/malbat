@@ -1,14 +1,10 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Background,
   Controls,
   ReactFlow,
-  applyNodeChanges,
-  type Node,
-  type NodeChange,
-  type OnNodeDrag,
   type ReactFlowInstance,
 } from "@xyflow/react";
 
@@ -25,36 +21,34 @@ import {
   type Relationship,
 } from "@/lib/tree-engine";
 import { collectSearchBranch } from "@/lib/search-branch";
-import { collectDragGroupNodeIds } from "@/lib/drag-subtree";
-import {
-  applyLayoutOverrides,
-  type LayoutOverrideMap,
-} from "@/lib/layout-overrides";
-import type { LayoutNodePosition } from "@/app/family/[id]/actions";
 
 type Person = {
   id: string;
   family_id: string;
+
   first_name: string;
   last_name: string;
+
   gender: "male" | "female" | "unknown";
+
   birth_date: string | null;
   birth_place: string | null;
+
   is_deceased: boolean;
+
   death_date: string | null;
   death_place: string | null;
+
   notes: string | null;
 };
 
 type Props = {
   persons: Person[];
   relationships: Relationship[];
-  layoutOverrides: LayoutOverrideMap;
   canEdit: boolean;
-  arrangeMode: boolean;
   focusPersonId?: string;
   focusRequest: number;
-  onArrangePositionsChange: (positions: LayoutNodePosition[]) => void;
+
   onOpenDetails: (person: Person) => void;
   onOpenRelationship: (person: Person) => void;
   onOpenParents: (person: Person) => void;
@@ -62,23 +56,12 @@ type Props = {
   onAddChild: (parentIds: string[]) => void;
 };
 
-function nodesToPositions(nodes: Node[]): LayoutNodePosition[] {
-  return nodes.map((node) => ({
-    nodeId: node.id,
-    x: node.position.x,
-    y: node.position.y,
-  }));
-}
-
 export default function TreeView({
   persons,
   relationships,
-  layoutOverrides,
   canEdit,
-  arrangeMode,
   focusPersonId,
   focusRequest,
-  onArrangePositionsChange,
   onOpenDetails,
   onOpenRelationship,
   onOpenParents,
@@ -87,24 +70,6 @@ export default function TreeView({
 }: Props) {
   const [flowInstance, setFlowInstance] =
     useState<ReactFlowInstance | null>(null);
-  const [flowNodes, setFlowNodes] = useState<Node[]>([]);
-
-  const wasArrangeModeRef = useRef(false);
-  const draggingRef = useRef(false);
-  const onArrangePositionsChangeRef = useRef(onArrangePositionsChange);
-  onArrangePositionsChangeRef.current = onArrangePositionsChange;
-
-  const arrangeDragRef = useRef<{
-    nodeId: string;
-    group: Set<string>;
-    starts: Record<string, { x: number; y: number }>;
-  } | null>(null);
-
-  const flowNodesRef = useRef(flowNodes);
-  flowNodesRef.current = flowNodes;
-  const relationshipsRef = useRef(relationships);
-  relationshipsRef.current = relationships;
-  const layoutEdgesRef = useRef<{ source: string; target: string }[]>([]);
 
   const nodeTypes = useMemo(
     () => ({
@@ -121,11 +86,17 @@ export default function TreeView({
     []
   );
 
+  /**
+   * 1. Domänengraph erzeugen
+   */
   const graph = useMemo(
     () => buildTreeGraph(persons, relationships),
     [persons, relationships]
   );
 
+  /**
+   * 2. Layout berechnen
+   */
   const layoutResult = useMemo(() => {
     try {
       return { layout: buildTreeLayout(graph), error: null as string | null };
@@ -136,40 +107,31 @@ export default function TreeView({
     }
   }, [graph]);
 
-  layoutEdgesRef.current = layoutResult.layout?.edges ?? [];
-
-  const layoutWithOverrides = useMemo(() => {
+  /**
+   * 3. React-Flow-Struktur erzeugen
+   */
+  const { nodes, edges } = useMemo(() => {
     if (!layoutResult.layout) {
-      return null;
-    }
-
-    return applyLayoutOverrides(layoutResult.layout, layoutOverrides);
-  }, [layoutResult.layout, layoutOverrides]);
-
-  const cardCanEdit = canEdit && !arrangeMode;
-
-  const { nodes: baseNodes, edges } = useMemo(() => {
-    if (!layoutWithOverrides) {
-      return { nodes: [] as Node[], edges: [] };
+      return { nodes: [], edges: [] };
     }
 
     return buildReactFlowGraph(
       graph,
-      layoutWithOverrides,
+      layoutResult.layout,
       onOpenDetails,
       onOpenRelationship,
       onOpenParents,
       onOpenSiblings,
-      cardCanEdit
+      canEdit
     );
   }, [
     graph,
-    layoutWithOverrides,
+    layoutResult.layout,
     onOpenDetails,
     onOpenRelationship,
     onOpenParents,
     onOpenSiblings,
-    cardCanEdit,
+    canEdit,
   ]);
 
   const branchPersonIds = useMemo(() => {
@@ -180,20 +142,14 @@ export default function TreeView({
     return collectSearchBranch(focusPersonId, relationships);
   }, [focusPersonId, relationships]);
 
-  const decorateNodes = useCallback(
-    (sourceNodes: Node[]): Node[] =>
-      sourceNodes.map((node) => {
+  const displayedNodes = useMemo(
+    () =>
+      nodes.map((node) => {
         if (node.type === "person") {
           return {
             ...node,
-            // draggable → React Flow setzt automatisch class "nopan" (kein Viewport-Pan).
-            draggable: arrangeMode,
-            selectable: arrangeMode,
-            zIndex: arrangeMode ? 10 : undefined,
             data: {
               ...node.data,
-              canEdit: cardCanEdit,
-              arrangeMode,
               searchHighlighted: node.id === focusPersonId,
               branchHighlighted:
                 node.id !== focusPersonId && branchPersonIds.has(node.id),
@@ -215,8 +171,6 @@ export default function TreeView({
 
           return {
             ...node,
-            draggable: false,
-            selectable: !arrangeMode,
             style: {
               ...node.style,
               outline: onBranch ? "2px solid #f87171" : undefined,
@@ -226,56 +180,16 @@ export default function TreeView({
           };
         }
 
-        return {
-          ...node,
-          draggable: false,
-        };
+        return node;
       }),
-    [arrangeMode, branchPersonIds, cardCanEdit, focusPersonId]
+    [nodes, focusPersonId, branchPersonIds]
   );
-
-  useEffect(() => {
-    if (!arrangeMode) {
-      setFlowNodes(decorateNodes(baseNodes));
-      wasArrangeModeRef.current = false;
-      arrangeDragRef.current = null;
-      draggingRef.current = false;
-      return;
-    }
-
-    if (!wasArrangeModeRef.current) {
-      const seeded = decorateNodes(baseNodes);
-      setFlowNodes(seeded);
-      onArrangePositionsChangeRef.current(nodesToPositions(seeded));
-      wasArrangeModeRef.current = true;
-    }
-  }, [arrangeMode, baseNodes, decorateNodes]);
-
-  useEffect(() => {
-    if (!arrangeMode || draggingRef.current) {
-      return;
-    }
-
-    setFlowNodes((current) => decorateNodes(current));
-  }, [arrangeMode, focusPersonId, branchPersonIds, decorateNodes]);
 
   const displayedEdges = useMemo(
     () =>
       edges.map((edge) => {
-        const base = arrangeMode
-          ? {
-              ...edge,
-              interactionWidth: 0,
-              focusable: false,
-              style: {
-                ...edge.style,
-                pointerEvents: "none" as const,
-              },
-            }
-          : edge;
-
         if (!focusPersonId || branchPersonIds.size === 0) {
-          return base;
+          return edge;
         }
 
         const sourceOnBranch = branchPersonIds.has(edge.source);
@@ -289,28 +203,30 @@ export default function TreeView({
           (targetIsFamily && sourceOnBranch);
 
         if (!highlighted) {
-          return base;
+          return edge;
         }
 
         return {
-          ...base,
+          ...edge,
           style: {
-            ...base.style,
+            ...edge.style,
             stroke: "#dc2626",
             strokeWidth: 3.5,
-            ...(arrangeMode ? { pointerEvents: "none" as const } : {}),
           },
         };
       }),
-    [edges, branchPersonIds, focusPersonId, arrangeMode]
+    [edges, branchPersonIds, focusPersonId]
   );
 
   useEffect(() => {
-    if (!flowInstance || !focusPersonId || arrangeMode) {
+    if (!flowInstance || !focusPersonId) {
       return;
     }
 
-    const personNode = flowNodes.find((node) => node.id === focusPersonId);
+    const personNode = nodes.find(
+      (node) => node.id === focusPersonId
+    );
+
     if (!personNode) {
       return;
     }
@@ -323,95 +239,7 @@ export default function TreeView({
         duration: 500,
       }
     );
-  }, [flowInstance, focusPersonId, focusRequest, flowNodes, arrangeMode]);
-
-  const handleNodesChange = useCallback(
-    (changes: NodeChange[]) => {
-      if (!arrangeMode) {
-        const safeChanges = changes.filter(
-          (change) => change.type !== "position"
-        );
-        if (safeChanges.length === 0) {
-          return;
-        }
-        setFlowNodes((current) => applyNodeChanges(safeChanges, current));
-        return;
-      }
-
-      // Controlled mode: Position-Changes MUESSEN angewandt werden, sonst
-      // bleibt der Knoten stehen und der Viewport wirkt wie "Pan".
-      setFlowNodes((current) => applyNodeChanges(changes, current));
-    },
-    [arrangeMode]
-  );
-
-  const handleNodeDragStart: OnNodeDrag = useCallback((_event, node) => {
-    draggingRef.current = true;
-
-    const group = collectDragGroupNodeIds(
-      node.id,
-      relationshipsRef.current,
-      layoutEdgesRef.current
-    );
-
-    const starts: Record<string, { x: number; y: number }> = {};
-    for (const entry of flowNodesRef.current) {
-      if (group.has(entry.id)) {
-        starts[entry.id] = { ...entry.position };
-      }
-    }
-
-    arrangeDragRef.current = {
-      nodeId: node.id,
-      group,
-      starts,
-    };
-  }, []);
-
-  const handleNodeDrag: OnNodeDrag = useCallback((_event, node) => {
-    const drag = arrangeDragRef.current;
-    if (!drag || drag.nodeId !== node.id) {
-      return;
-    }
-
-    const origin = drag.starts[node.id];
-    if (!origin) {
-      return;
-    }
-
-    const dx = node.position.x - origin.x;
-    const dy = node.position.y - origin.y;
-
-    setFlowNodes((current) =>
-      current.map((entry) => {
-        // Gezogener Knoten kommt bereits aus onNodesChange.
-        if (entry.id === node.id || !drag.group.has(entry.id)) {
-          return entry;
-        }
-
-        const start = drag.starts[entry.id];
-        if (!start) {
-          return entry;
-        }
-
-        return {
-          ...entry,
-          position: {
-            x: start.x + dx,
-            y: start.y + dy,
-          },
-        };
-      })
-    );
-  }, []);
-
-  const handleNodeDragStop: OnNodeDrag = useCallback(() => {
-    draggingRef.current = false;
-    arrangeDragRef.current = null;
-    onArrangePositionsChangeRef.current(
-      nodesToPositions(flowNodesRef.current)
-    );
-  }, []);
+  }, [flowInstance, focusPersonId, focusRequest, nodes]);
 
   if (layoutResult.error) {
     return (
@@ -431,43 +259,27 @@ export default function TreeView({
 
   return (
     <div
-      className={
-        arrangeMode
-          ? "rounded-2xl ring-2 ring-amber-400 ring-offset-2"
-          : undefined
-      }
       style={{
         width: "100%",
         height: "700px",
       }}
     >
       <ReactFlow
-        nodes={flowNodes}
+        nodes={displayedNodes}
         edges={displayedEdges}
         nodeTypes={nodeTypes}
         edgeTypes={edgeTypes}
         nodesConnectable={false}
-        nodesDraggable={arrangeMode}
-        nodeDragThreshold={1}
-        elementsSelectable={arrangeMode}
-        selectNodesOnDrag={false}
-        // Standard: leerer Hintergrund pannt; draggable Nodes haben auto-nopan.
+        nodesDraggable={false}
+        elementsSelectable={true}
         panOnDrag
-        panOnScroll={false}
-        zoomOnScroll
-        zoomOnPinch
-        zoomOnDoubleClick={!arrangeMode}
-        fitView={!arrangeMode}
+        fitView
         fitViewOptions={{ padding: 0.2, minZoom: 0.1, maxZoom: 1.5 }}
         minZoom={0.1}
         maxZoom={2}
         onInit={setFlowInstance}
-        onNodesChange={handleNodesChange}
-        onNodeDragStart={arrangeMode ? handleNodeDragStart : undefined}
-        onNodeDrag={arrangeMode ? handleNodeDrag : undefined}
-        onNodeDragStop={arrangeMode ? handleNodeDragStop : undefined}
         onNodeClick={(_event, node) => {
-          if (!canEdit || arrangeMode || node.type !== "family") {
+          if (!canEdit || node.type !== "family") {
             return;
           }
 
@@ -480,7 +292,8 @@ export default function TreeView({
             return;
           }
 
-          onAddChild(data.parentIds ?? []);
+          const parentIds = data.parentIds ?? [];
+          onAddChild(parentIds);
         }}
       >
         <Background />

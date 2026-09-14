@@ -13,7 +13,6 @@ type PersonCardProps = {
   onOpenSiblings?: () => void;
   hasParents?: boolean;
   canEdit?: boolean;
-  arrangeMode?: boolean;
 };
 
 export default function PersonCard({
@@ -28,24 +27,14 @@ export default function PersonCard({
   onOpenSiblings,
   hasParents = false,
   canEdit = true,
-  arrangeMode = false,
 }: PersonCardProps) {
   return (
-    <div
-      className={
-        arrangeMode
-          ? "relative w-[270px] cursor-grab active:cursor-grabbing rounded-md border border-amber-300 bg-white p-4 shadow-sm select-none"
-          : "relative w-[270px] rounded-md border border-gray-300 bg-white p-4 shadow-sm"
-      }
-    >
+    <div className="relative w-[270px] rounded-md border border-gray-300 bg-white p-4 shadow-sm">
+
       {canEdit && !hasParents && (
         <button
           type="button"
-          className={
-            canEdit
-              ? "nodrag nopan nowheel absolute z-20 left-1/2 top-0 flex h-8 w-8 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border bg-white text-base leading-none hover:bg-green-100"
-              : ""
-          }
+          className="nodrag nopan nowheel absolute z-20 left-1/2 top-0 flex h-8 w-8 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border bg-white text-base leading-none hover:bg-green-100"
           title="Eltern hinzufügen"
           aria-label="Eltern hinzufügen"
           onPointerDown={(event) => event.stopPropagation()}
@@ -140,19 +129,14 @@ export default function PersonCard({
       </div>
 
       <div className="mt-5">
-        {arrangeMode ? (
-          <div className="w-full rounded border border-amber-200 bg-amber-50 py-2 text-center text-sm text-amber-800">
-            Ziehen zum Verschieben
-          </div>
-        ) : (
-          <button
-            type="button"
-            onClick={onOpenDetails}
-            className="w-full rounded border border-gray-300 py-2 text-sm transition hover:bg-gray-100"
-          >
-            Weitere Details
-          </button>
-        )}
+
+        <button
+          onClick={onOpenDetails}
+          className="w-full rounded border border-gray-300 py-2 text-sm transition hover:bg-gray-100"
+        >
+          Weitere Details
+        </button>
+
       </div>
 
     </div>

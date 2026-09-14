@@ -13,16 +13,23 @@ type PersonNodeData = {
   person: {
     id: string;
     family_id: string;
+
     first_name: string;
     last_name: string;
+
     gender: "male" | "female" | "unknown";
+
     birth_date: string | null;
     birth_place: string | null;
+
     is_deceased: boolean;
+
     death_date: string | null;
     death_place: string | null;
+
     notes: string | null;
   };
+
   onOpenDetails: () => void;
   onOpenRelationship: () => void;
   onOpenParents: () => void;
@@ -31,10 +38,18 @@ type PersonNodeData = {
   searchHighlighted?: boolean;
   branchHighlighted?: boolean;
   canEdit: boolean;
-  arrangeMode?: boolean;
 };
 
-export default function PersonNode({ data }: NodeProps) {
+/**
+ * Darstellung einer Person innerhalb der
+ * neuen Malbat Tree Engine.
+ *
+ * Die Position wird ausschließlich durch
+ * die Layout-Engine bestimmt.
+ */
+export default function PersonNode({
+  data,
+}: NodeProps) {
   const personData = data as PersonNodeData;
   const { person } = personData;
 
@@ -47,6 +62,7 @@ export default function PersonNode({ data }: NodeProps) {
         isConnectable={false}
         style={{ opacity: 0, pointerEvents: "none" }}
       />
+
       <Handle
         id="child"
         type="source"
@@ -54,6 +70,7 @@ export default function PersonNode({ data }: NodeProps) {
         isConnectable={false}
         style={{ opacity: 0, pointerEvents: "none" }}
       />
+
       <Handle
         id="partner-left"
         type="source"
@@ -61,6 +78,7 @@ export default function PersonNode({ data }: NodeProps) {
         isConnectable={false}
         style={{ opacity: 0, pointerEvents: "none" }}
       />
+
       <Handle
         id="partner-right"
         type="source"
@@ -70,19 +88,17 @@ export default function PersonNode({ data }: NodeProps) {
       />
 
       <div
-        className={
-          personData.arrangeMode
-            ? "rounded-2xl cursor-grab active:cursor-grabbing"
-            : "rounded-2xl"
-        }
+        className="rounded-2xl"
         style={
           personData.searchHighlighted
             ? {
-                boxShadow: "0 0 0 4px #ffffff, 0 0 0 8px #ef4444",
+                boxShadow:
+                  "0 0 0 4px #ffffff, 0 0 0 8px #ef4444",
               }
             : personData.branchHighlighted
               ? {
-                  boxShadow: "0 0 0 2px #ffffff, 0 0 0 5px #f87171",
+                  boxShadow:
+                    "0 0 0 2px #ffffff, 0 0 0 5px #f87171",
                 }
               : undefined
         }
@@ -92,14 +108,18 @@ export default function PersonNode({ data }: NodeProps) {
           lastName={person.last_name}
           gender={person.gender}
           age={
-            calculateAge(person.birth_date, person.death_date) ?? 0
+            calculateAge(
+              person.birth_date,
+              person.death_date
+            ) ?? 0
           }
           isDeceased={person.is_deceased}
           hasParents={personData.hasParents}
-          canEdit={personData.canEdit && !personData.arrangeMode}
-          arrangeMode={personData.arrangeMode === true}
+          canEdit={personData.canEdit}
           onOpenDetails={personData.onOpenDetails}
-          onOpenRelationship={personData.onOpenRelationship}
+          onOpenRelationship={
+            personData.onOpenRelationship
+          }
           onOpenParents={personData.onOpenParents}
           onOpenSiblings={personData.onOpenSiblings}
         />
