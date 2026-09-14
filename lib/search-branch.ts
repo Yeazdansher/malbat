@@ -1,101 +1,86 @@
 /**
- * Such-Hervorhebung (wie Skizze):
- * - Vorfahren (+ deren Partner) und Fokus ? rot
- * - Kinder / Enkel / weitere Nachkommen ? grün
- * - Geschwister und andere Seitenlinien ? nicht markiert
+ * Such-Hervorhebung über denselben Familien-Graphen wie der Stammbaum:
+ * - nach oben (Familien, in denen die Person Kind ist) ? rot
+ * - nach unten (Familien, in denen die Person Partner ist) ? grün
+ *
+ * Partner der Fokusperson und deren Vorfahren werden nicht mitmarkiert.
  */
 
-type Rel = {
-  person1_id: string;
-  person2_id: string;
-  relationship_type: string;
-};
-
-const PARENT_TYPES = new Set([
-  "father",
-  "mother",
-  "parent",
-  "adoptive-parent",
-]);
+import { buildTreeGraph } from "@/lib/tree-engine/graph";
+import type { Relationship } from "@/lib/tree-engine/types";
 
 export type SearchHighlightSets = {
-  /** Fokus + Vorfahren(+Partner) + Nachkommen */
   branch: Set<string>;
-  /** Nur Vorfahren inkl. Partner der Vorfahren (ohne Fokus) */
   ancestors: Set<string>;
-  /** Nur Nachkommen (ohne Fokus, ohne Partner) */
   descendants: Set<string>;
+  /** Family-Nodes auf dem Vorfahren-Pfad (rot) */
+  ancestorFamilyIds: Set<string>;
+  /** Family-Nodes auf dem Nachkommen-Pfad (grün) */
+  descendantFamilyIds: Set<string>;
 };
 
 export function collectSearchBranch(
   personId: string,
-  relationships: Rel[]
+  relationships: Relationship[]
 ): SearchHighlightSets {
-  const parentsOf = new Map<string, string[]>();
-  const childrenOf = new Map<string, string[]>();
-  const partnersOf = new Map<string, string[]>();
-
-  function push(map: Map<string, string[]>, key: string, value: string) {
-    const list = map.get(key);
-    if (list) {
-      if (!list.includes(value)) {
-        list.push(value);
-      }
-    } else {
-      map.set(key, [value]);
-    }
-  }
-
-  for (const relation of relationships) {
-    if (PARENT_TYPES.has(relation.relationship_type)) {
-      push(parentsOf, relation.person2_id, relation.person1_id);
-      push(childrenOf, relation.person1_id, relation.person2_id);
-      continue;
-    }
-
-    if (relation.relationship_type === "partner") {
-      push(partnersOf, relation.person1_id, relation.person2_id);
-      push(partnersOf, relation.person2_id, relation.person1_id);
-    }
-  }
+  const graph = buildTreeGraph([], relationships);
+  const families = [...graph.families.values()];
 
   const ancestors = new Set<string>();
   const descendants = new Set<string>();
+  const ancestorFamilyIds = new Set<string>();
+  const descendantFamilyIds = new Set<string>();
 
-  const ancestorQueue = [personId];
-  while (ancestorQueue.length > 0) {
-    const current = ancestorQueue.pop()!;
-    for (const parentId of parentsOf.get(current) ?? []) {
-      if (parentId === personId || ancestors.has(parentId)) continue;
-      ancestors.add(parentId);
-      ancestorQueue.push(parentId);
-    }
-  }
+  // --- nach oben: Elternpaare, in denen current Kind ist ---
+  const upQueue = [personId];
+  const seenUp = new Set<string>([personId]);
 
-  // Partner nur der Vorfahren (nicht der Fokusperson) ? rot, wie Elternpaar oben
-  for (const ancestorId of [...ancestors]) {
-    for (const partnerId of partnersOf.get(ancestorId) ?? []) {
-      if (partnerId === personId || descendants.has(partnerId)) continue;
-      ancestors.add(partnerId);
-    }
-  }
+  while (upQueue.length > 0) {
+    const current = upQueue.pop()!;
 
-  const descendantQueue = [personId];
-  while (descendantQueue.length > 0) {
-    const current = descendantQueue.pop()!;
-    for (const childId of childrenOf.get(current) ?? []) {
-      if (
-        childId === personId ||
-        descendants.has(childId) ||
-        ancestors.has(childId)
-      ) {
-        continue;
+    for (const family of families) {
+      if (family.kind === "sibling-group") continue;
+      if (!family.children.includes(current)) continue;
+
+      ancestorFamilyIds.add(family.familyNodeId);
+
+      for (const parentId of family.partners) {
+        if (seenUp.has(parentId)) continue;
+        seenUp.add(parentId);
+        ancestors.add(parentId);
+        upQueue.push(parentId);
       }
-      descendants.add(childId);
-      descendantQueue.push(childId);
+    }
+  }
+
+  // --- nach unten: Unions, in denen current Partner ist ---
+  const downQueue = [personId];
+  const seenDown = new Set<string>([personId]);
+
+  while (downQueue.length > 0) {
+    const current = downQueue.pop()!;
+
+    for (const family of families) {
+      if (family.kind === "sibling-group") continue;
+      if (!family.partners.includes(current)) continue;
+
+      descendantFamilyIds.add(family.familyNodeId);
+
+      for (const childId of family.children) {
+        if (seenDown.has(childId) || ancestors.has(childId)) continue;
+        seenDown.add(childId);
+        descendants.add(childId);
+        downQueue.push(childId);
+      }
     }
   }
 
   const branch = new Set<string>([personId, ...ancestors, ...descendants]);
-  return { branch, ancestors, descendants };
+  return {
+    branch,
+    ancestors,
+    descendants,
+    ancestorFamilyIds,
+    descendantFamilyIds,
+  };
 }
