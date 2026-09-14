@@ -43,13 +43,13 @@ export default async function FamilyPage({
     .eq("id", id)
     .single();
 
-  const { data: persons } = await supabase
+  const { data: persons, error: personsError } = await supabase
     .from("persons")
     .select("*")
     .eq("family_id", id)
     .order("created_at");
 
-  const { data: relationships } = await supabase
+  const { data: relationships, error: relationshipsError } = await supabase
     .from("relationships")
     .select("*")
     .eq("family_id", id);
@@ -155,6 +155,14 @@ export default async function FamilyPage({
             {isOwner
               ? "Personenlimit erreicht. Weitere Personen sind mit Premium möglich."
               : "Das Personenlimit des Besitzers ist erreicht."}
+          </div>
+        )}
+
+        {(personsError || relationshipsError) && (
+          <div className="mb-6 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-900">
+            Stammbaum-Daten konnten nicht geladen werden
+            {personsError ? `: ${personsError.message}` : ""}
+            {relationshipsError ? `: ${relationshipsError.message}` : ""}
           </div>
         )}
 

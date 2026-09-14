@@ -96,35 +96,42 @@ export default function TreeView({
   /**
    * 2. Layout berechnen
    */
-  const layout = useMemo(
-    () => buildTreeLayout(graph),
-    [graph]
-  );
+  const layoutResult = useMemo(() => {
+    try {
+      return { layout: buildTreeLayout(graph), error: null as string | null };
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Unbekannter Layout-Fehler";
+      return { layout: null, error: message };
+    }
+  }, [graph]);
 
   /**
    * 3. React-Flow-Struktur erzeugen
    */
-  const { nodes, edges } = useMemo(
-    () =>
-      buildReactFlowGraph(
-        graph,
-        layout,
-        onOpenDetails,
-        onOpenRelationship,
-        onOpenParents,
-        onOpenSiblings,
-        canEdit
-      ),
-    [
+  const { nodes, edges } = useMemo(() => {
+    if (!layoutResult.layout) {
+      return { nodes: [], edges: [] };
+    }
+
+    return buildReactFlowGraph(
       graph,
-      layout,
+      layoutResult.layout,
       onOpenDetails,
       onOpenRelationship,
       onOpenParents,
       onOpenSiblings,
-      canEdit,
-    ]
-  );
+      canEdit
+    );
+  }, [
+    graph,
+    layoutResult.layout,
+    onOpenDetails,
+    onOpenRelationship,
+    onOpenParents,
+    onOpenSiblings,
+    canEdit,
+  ]);
 
   const displayedNodes = useMemo(
     () =>
@@ -164,6 +171,22 @@ export default function TreeView({
       }
     );
   }, [flowInstance, focusPersonId, focusRequest, nodes]);
+
+  if (layoutResult.error) {
+    return (
+      <div className="flex h-[650px] items-center justify-center rounded-2xl border-2 border-red-200 bg-red-50 p-8 text-center">
+        <div>
+          <h2 className="text-xl font-semibold text-red-800">
+            Stammbaum-Layout fehlgeschlagen
+          </h2>
+          <p className="mt-2 text-sm text-red-700">
+            {persons.length} Personen geladen, aber die Darstellung ist
+            abgestürzt: {layoutResult.error}
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div
