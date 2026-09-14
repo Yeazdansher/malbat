@@ -90,7 +90,9 @@ export default function PersonNode({
 
       <div
         className={
-          personData.arrangeMode ? "rounded-2xl cursor-move" : "rounded-2xl"
+          personData.arrangeMode
+            ? "person-drag-root rounded-2xl cursor-grab active:cursor-grabbing"
+            : "person-drag-root rounded-2xl"
         }
         style={
           personData.searchHighlighted

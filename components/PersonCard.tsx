@@ -34,7 +34,7 @@ export default function PersonCard({
     <div
       className={
         arrangeMode
-          ? "relative w-[270px] cursor-move rounded-md border border-amber-300 bg-white p-4 shadow-sm"
+          ? "relative w-[270px] cursor-grab active:cursor-grabbing rounded-md border border-amber-300 bg-white p-4 shadow-sm select-none"
           : "relative w-[270px] rounded-md border border-gray-300 bg-white p-4 shadow-sm"
       }
     >
@@ -138,11 +138,12 @@ export default function PersonCard({
       <div className="mt-5">
 
         <button
+          type="button"
           onClick={onOpenDetails}
           disabled={arrangeMode}
           className={
             arrangeMode
-              ? "w-full cursor-move rounded border border-gray-200 py-2 text-sm text-gray-400"
+              ? "pointer-events-none w-full cursor-grab rounded border border-gray-200 py-2 text-sm text-gray-400"
               : "w-full rounded border border-gray-300 py-2 text-sm transition hover:bg-gray-100"
           }
         >
