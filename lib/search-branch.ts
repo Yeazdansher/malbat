@@ -1,9 +1,9 @@
 /**
- * Such-Hervorhebung über denselben Familien-Graphen wie der Stammbaum:
- * - nach oben (Familien, in denen die Person Kind ist) ? rot
- * - nach unten (Familien, in denen die Person Partner ist) ? grün
+ * Search highlight using the same family graph as the tree:
+ * - upward (families where the person is a child) -> red
+ * - downward (families where the person is a partner) -> green
  *
- * Partner der Fokusperson und deren Vorfahren werden nicht mitmarkiert.
+ * The focus person's partner and that partner's ancestors are not highlighted.
  */
 
 import { buildTreeGraph } from "@/lib/tree-engine/graph";
@@ -13,9 +13,9 @@ export type SearchHighlightSets = {
   branch: Set<string>;
   ancestors: Set<string>;
   descendants: Set<string>;
-  /** Family-Nodes auf dem Vorfahren-Pfad (rot) */
+  /** Family nodes on the ancestor path (red) */
   ancestorFamilyIds: Set<string>;
-  /** Family-Nodes auf dem Nachkommen-Pfad (grün) */
+  /** Family nodes on the descendant path (green) */
   descendantFamilyIds: Set<string>;
 };
 
@@ -31,7 +31,6 @@ export function collectSearchBranch(
   const ancestorFamilyIds = new Set<string>();
   const descendantFamilyIds = new Set<string>();
 
-  // --- nach oben: Elternpaare, in denen current Kind ist ---
   const upQueue = [personId];
   const seenUp = new Set<string>([personId]);
 
@@ -53,7 +52,6 @@ export function collectSearchBranch(
     }
   }
 
-  // --- nach unten: Unions, in denen current Partner ist ---
   const downQueue = [personId];
   const seenDown = new Set<string>([personId]);
 
