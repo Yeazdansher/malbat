@@ -1,5 +1,7 @@
 /**
- * Personen-Ast für die Suche: Vorfahren, Nachkommen und Partner.
+ * Such-Hervorhebung:
+ * - Vorfahren bis Urgroßeltern (+ Partner) → rot
+ * - Kinder und Enkel → grün
  */
 
 type Rel = {
@@ -15,10 +17,17 @@ const PARENT_TYPES = new Set([
   "adoptive-parent",
 ]);
 
+/** Eltern → Großeltern → Urgroßeltern */
+const ANCESTOR_GENERATIONS = 3;
+/** Kinder → Enkel */
+const DESCENDANT_GENERATIONS = 2;
+
 export type SearchBranchSets = {
-  /** Gesamter Ast inkl. Fokusperson */
+  /** Fokus + Vorfahren(+Partner) + Nachkommen */
   branch: Set<string>;
-  /** Nur Nachkommen (Kinder und weitere Generationen), ohne Fokus */
+  /** Vorfahren bis Urgroßeltern inkl. Partner (ohne Fokus) */
+  ancestors: Set<string>;
+  /** Kinder und Enkel (ohne Fokus, ohne Partner) */
   descendants: Set<string>;
 };
 
@@ -54,48 +63,46 @@ export function collectSearchBranch(
     }
   }
 
-  const branch = new Set<string>([personId]);
+  const ancestors = new Set<string>();
   const descendants = new Set<string>();
 
-  const ancestorQueue = [personId];
+  const ancestorQueue: Array<{ id: string; depth: number }> = [
+    { id: personId, depth: 0 },
+  ];
   while (ancestorQueue.length > 0) {
-    const current = ancestorQueue.pop()!;
+    const { id: current, depth } = ancestorQueue.pop()!;
+    if (depth >= ANCESTOR_GENERATIONS) continue;
+
     for (const parentId of parentsOf.get(current) ?? []) {
-      if (!branch.has(parentId)) {
-        branch.add(parentId);
-        ancestorQueue.push(parentId);
-      }
+      if (ancestors.has(parentId) || parentId === personId) continue;
+      ancestors.add(parentId);
+      ancestorQueue.push({ id: parentId, depth: depth + 1 });
     }
   }
 
-  const descendantQueue = [personId];
+  const descendantQueue: Array<{ id: string; depth: number }> = [
+    { id: personId, depth: 0 },
+  ];
   while (descendantQueue.length > 0) {
-    const current = descendantQueue.pop()!;
+    const { id: current, depth } = descendantQueue.pop()!;
+    if (depth >= DESCENDANT_GENERATIONS) continue;
+
     for (const childId of childrenOf.get(current) ?? []) {
-      if (!branch.has(childId)) {
-        branch.add(childId);
-        descendants.add(childId);
-        descendantQueue.push(childId);
-      }
+      if (descendants.has(childId) || childId === personId) continue;
+      if (ancestors.has(childId)) continue;
+      descendants.add(childId);
+      descendantQueue.push({ id: childId, depth: depth + 1 });
     }
   }
 
-  // Partner der Nachkommen → grün (Generation/Haushalt der Kinder)
-  for (const id of [...descendants]) {
+  // Partner der Fokusperson und Vorfahren → rot (wie bisher beim Ast)
+  for (const id of [personId, ...ancestors]) {
     for (const partnerId of partnersOf.get(id) ?? []) {
-      if (partnerId === personId) continue;
-      branch.add(partnerId);
-      descendants.add(partnerId);
+      if (partnerId === personId || descendants.has(partnerId)) continue;
+      ancestors.add(partnerId);
     }
   }
 
-  // Partner der Fokusperson und der Vorfahren → rot (nicht Nachkommen)
-  for (const id of [...branch]) {
-    if (descendants.has(id)) continue;
-    for (const partnerId of partnersOf.get(id) ?? []) {
-      branch.add(partnerId);
-    }
-  }
-
-  return { branch, descendants };
+  const branch = new Set<string>([personId, ...ancestors, ...descendants]);
+  return { branch, ancestors, descendants };
 }

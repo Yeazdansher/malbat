@@ -135,17 +135,21 @@ export default function TreeView({
     canEdit,
   ]);
 
-  const { branch: branchPersonIds, descendants: descendantPersonIds } =
-    useMemo(() => {
-      if (!focusPersonId) {
-        return {
-          branch: new Set<string>(),
-          descendants: new Set<string>(),
-        };
-      }
+  const {
+    branch: branchPersonIds,
+    ancestors: ancestorPersonIds,
+    descendants: descendantPersonIds,
+  } = useMemo(() => {
+    if (!focusPersonId) {
+      return {
+        branch: new Set<string>(),
+        ancestors: new Set<string>(),
+        descendants: new Set<string>(),
+      };
+    }
 
-      return collectSearchBranch(focusPersonId, relationships);
-    }, [focusPersonId, relationships]);
+    return collectSearchBranch(focusPersonId, relationships);
+  }, [focusPersonId, relationships]);
 
   const displayedNodes = useMemo(
     () =>
@@ -154,17 +158,17 @@ export default function TreeView({
           const onDescendant =
             node.id !== focusPersonId &&
             descendantPersonIds.has(node.id);
-          const onBranch =
+          const onAncestor =
             node.id !== focusPersonId &&
             !onDescendant &&
-            branchPersonIds.has(node.id);
+            ancestorPersonIds.has(node.id);
 
           return {
             ...node,
             data: {
               ...node.data,
               searchHighlighted: node.id === focusPersonId,
-              branchHighlighted: onBranch,
+              branchHighlighted: onAncestor,
               descendantHighlighted: onDescendant,
             },
           };
@@ -178,14 +182,18 @@ export default function TreeView({
             Array.isArray(node.data.parentIds)
               ? (node.data.parentIds as string[])
               : [];
+
+          // Family-Node unter dem Fokus / unter Kindern → grün (Kinder/Enkel)
           const onDescendantBranch =
             focusPersonId !== undefined &&
             (parentIds.includes(focusPersonId) ||
               parentIds.some((id) => descendantPersonIds.has(id)));
+
+          // Family-Node bei Vorfahren → rot
           const onAncestorBranch =
             focusPersonId !== undefined &&
             !onDescendantBranch &&
-            parentIds.some((id) => branchPersonIds.has(id));
+            parentIds.some((id) => ancestorPersonIds.has(id));
 
           return {
             ...node,
@@ -210,7 +218,12 @@ export default function TreeView({
 
         return node;
       }),
-    [nodes, focusPersonId, branchPersonIds, descendantPersonIds]
+    [
+      nodes,
+      focusPersonId,
+      ancestorPersonIds,
+      descendantPersonIds,
+    ]
   );
 
   const displayedEdges = useMemo(
@@ -222,6 +235,12 @@ export default function TreeView({
 
         const sourceDesc = descendantPersonIds.has(edge.source);
         const targetDesc = descendantPersonIds.has(edge.target);
+        const sourceAnc =
+          ancestorPersonIds.has(edge.source) ||
+          edge.source === focusPersonId;
+        const targetAnc =
+          ancestorPersonIds.has(edge.target) ||
+          edge.target === focusPersonId;
         const sourceOnBranch = branchPersonIds.has(edge.source);
         const targetOnBranch = branchPersonIds.has(edge.target);
         const sourceIsFamily = edge.source.startsWith("family-node:");
@@ -236,31 +255,40 @@ export default function TreeView({
           return edge;
         }
 
-        // Verbindung Richtung / zwischen Nachkommen → grün
-        // (inkl. Kanten vom Fokus zur Family-Node der eigenen Kinder)
-        const touchesFocusFamily =
-          (sourceIsFamily || targetIsFamily) &&
-          (edge.source === focusPersonId || edge.target === focusPersonId);
-
-        const descendantEdge =
+        // Nach unten (Fokus→Kinder/Enkel) grün, nach oben (Vorfahren) rot
+        const downward =
           sourceDesc ||
           targetDesc ||
-          (sourceIsFamily && targetDesc) ||
-          (targetIsFamily && sourceDesc) ||
-          touchesFocusFamily ||
-          (edge.source === focusPersonId && targetDesc) ||
-          (edge.target === focusPersonId && sourceDesc);
+          ((sourceIsFamily || targetIsFamily) &&
+            (edge.source === focusPersonId ||
+              edge.target === focusPersonId ||
+              sourceDesc ||
+              targetDesc));
+
+        const upward =
+          !downward &&
+          (sourceAnc || targetAnc || sourceIsFamily || targetIsFamily);
+
+        if (!downward && !upward) {
+          return edge;
+        }
 
         return {
           ...edge,
           style: {
             ...edge.style,
-            stroke: descendantEdge ? "#16a34a" : "#dc2626",
+            stroke: downward ? "#16a34a" : "#dc2626",
             strokeWidth: 3.5,
           },
         };
       }),
-    [edges, branchPersonIds, descendantPersonIds, focusPersonId]
+    [
+      edges,
+      branchPersonIds,
+      ancestorPersonIds,
+      descendantPersonIds,
+      focusPersonId,
+    ]
   );
 
   useEffect(() => {
