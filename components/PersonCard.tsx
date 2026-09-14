@@ -92,12 +92,20 @@ export default function PersonCard({
 
           <div className="flex items-center gap-2">
 
-            <span className="text-xl">
+            <span
+              className={
+                gender === "male"
+                  ? "text-xl text-blue-600"
+                  : gender === "female"
+                    ? "text-xl text-pink-500"
+                    : "text-xl text-gray-500"
+              }
+            >
               {gender === "male"
                 ? "♂"
                 : gender === "female"
-                ? "♀"
-                : "?"}
+                  ? "♀"
+                  : "?"}
             </span>
 
             <h3 className="font-semibold leading-5">
