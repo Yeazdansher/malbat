@@ -22,6 +22,21 @@ export function buildTreeGraph(
     personMap.set(person.id, person);
   }
 
+  // IDs aus Beziehungen nachtragen (wichtig fuer Geschwister-Merge
+  // und Aufrufe ohne vollstaendige Personliste).
+  for (const relation of relationships) {
+    if (!personMap.has(relation.person1_id)) {
+      personMap.set(relation.person1_id, {
+        id: relation.person1_id,
+      } as Person);
+    }
+    if (!personMap.has(relation.person2_id)) {
+      personMap.set(relation.person2_id, {
+        id: relation.person2_id,
+      } as Person);
+    }
+  }
+
   const familyMap = new Map<string, Family>();
   const partnerIndex = new Map<string, string>();
   const parentsOfChild = new Map<string, Set<string>>();

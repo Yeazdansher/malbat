@@ -9,6 +9,7 @@ import { canEditFamily } from "@/lib/family-permissions";
 import type { FamilyRole } from "@/lib/invitations";
 import { getFamilyPlanUsage } from "@/lib/plans";
 import { getCurrentProfile } from "@/lib/profile";
+import { findMissingSiblingParentLinks } from "@/lib/sibling-parent-sync";
 import { createClient } from "@/lib/supabase/server";
 
 type PageProps = {
@@ -51,7 +52,7 @@ export default async function FamilyPage({
     .eq("family_id", id)
     .order("created_at");
 
-  const { data: relationships, error: relationshipsError } = await supabase
+  let { data: relationships, error: relationshipsError } = await supabase
     .from("relationships")
     .select("*")
     .eq("family_id", id);
@@ -66,6 +67,24 @@ export default async function FamilyPage({
   const role = membership?.role as FamilyRole | undefined;
   const isOwner = role === "owner";
   const canEdit = role ? canEditFamily(role) : false;
+
+  // Fehlende Vater/Mutter-Links bei Geschwistern nachziehen (alte Daten).
+  if (canEdit && relationships && relationships.length > 0) {
+    const missing = findMissingSiblingParentLinks(id, relationships);
+    if (missing.length > 0) {
+      const { error: syncError } = await supabase
+        .from("relationships")
+        .insert(missing);
+      if (!syncError) {
+        const refreshed = await supabase
+          .from("relationships")
+          .select("*")
+          .eq("family_id", id);
+        relationships = refreshed.data ?? relationships;
+        relationshipsError = refreshed.error;
+      }
+    }
+  }
 
   if (error || !family || !membership) {
     return (

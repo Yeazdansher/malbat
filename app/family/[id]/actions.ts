@@ -623,7 +623,12 @@ async function copyParentRelationships(
         relationship_type: relation.relationship_type,
       });
 
-    if (insertError) {
+    // Bereits vorhanden (z. B. parallele Syncs) ist ok.
+    if (
+      insertError &&
+      insertError.code !== "23505" &&
+      !insertError.message.toLowerCase().includes("duplicate")
+    ) {
       throw new Error(insertError.message);
     }
   }

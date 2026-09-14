@@ -59,6 +59,7 @@ export type PersonNameRef = {
   id: string;
   first_name: string;
   last_name: string;
+  gender?: "male" | "female" | "unknown";
 };
 
 function personDisplayName(person: PersonNameRef): string {
@@ -69,6 +70,9 @@ function personDisplayName(person: PersonNameRef): string {
  * Liefert Anzeigenamen für Eltern, Partner und Kinder einer Person.
  * Konvention: person1 = Elternteil/Partner-A, person2 = Kind/Partner-B
  * bei father/mother/partner.
+ *
+ * Fehlen direkte Vater/Mutter-Links (z. B. nur Geschwister-Beziehung),
+ * werden die Eltern über den Familien-Graphen abgeleitet.
  */
 export function getPersonRelationNames(
   personId: string,
@@ -140,7 +144,68 @@ export function getPersonRelationNames(
     }
   }
 
+  if (!fatherName || !motherName) {
+    const inferred = inferParentNamesFromGraph(
+      personId,
+      persons,
+      relationships
+    );
+    fatherName = fatherName ?? inferred.fatherName;
+    motherName = motherName ?? inferred.motherName;
+  }
+
   return { fatherName, motherName, partnerNames, childNames };
+}
+
+function inferParentNamesFromGraph(
+  personId: string,
+  persons: PersonNameRef[],
+  relationships: {
+    person1_id: string;
+    person2_id: string;
+    relationship_type: string;
+  }[]
+): { fatherName: string | null; motherName: string | null } {
+  const byId = new Map(persons.map((person) => [person.id, person]));
+  const engineRelationships = relationships.filter(
+    (relation) =>
+      relation.relationship_type === "father" ||
+      relation.relationship_type === "mother" ||
+      relation.relationship_type === "partner" ||
+      relation.relationship_type === "parent" ||
+      relation.relationship_type === "adoptive-parent" ||
+      relation.relationship_type === "sibling"
+  ) as Relationship[];
+
+  const graph = buildTreeGraph([], engineRelationships);
+
+  let fatherName: string | null = null;
+  let motherName: string | null = null;
+
+  for (const family of graph.families.values()) {
+    if (family.kind === "sibling-group") continue;
+    if (!family.children.includes(personId)) continue;
+
+    for (const parentId of family.partners) {
+      const parent = byId.get(parentId);
+      if (!parent) continue;
+
+      const name = personDisplayName(parent);
+
+      if (parent.gender === "female") {
+        motherName = motherName ?? name;
+      } else if (parent.gender === "male") {
+        fatherName = fatherName ?? name;
+      } else if (!fatherName) {
+        fatherName = name;
+      } else {
+        motherName = motherName ?? name;
+      }
+    }
+    break;
+  }
+
+  return { fatherName, motherName };
 }
 
 export function personHasChildren(
