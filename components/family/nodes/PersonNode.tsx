@@ -38,6 +38,7 @@ type PersonNodeData = {
   searchHighlighted?: boolean;
   branchHighlighted?: boolean;
   canEdit: boolean;
+  arrangeMode?: boolean;
 };
 
 /**
@@ -88,7 +89,9 @@ export default function PersonNode({
       />
 
       <div
-        className="rounded-2xl"
+        className={
+          personData.arrangeMode ? "rounded-2xl cursor-move" : "rounded-2xl"
+        }
         style={
           personData.searchHighlighted
             ? {
@@ -115,7 +118,8 @@ export default function PersonNode({
           }
           isDeceased={person.is_deceased}
           hasParents={personData.hasParents}
-          canEdit={personData.canEdit}
+          canEdit={personData.canEdit && !personData.arrangeMode}
+          arrangeMode={personData.arrangeMode === true}
           onOpenDetails={personData.onOpenDetails}
           onOpenRelationship={
             personData.onOpenRelationship

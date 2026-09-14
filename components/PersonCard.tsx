@@ -13,6 +13,7 @@ type PersonCardProps = {
   onOpenSiblings?: () => void;
   hasParents?: boolean;
   canEdit?: boolean;
+  arrangeMode?: boolean;
 };
 
 export default function PersonCard({
@@ -27,10 +28,16 @@ export default function PersonCard({
   onOpenSiblings,
   hasParents = false,
   canEdit = true,
+  arrangeMode = false,
 }: PersonCardProps) {
   return (
-    <div className="relative w-[270px] rounded-md border border-gray-300 bg-white p-4 shadow-sm">
-
+    <div
+      className={
+        arrangeMode
+          ? "relative w-[270px] cursor-move rounded-md border border-amber-300 bg-white p-4 shadow-sm"
+          : "relative w-[270px] rounded-md border border-gray-300 bg-white p-4 shadow-sm"
+      }
+    >
       {canEdit && !hasParents && (
         <button
           type="button"
@@ -132,9 +139,14 @@ export default function PersonCard({
 
         <button
           onClick={onOpenDetails}
-          className="w-full rounded border border-gray-300 py-2 text-sm transition hover:bg-gray-100"
+          disabled={arrangeMode}
+          className={
+            arrangeMode
+              ? "w-full cursor-move rounded border border-gray-200 py-2 text-sm text-gray-400"
+              : "w-full rounded border border-gray-300 py-2 text-sm transition hover:bg-gray-100"
+          }
         >
-          Weitere Details
+          {arrangeMode ? "Ziehen zum Verschieben" : "Weitere Details"}
         </button>
 
       </div>

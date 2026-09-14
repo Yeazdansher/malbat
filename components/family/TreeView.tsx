@@ -5,7 +5,9 @@ import {
   Background,
   Controls,
   ReactFlow,
+  applyNodeChanges,
   type Node,
+  type NodeChange,
   type ReactFlowInstance,
 } from "@xyflow/react";
 
@@ -177,8 +179,11 @@ export default function TreeView({
           return {
             ...node,
             draggable: arrangeMode,
+            selectable: true,
             data: {
               ...node.data,
+              canEdit: cardCanEdit,
+              arrangeMode,
               searchHighlighted: node.id === focusPersonId,
               branchHighlighted:
                 node.id !== focusPersonId && branchPersonIds.has(node.id),
@@ -201,6 +206,7 @@ export default function TreeView({
           return {
             ...node,
             draggable: false,
+            selectable: !arrangeMode,
             style: {
               ...node.style,
               outline: onBranch ? "2px solid #f87171" : undefined,
@@ -212,7 +218,7 @@ export default function TreeView({
 
         return node;
       }),
-    [arrangeMode, branchPersonIds, focusPersonId]
+    [arrangeMode, branchPersonIds, cardCanEdit, focusPersonId]
   );
 
   const displayedNodes = useMemo(
@@ -220,15 +226,23 @@ export default function TreeView({
     [decorateNodes, nodes]
   );
 
+  const prevArrangeModeRef = useRef(false);
+
   useEffect(() => {
     if (!arrangeMode) {
       setArrangeNodes(null);
+      prevArrangeModeRef.current = false;
       return;
     }
 
-    const decorated = decorateNodes(nodes);
-    setArrangeNodes(decorated);
-    onArrangePositionsChange(nodesToPositions(decorated));
+    // Nur beim Einschalten initialisieren — nicht bei jedem Re-Render zurücksetzen.
+    if (!prevArrangeModeRef.current) {
+      const decorated = decorateNodes(nodes);
+      setArrangeNodes(decorated);
+      onArrangePositionsChange(nodesToPositions(decorated));
+    }
+
+    prevArrangeModeRef.current = true;
   }, [arrangeMode, nodes, decorateNodes, onArrangePositionsChange]);
 
   useEffect(() => {
@@ -304,6 +318,23 @@ export default function TreeView({
     );
   }, [flowInstance, focusPersonId, focusRequest, nodesToRender, arrangeMode]);
 
+  const handleNodesChange = useCallback(
+    (changes: NodeChange[]) => {
+      if (!arrangeMode) {
+        return;
+      }
+
+      setArrangeNodes((current) => {
+        if (!current) {
+          return current;
+        }
+
+        return applyNodeChanges(changes, current);
+      });
+    },
+    [arrangeMode]
+  );
+
   const handleNodeDragStart = useCallback(
     (_event: MouseEvent | TouchEvent, node: Node) => {
       if (!arrangeMode || node.type !== "person" || !layoutResult.layout) {
@@ -319,7 +350,7 @@ export default function TreeView({
       dragGroupRef.current = group;
 
       const starts: Record<string, { x: number; y: number }> = {};
-      for (const entry of nodesToRender) {
+      for (const entry of arrangeNodes ?? []) {
         if (group.has(entry.id)) {
           starts[entry.id] = { ...entry.position };
         }
@@ -327,7 +358,7 @@ export default function TreeView({
 
       dragStartPositionsRef.current = starts;
     },
-    [arrangeMode, layoutResult.layout, nodesToRender, relationships]
+    [arrangeMode, arrangeNodes, layoutResult.layout, relationships]
   );
 
   const handleNodeDrag = useCallback(
@@ -428,12 +459,14 @@ export default function TreeView({
         nodesConnectable={false}
         nodesDraggable={arrangeMode}
         elementsSelectable={true}
-        panOnDrag
-        fitView
+        // Im Anordnen-Modus: Linksklick zieht Karten; Mittel/Rechts pannt.
+        panOnDrag={arrangeMode ? [1, 2] : true}
+        fitView={!arrangeMode}
         fitViewOptions={{ padding: 0.2, minZoom: 0.1, maxZoom: 1.5 }}
         minZoom={0.1}
         maxZoom={2}
         onInit={setFlowInstance}
+        onNodesChange={arrangeMode ? handleNodesChange : undefined}
         onNodeDragStart={handleNodeDragStart}
         onNodeDrag={handleNodeDrag}
         onNodeDragStop={handleNodeDragStop}
