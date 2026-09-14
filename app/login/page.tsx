@@ -65,7 +65,17 @@ export default async function LoginPage({
           required
         />
 
-        <div className="text-right">
+        <div className="flex items-center justify-between gap-3">
+          <label className="flex cursor-pointer items-center gap-2 text-sm text-gray-700">
+            <input
+              type="checkbox"
+              name="remember"
+              value="1"
+              className="h-4 w-4 rounded border-gray-300 accent-[#1f7a45]"
+            />
+            Angemeldet bleiben
+          </label>
+
           <Link
             href="/forgot-password"
             className="text-sm text-[#1f7a45] hover:underline"

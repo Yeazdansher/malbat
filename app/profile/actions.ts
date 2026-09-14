@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 import { isValidPassword, PASSWORD_REQUIREMENTS } from "@/lib/password";
+import { clearSessionPolicyCookies } from "@/lib/auth/session-cookies";
 import {
   extensionForImageType,
   validateImageFile,
@@ -350,5 +351,6 @@ export async function deleteAccount(formData: FormData) {
   }
 
   await supabase.auth.signOut();
+  await clearSessionPolicyCookies();
   redirect("/login?accountDeleted=1");
 }

@@ -2,6 +2,7 @@
 
 import { redirect } from "next/navigation";
 
+import { clearSessionPolicyCookies } from "@/lib/auth/session-cookies";
 import { isValidPassword, PASSWORD_REQUIREMENTS } from "@/lib/password";
 import { createClient } from "@/lib/supabase/server";
 
@@ -50,5 +51,6 @@ export async function resetPassword(formData: FormData) {
   }
 
   await supabase.auth.signOut();
+  await clearSessionPolicyCookies();
   redirect("/login?passwordReset=1");
 }
