@@ -140,20 +140,19 @@ export default function PersonCard({
       </div>
 
       <div className="mt-5">
-
-        <button
-          type="button"
-          onClick={onOpenDetails}
-          disabled={arrangeMode}
-          className={
-            arrangeMode
-              ? "w-full cursor-grab rounded border border-gray-200 py-2 text-sm text-gray-400"
-              : "w-full rounded border border-gray-300 py-2 text-sm transition hover:bg-gray-100"
-          }
-        >
-          {arrangeMode ? "Ziehen zum Verschieben" : "Weitere Details"}
-        </button>
-
+        {arrangeMode ? (
+          <div className="w-full rounded border border-amber-200 bg-amber-50 py-2 text-center text-sm text-amber-800">
+            Ziehen zum Verschieben
+          </div>
+        ) : (
+          <button
+            type="button"
+            onClick={onOpenDetails}
+            className="w-full rounded border border-gray-300 py-2 text-sm transition hover:bg-gray-100"
+          >
+            Weitere Details
+          </button>
+        )}
       </div>
 
     </div>

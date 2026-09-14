@@ -8,6 +8,7 @@ import {
   applyNodeChanges,
   type Node,
   type NodeChange,
+  type OnNodeDrag,
   type ReactFlowInstance,
 } from "@xyflow/react";
 
@@ -69,26 +70,6 @@ function nodesToPositions(nodes: Node[]): LayoutNodePosition[] {
   }));
 }
 
-function isUiChromeTarget(target: EventTarget | null): boolean {
-  if (!(target instanceof Element)) {
-    return false;
-  }
-
-  return Boolean(
-    target.closest(".react-flow__controls") ||
-      target.closest(".react-flow__attribution") ||
-      target.closest(".react-flow__panel")
-  );
-}
-
-function isNodeTarget(target: EventTarget | null): boolean {
-  if (!(target instanceof Element)) {
-    return false;
-  }
-
-  return Boolean(target.closest(".react-flow__node"));
-}
-
 export default function TreeView({
   persons,
   relationships,
@@ -109,34 +90,20 @@ export default function TreeView({
   const [flowNodes, setFlowNodes] = useState<Node[]>([]);
 
   const wasArrangeModeRef = useRef(false);
+  const draggingRef = useRef(false);
   const onArrangePositionsChangeRef = useRef(onArrangePositionsChange);
   onArrangePositionsChangeRef.current = onArrangePositionsChange;
 
   const arrangeDragRef = useRef<{
-    personId: string;
+    nodeId: string;
     group: Set<string>;
     starts: Record<string, { x: number; y: number }>;
-    startClientX: number;
-    startClientY: number;
-    zoom: number;
-  } | null>(null);
-
-  const viewportPanRef = useRef<{
-    startClientX: number;
-    startClientY: number;
-    originX: number;
-    originY: number;
-    zoom: number;
   } | null>(null);
 
   const flowNodesRef = useRef(flowNodes);
   flowNodesRef.current = flowNodes;
-  const flowInstanceRef = useRef(flowInstance);
-  flowInstanceRef.current = flowInstance;
   const relationshipsRef = useRef(relationships);
   relationshipsRef.current = relationships;
-  const arrangeModeRef = useRef(arrangeMode);
-  arrangeModeRef.current = arrangeMode;
   const layoutEdgesRef = useRef<{ source: string; target: string }[]>([]);
 
   const nodeTypes = useMemo(
@@ -213,194 +180,15 @@ export default function TreeView({
     return collectSearchBranch(focusPersonId, relationships);
   }, [focusPersonId, relationships]);
 
-  const endArrangePointerDrag = useCallback(() => {
-    if (!arrangeDragRef.current) {
-      return;
-    }
-
-    arrangeDragRef.current = null;
-    setFlowNodes((current) => {
-      onArrangePositionsChangeRef.current(nodesToPositions(current));
-      return current;
-    });
-  }, []);
-
-  const handleArrangePointerDown = useCallback(
-    (personId: string, event: React.PointerEvent | React.MouseEvent) => {
-      if (!arrangeModeRef.current) {
-        return;
-      }
-
-      if ("button" in event && event.button !== 0) {
-        return;
-      }
-
-      // Verhindert React-Flow-/d3-Zoom-Pan (mousedown), nicht nur pointerdown.
-      event.preventDefault();
-      event.stopPropagation();
-      if (typeof event.nativeEvent.stopImmediatePropagation === "function") {
-        event.nativeEvent.stopImmediatePropagation();
-      }
-
-      viewportPanRef.current = null;
-
-      const group = collectDragGroupNodeIds(
-        personId,
-        relationshipsRef.current,
-        layoutEdgesRef.current
-      );
-
-      const starts: Record<string, { x: number; y: number }> = {};
-      for (const entry of flowNodesRef.current) {
-        if (group.has(entry.id)) {
-          starts[entry.id] = { ...entry.position };
-        }
-      }
-
-      arrangeDragRef.current = {
-        personId,
-        group,
-        starts,
-        startClientX: event.clientX,
-        startClientY: event.clientY,
-        zoom: flowInstanceRef.current?.getZoom() ?? 1,
-      };
-
-      const target = event.currentTarget;
-      if (target instanceof HTMLElement && "pointerId" in event) {
-        try {
-          target.setPointerCapture((event as React.PointerEvent).pointerId);
-        } catch {
-          // ignore capture errors (unsupported targets)
-        }
-      }
-
-      const onMove = (moveEvent: PointerEvent | MouseEvent) => {
-        const drag = arrangeDragRef.current;
-        if (!drag) {
-          return;
-        }
-
-        moveEvent.preventDefault();
-
-        const dx =
-          (moveEvent.clientX - drag.startClientX) / (drag.zoom || 1);
-        const dy =
-          (moveEvent.clientY - drag.startClientY) / (drag.zoom || 1);
-
-        setFlowNodes((current) =>
-          current.map((entry) => {
-            if (!drag.group.has(entry.id)) {
-              return entry;
-            }
-
-            const origin = drag.starts[entry.id];
-            if (!origin) {
-              return entry;
-            }
-
-            return {
-              ...entry,
-              position: {
-                x: origin.x + dx,
-                y: origin.y + dy,
-              },
-            };
-          })
-        );
-      };
-
-      const onUp = () => {
-        window.removeEventListener("pointermove", onMove);
-        window.removeEventListener("pointerup", onUp);
-        window.removeEventListener("pointercancel", onUp);
-        window.removeEventListener("mousemove", onMove);
-        window.removeEventListener("mouseup", onUp);
-        endArrangePointerDrag();
-      };
-
-      window.addEventListener("pointermove", onMove);
-      window.addEventListener("pointerup", onUp);
-      window.addEventListener("pointercancel", onUp);
-      window.addEventListener("mousemove", onMove);
-      window.addEventListener("mouseup", onUp);
-    },
-    [endArrangePointerDrag]
-  );
-
-  const handleArrangePanePointerDown = useCallback(
-    (event: React.PointerEvent<HTMLDivElement>) => {
-      if (!arrangeModeRef.current) {
-        return;
-      }
-
-      if (event.button !== 0) {
-        return;
-      }
-
-      if (arrangeDragRef.current) {
-        return;
-      }
-
-      if (isNodeTarget(event.target) || isUiChromeTarget(event.target)) {
-        return;
-      }
-
-      const instance = flowInstanceRef.current;
-      if (!instance) {
-        return;
-      }
-
-      const viewport = instance.getViewport();
-      viewportPanRef.current = {
-        startClientX: event.clientX,
-        startClientY: event.clientY,
-        originX: viewport.x,
-        originY: viewport.y,
-        zoom: viewport.zoom,
-      };
-
-      event.currentTarget.setPointerCapture(event.pointerId);
-
-      const onMove = (moveEvent: PointerEvent) => {
-        const pan = viewportPanRef.current;
-        const flow = flowInstanceRef.current;
-        if (!pan || !flow) {
-          return;
-        }
-
-        const dx = moveEvent.clientX - pan.startClientX;
-        const dy = moveEvent.clientY - pan.startClientY;
-        flow.setViewport({
-          x: pan.originX + dx,
-          y: pan.originY + dy,
-          zoom: pan.zoom,
-        });
-      };
-
-      const onUp = () => {
-        viewportPanRef.current = null;
-        window.removeEventListener("pointermove", onMove);
-        window.removeEventListener("pointerup", onUp);
-        window.removeEventListener("pointercancel", onUp);
-      };
-
-      window.addEventListener("pointermove", onMove);
-      window.addEventListener("pointerup", onUp);
-      window.addEventListener("pointercancel", onUp);
-    },
-    []
-  );
-
   const decorateNodes = useCallback(
     (sourceNodes: Node[]): Node[] =>
       sourceNodes.map((node) => {
         if (node.type === "person") {
           return {
             ...node,
-            draggable: false,
-            selectable: false,
-            className: "nopan nodrag",
+            // draggable → React Flow setzt automatisch class "nopan" (kein Viewport-Pan).
+            draggable: arrangeMode,
+            selectable: arrangeMode,
             zIndex: arrangeMode ? 10 : undefined,
             data: {
               ...node.data,
@@ -409,9 +197,6 @@ export default function TreeView({
               searchHighlighted: node.id === focusPersonId,
               branchHighlighted:
                 node.id !== focusPersonId && branchPersonIds.has(node.id),
-              onArrangePointerDown: arrangeMode
-                ? handleArrangePointerDown
-                : undefined,
             },
           };
         }
@@ -432,7 +217,6 @@ export default function TreeView({
             ...node,
             draggable: false,
             selectable: !arrangeMode,
-            className: "nopan nodrag",
             style: {
               ...node.style,
               outline: onBranch ? "2px solid #f87171" : undefined,
@@ -445,16 +229,9 @@ export default function TreeView({
         return {
           ...node,
           draggable: false,
-          className: "nopan nodrag",
         };
       }),
-    [
-      arrangeMode,
-      branchPersonIds,
-      cardCanEdit,
-      focusPersonId,
-      handleArrangePointerDown,
-    ]
+    [arrangeMode, branchPersonIds, cardCanEdit, focusPersonId]
   );
 
   useEffect(() => {
@@ -462,7 +239,7 @@ export default function TreeView({
       setFlowNodes(decorateNodes(baseNodes));
       wasArrangeModeRef.current = false;
       arrangeDragRef.current = null;
-      viewportPanRef.current = null;
+      draggingRef.current = false;
       return;
     }
 
@@ -475,7 +252,7 @@ export default function TreeView({
   }, [arrangeMode, baseNodes, decorateNodes]);
 
   useEffect(() => {
-    if (!arrangeMode || arrangeDragRef.current) {
+    if (!arrangeMode || draggingRef.current) {
       return;
     }
 
@@ -548,14 +325,92 @@ export default function TreeView({
     );
   }, [flowInstance, focusPersonId, focusRequest, flowNodes, arrangeMode]);
 
-  const handleNodesChange = useCallback((changes: NodeChange[]) => {
-    // Positionen steuern wir im Anordnen-Modus selbst — nur andere Changes durchlassen.
-    const safeChanges = changes.filter((change) => change.type !== "position");
-    if (safeChanges.length === 0) {
+  const handleNodesChange = useCallback(
+    (changes: NodeChange[]) => {
+      if (!arrangeMode) {
+        const safeChanges = changes.filter(
+          (change) => change.type !== "position"
+        );
+        if (safeChanges.length === 0) {
+          return;
+        }
+        setFlowNodes((current) => applyNodeChanges(safeChanges, current));
+        return;
+      }
+
+      // Controlled mode: Position-Changes MUESSEN angewandt werden, sonst
+      // bleibt der Knoten stehen und der Viewport wirkt wie "Pan".
+      setFlowNodes((current) => applyNodeChanges(changes, current));
+    },
+    [arrangeMode]
+  );
+
+  const handleNodeDragStart: OnNodeDrag = useCallback((_event, node) => {
+    draggingRef.current = true;
+
+    const group = collectDragGroupNodeIds(
+      node.id,
+      relationshipsRef.current,
+      layoutEdgesRef.current
+    );
+
+    const starts: Record<string, { x: number; y: number }> = {};
+    for (const entry of flowNodesRef.current) {
+      if (group.has(entry.id)) {
+        starts[entry.id] = { ...entry.position };
+      }
+    }
+
+    arrangeDragRef.current = {
+      nodeId: node.id,
+      group,
+      starts,
+    };
+  }, []);
+
+  const handleNodeDrag: OnNodeDrag = useCallback((_event, node) => {
+    const drag = arrangeDragRef.current;
+    if (!drag || drag.nodeId !== node.id) {
       return;
     }
 
-    setFlowNodes((current) => applyNodeChanges(safeChanges, current));
+    const origin = drag.starts[node.id];
+    if (!origin) {
+      return;
+    }
+
+    const dx = node.position.x - origin.x;
+    const dy = node.position.y - origin.y;
+
+    setFlowNodes((current) =>
+      current.map((entry) => {
+        // Gezogener Knoten kommt bereits aus onNodesChange.
+        if (entry.id === node.id || !drag.group.has(entry.id)) {
+          return entry;
+        }
+
+        const start = drag.starts[entry.id];
+        if (!start) {
+          return entry;
+        }
+
+        return {
+          ...entry,
+          position: {
+            x: start.x + dx,
+            y: start.y + dy,
+          },
+        };
+      })
+    );
+  }, []);
+
+  const handleNodeDragStop: OnNodeDrag = useCallback(() => {
+    draggingRef.current = false;
+    arrangeDragRef.current = null;
+    onArrangePositionsChangeRef.current(
+      nodesToPositions(flowNodesRef.current)
+    );
   }, []);
 
   if (layoutResult.error) {
@@ -585,9 +440,6 @@ export default function TreeView({
         width: "100%",
         height: "700px",
       }}
-      onPointerDown={
-        arrangeMode ? handleArrangePanePointerDown : undefined
-      }
     >
       <ReactFlow
         nodes={flowNodes}
@@ -595,23 +447,25 @@ export default function TreeView({
         nodeTypes={nodeTypes}
         edgeTypes={edgeTypes}
         nodesConnectable={false}
-        nodesDraggable={false}
-        elementsSelectable={!arrangeMode}
+        nodesDraggable={arrangeMode}
+        nodeDragThreshold={1}
+        elementsSelectable={arrangeMode}
         selectNodesOnDrag={false}
-        // Im Anordnen-Modus: kein d3-Pan — Karten und Pane haben eigene Handler.
-        panOnDrag={!arrangeMode}
+        // Standard: leerer Hintergrund pannt; draggable Nodes haben auto-nopan.
+        panOnDrag
         panOnScroll={false}
         zoomOnScroll
         zoomOnPinch
         zoomOnDoubleClick={!arrangeMode}
-        noPanClassName="nopan"
-        noDragClassName="nodrag"
         fitView={!arrangeMode}
         fitViewOptions={{ padding: 0.2, minZoom: 0.1, maxZoom: 1.5 }}
         minZoom={0.1}
         maxZoom={2}
         onInit={setFlowInstance}
         onNodesChange={handleNodesChange}
+        onNodeDragStart={arrangeMode ? handleNodeDragStart : undefined}
+        onNodeDrag={arrangeMode ? handleNodeDrag : undefined}
+        onNodeDragStop={arrangeMode ? handleNodeDragStop : undefined}
         onNodeClick={(_event, node) => {
           if (!canEdit || arrangeMode || node.type !== "family") {
             return;

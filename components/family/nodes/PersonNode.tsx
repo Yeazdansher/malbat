@@ -32,10 +32,6 @@ type PersonNodeData = {
   branchHighlighted?: boolean;
   canEdit: boolean;
   arrangeMode?: boolean;
-  onArrangePointerDown?: (
-    personId: string,
-    event: React.PointerEvent
-  ) => void;
 };
 
 export default function PersonNode({ data }: NodeProps) {
@@ -76,8 +72,8 @@ export default function PersonNode({ data }: NodeProps) {
       <div
         className={
           personData.arrangeMode
-            ? "nopan nodrag rounded-2xl cursor-grab active:cursor-grabbing"
-            : "nopan nodrag rounded-2xl"
+            ? "rounded-2xl cursor-grab active:cursor-grabbing"
+            : "rounded-2xl"
         }
         style={
           personData.searchHighlighted
@@ -90,31 +86,6 @@ export default function PersonNode({ data }: NodeProps) {
                 }
               : undefined
         }
-        onPointerDownCapture={(event) => {
-          if (!personData.arrangeMode || !personData.onArrangePointerDown) {
-            return;
-          }
-
-          if (event.button !== 0) {
-            return;
-          }
-
-          personData.onArrangePointerDown(person.id, event);
-        }}
-        onMouseDownCapture={(event) => {
-          if (!personData.arrangeMode || !personData.onArrangePointerDown) {
-            return;
-          }
-
-          if (event.button !== 0) {
-            return;
-          }
-
-          // d3-zoom hört auf mousedown — Pointer-Stop allein reicht nicht.
-          event.preventDefault();
-          event.stopPropagation();
-          event.nativeEvent.stopImmediatePropagation();
-        }}
       >
         <PersonCard
           firstName={person.first_name}
