@@ -154,6 +154,33 @@ export function buildTreeLayout(graph: TreeGraph): TreeLayout {
     );
   }
 
+  function measureExtraUnionsOwnGen(
+    personId: string,
+    skipFamilyId: string,
+    visited: Set<string>
+  ): number {
+    const unions = (familiesByPartner.get(personId) ?? []).filter(
+      (family) =>
+        !placedFamilies.has(family.id) && family.id !== skipFamilyId
+    );
+
+    let width = 0;
+
+    for (const union of unions) {
+      const others = otherPartnersOf(union, personId).filter(
+        (id) => !visited.has(id)
+      );
+
+      for (const partnerId of others) {
+        width += PARTNER_GAP + CARD_WIDTH;
+        visited.add(partnerId);
+        width += measureExtraUnionsOwnGen(partnerId, union.id, visited);
+      }
+    }
+
+    return width;
+  }
+
   function measureOwnGenerationWidth(personId: string): number {
     if (!graph.persons.has(personId)) {
       return 0;
@@ -167,11 +194,22 @@ export function buildTreeLayout(graph: TreeGraph): TreeLayout {
       return CARD_WIDTH;
     }
 
+    // Gleiche horizontale Ausdehnung wie placePersonWithPartners + placeExtraUnions.
     let rowWidth = CARD_WIDTH;
+    const visited = new Set<string>([personId]);
 
     for (const union of unions) {
       const others = otherPartnersOf(union, personId);
-      rowWidth += others.length * (PARTNER_GAP + CARD_WIDTH);
+
+      for (const partnerId of others) {
+        rowWidth += PARTNER_GAP + CARD_WIDTH;
+        visited.add(partnerId);
+        rowWidth += measureExtraUnionsOwnGen(partnerId, union.id, visited);
+      }
+
+      if (others.length === 0) {
+        rowWidth += PARTNER_GAP;
+      }
     }
 
     return rowWidth;
@@ -297,7 +335,7 @@ export function buildTreeLayout(graph: TreeGraph): TreeLayout {
   function generationRowBounds(
     nodeIds: string[],
     generationY: number
-  ): { left: number; right: number } {
+  ): { left: number; right: number } | null {
     let left = Number.POSITIVE_INFINITY;
     let right = Number.NEGATIVE_INFINITY;
 
@@ -307,8 +345,6 @@ export function buildTreeLayout(graph: TreeGraph): TreeLayout {
         continue;
       }
 
-      // Nur Karten auf derselben Generation — Nachkommen nicht mitzählen,
-      // sonst entstehen wieder lange leere Sammelschienen.
       if (Math.abs(node.position.y - generationY) > 1) {
         continue;
       }
@@ -318,10 +354,39 @@ export function buildTreeLayout(graph: TreeGraph): TreeLayout {
     }
 
     if (!Number.isFinite(left) || !Number.isFinite(right)) {
-      return { left: 0, right: 0 };
+      return null;
     }
 
     return { left, right };
+  }
+
+  /** Pro Y-Zeile die Karten-Bounds — verhindert Cousin-Kollisionen ohne volle AABB-Schienen. */
+  function boundsByGeneration(
+    nodeIds: string[]
+  ): Map<number, { left: number; right: number }> {
+    const byY = new Map<number, { left: number; right: number }>();
+
+    for (const id of nodeIds) {
+      const node = nodes.find((entry) => entry.id === id);
+      if (!node || node.type !== "person") {
+        continue;
+      }
+
+      const y = node.position.y;
+      const existing = byY.get(y);
+
+      if (existing) {
+        existing.left = Math.min(existing.left, node.position.x);
+        existing.right = Math.max(existing.right, node.position.x + CARD_WIDTH);
+      } else {
+        byY.set(y, {
+          left: node.position.x,
+          right: node.position.x + CARD_WIDTH,
+        });
+      }
+    }
+
+    return byY;
   }
 
   function shiftSubtree(nodeIds: string[], dx: number): void {
@@ -342,20 +407,33 @@ export function buildTreeLayout(graph: TreeGraph): TreeLayout {
     }
   }
 
-  function resolveSiblingOverlaps(
-    subtreeNodeIds: string[][],
-    generationY: number
-  ): void {
-    for (let index = 1; index < subtreeNodeIds.length; index++) {
-      const previous = generationRowBounds(
-        subtreeNodeIds[index - 1],
-        generationY
-      );
-      const current = generationRowBounds(subtreeNodeIds[index], generationY);
-      const minLeft = previous.right + SIBLING_GAP;
+  function requiredOverlapShift(leftIds: string[], rightIds: string[]): number {
+    const leftByY = boundsByGeneration(leftIds);
+    const rightByY = boundsByGeneration(rightIds);
+    let shift = 0;
 
-      if (current.left < minLeft) {
-        shiftSubtree(subtreeNodeIds[index], minLeft - current.left);
+    for (const [y, rightBounds] of rightByY) {
+      const leftBounds = leftByY.get(y);
+      if (!leftBounds) {
+        continue;
+      }
+
+      const needed = leftBounds.right + SIBLING_GAP - rightBounds.left;
+      if (needed > shift) {
+        shift = needed;
+      }
+    }
+
+    return shift;
+  }
+
+  function resolveSiblingOverlaps(subtreeNodeIds: string[][]): void {
+    const groups = subtreeNodeIds.filter((ids) => ids.length > 0);
+
+    for (let index = 1; index < groups.length; index++) {
+      const shift = requiredOverlapShift(groups[index - 1], groups[index]);
+      if (shift > 0) {
+        shiftSubtree(groups[index], shift);
       }
     }
   }
@@ -371,8 +449,20 @@ export function buildTreeLayout(graph: TreeGraph): TreeLayout {
     }
 
     const bounds = generationRowBounds(allIds, generationY);
+    if (!bounds) {
+      return;
+    }
+
     const currentCenter = (bounds.left + bounds.right) / 2;
     shiftSubtree(allIds, targetCenterX - currentCenter);
+  }
+
+  function captureSubtree(before: Set<string>, rootPersonId: string): string[] {
+    const ids = newNodeIdsSince(before);
+    if (!ids.includes(rootPersonId) && placedPersons.has(rootPersonId)) {
+      ids.push(rootPersonId);
+    }
+    return ids;
   }
 
   function moveFamilyNodeTo(familyNodeId: string, centerX: number, centerY: number): void {
@@ -421,10 +511,10 @@ export function buildTreeLayout(graph: TreeGraph): TreeLayout {
       const before = nodeIdsSnapshot();
       placePersonWithPartners(childId, blockLeft + offsets[index], y);
       addEdge(family.familyNodeId, childId);
-      subtreeNodeIds.push(newNodeIdsSince(before));
+      subtreeNodeIds.push(captureSubtree(before, childId));
     }
 
-    resolveSiblingOverlaps(subtreeNodeIds, y);
+    resolveSiblingOverlaps(subtreeNodeIds);
     recenterSiblingBlock(subtreeNodeIds, familyCenterX, y);
   }
 
@@ -633,14 +723,16 @@ export function buildTreeLayout(graph: TreeGraph): TreeLayout {
         const before = nodeIdsSnapshot();
         placePersonWithPartners(childId, blockLeft + offsets[index], y);
         addEdge(family.familyNodeId, childId);
-        subtreeNodeIds.push(newNodeIdsSince(before));
+        subtreeNodeIds.push(captureSubtree(before, childId));
       }
 
-      resolveSiblingOverlaps(subtreeNodeIds, y);
+      resolveSiblingOverlaps(subtreeNodeIds);
 
       const packed = generationRowBounds(subtreeNodeIds.flat(), y);
-      const packedCenter = (packed.left + packed.right) / 2;
-      moveFamilyNodeTo(family.familyNodeId, packedCenter, familyCenterY);
+      if (packed) {
+        const packedCenter = (packed.left + packed.right) / 2;
+        moveFamilyNodeTo(family.familyNodeId, packedCenter, familyCenterY);
+      }
 
       return;
     }
@@ -690,11 +782,20 @@ export function buildTreeLayout(graph: TreeGraph): TreeLayout {
       }
     }
 
+    const beforeChildren = nodeIdsSnapshot();
     placeChildren(family, familyCenterX, y + GENERATION_GAP);
+    const mainChildIds = newNodeIdsSince(beforeChildren);
 
     if (partners.length > 0) {
+      const beforeLeft = nodeIdsSnapshot();
       placeExtraUnions(partners[0], "left");
+      const leftIds = newNodeIdsSince(beforeLeft);
+
+      const beforeRight = nodeIdsSnapshot();
       placeExtraUnions(partners[partners.length - 1], "right");
+      const rightIds = newNodeIdsSince(beforeRight);
+
+      resolveSiblingOverlaps([leftIds, mainChildIds, rightIds]);
     }
   }
 
