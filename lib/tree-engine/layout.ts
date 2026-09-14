@@ -192,7 +192,7 @@ export function buildTreeLayout(graph: TreeGraph): TreeLayout {
       return CARD_WIDTH;
     }
 
-    // Erste Union rechts vom Anker; weitere Unions links — wie placePersonWithPartners.
+    // Erste Union rechts; weitere abwechselnd links/rechts — wie placePersonWithPartners.
     const visited = new Set<string>([personId]);
     let leftWidth = 0;
     let rightWidth = CARD_WIDTH;
@@ -212,12 +212,18 @@ export function buildTreeLayout(graph: TreeGraph): TreeLayout {
 
     for (let index = 1; index < unions.length; index++) {
       const union = unions[index];
-      const others = otherPartnersOf(union, personId);
+      let add = 0;
 
-      for (const partnerId of others) {
-        leftWidth += PARTNER_GAP + CARD_WIDTH;
+      for (const partnerId of otherPartnersOf(union, personId)) {
+        add += PARTNER_GAP + CARD_WIDTH;
         visited.add(partnerId);
-        leftWidth += measureExtraUnionsOwnGen(partnerId, union.id, visited);
+        add += measureExtraUnionsOwnGen(partnerId, union.id, visited);
+      }
+
+      if (index % 2 === 1) {
+        leftWidth += add;
+      } else {
+        rightWidth += add;
       }
     }
 
@@ -562,6 +568,41 @@ export function buildTreeLayout(graph: TreeGraph): TreeLayout {
       .sort((a, b) => a.id.localeCompare(b.id));
   }
 
+  /** Äußerer Rand der bereits platzierten Partner-Zeile dieser Person. */
+  function personRowExtent(
+    personId: string,
+    side: "left" | "right"
+  ): number {
+    const origin = personPositions.get(personId);
+    if (!origin) {
+      return 0;
+    }
+
+    let edge =
+      side === "left" ? origin.x : origin.x + CARD_WIDTH;
+
+    for (const family of familiesByPartner.get(personId) ?? []) {
+      if (!placedFamilies.has(family.id)) {
+        continue;
+      }
+
+      for (const partnerId of family.partners) {
+        const pos = personPositions.get(partnerId);
+        if (!pos) {
+          continue;
+        }
+
+        if (side === "left") {
+          edge = Math.min(edge, pos.x);
+        } else {
+          edge = Math.max(edge, pos.x + CARD_WIDTH);
+        }
+      }
+    }
+
+    return edge;
+  }
+
   function placePersonWithPartners(
     personId: string,
     x: number,
@@ -569,16 +610,20 @@ export function buildTreeLayout(graph: TreeGraph): TreeLayout {
   ): void {
     const unions = unionsForPerson(personId);
 
-    // Weitere Unions links vom Anker reservieren, damit Geschwister-Packing stimmt.
+    // Weitere Unions abwechselnd links/rechts reservieren.
     let leftWidth = 0;
     if (unions.length > 1) {
       const visited = new Set<string>([personId]);
       for (let index = 1; index < unions.length; index++) {
         const union = unions[index];
+        let add = 0;
         for (const partnerId of otherPartnersOf(union, personId)) {
-          leftWidth += PARTNER_GAP + CARD_WIDTH;
+          add += PARTNER_GAP + CARD_WIDTH;
           visited.add(partnerId);
-          leftWidth += measureExtraUnionsOwnGen(partnerId, union.id, visited);
+          add += measureExtraUnionsOwnGen(partnerId, union.id, visited);
+        }
+        if (index % 2 === 1) {
+          leftWidth += add;
         }
       }
     }
@@ -590,7 +635,7 @@ export function buildTreeLayout(graph: TreeGraph): TreeLayout {
       return;
     }
 
-    // Nur die erste Union rechts vom Anker — weitere über placeExtraUnions links.
+    // Erste Union rechts vom Anker.
     const first = unions[0];
     placedFamilies.add(first.id);
 
@@ -620,8 +665,16 @@ export function buildTreeLayout(graph: TreeGraph): TreeLayout {
       placeExtraUnions(partnerId, "right");
     }
 
-    // Zweite und weitere Partnerschaften links am Anker (nicht hinter Partner 1).
-    placeExtraUnions(personId, "left");
+    // Weitere Partnerschaften abwechselnd links/rechts; Family-Knoten am Anker.
+    let leftDock = 0;
+    let rightDock = 0;
+    for (let index = 1; index < unions.length; index++) {
+      if (index % 2 === 1) {
+        placeExtraUnion(personId, unions[index], "left", leftDock++);
+      } else {
+        placeExtraUnion(personId, unions[index], "right", rightDock++);
+      }
+    }
   }
 
   function extraUnionsOf(personId: string): Family[] {
@@ -664,77 +717,82 @@ export function buildTreeLayout(graph: TreeGraph): TreeLayout {
     return width;
   }
 
+  /**
+   * Eine Extra-Partnerschaft: Partner außen, Family-Knoten am Anker
+   * (nicht zwischen zwei Extra-Partnern — sonst wirkt es wie deren Paarung).
+   */
+  function placeExtraUnion(
+    personId: string,
+    union: Family,
+    direction: "left" | "right",
+    dockIndex: number
+  ): void {
+    const origin = personPositions.get(personId);
+    if (!origin || placedFamilies.has(union.id)) {
+      return;
+    }
+
+    placedFamilies.add(union.id);
+
+    const others = otherPartnersOf(union, personId);
+    const familyCenterY = origin.y + CARD_HEIGHT / 2;
+    const dockGap = FAMILY_NODE_SIZE + 12;
+
+    let familyCenterX: number;
+    const placedPartnerXs: number[] = [];
+
+    if (direction === "right") {
+      // +1: Index 0 nicht auf dem Family-Knoten der ersten Partnerschaft ablegen.
+      familyCenterX =
+        origin.x + CARD_WIDTH + PARTNER_GAP / 2 + (dockIndex + 1) * dockGap;
+      let cursorX = personRowExtent(personId, "right");
+
+      for (const partnerId of others) {
+        cursorX += PARTNER_GAP;
+        placePerson(partnerId, cursorX, origin.y);
+        placedPartnerXs.push(cursorX);
+        cursorX += CARD_WIDTH;
+      }
+    } else {
+      familyCenterX =
+        origin.x - PARTNER_GAP / 2 - (dockIndex + 1) * dockGap;
+      let cursorX = personRowExtent(personId, "left");
+
+      for (const partnerId of others) {
+        cursorX -= PARTNER_GAP + CARD_WIDTH;
+        placePerson(partnerId, cursorX, origin.y);
+        placedPartnerXs.push(cursorX);
+      }
+    }
+
+    addFamilyNode(union, familyCenterX, familyCenterY);
+    addEdge(personId, union.familyNodeId);
+
+    for (const partnerId of others) {
+      addEdge(partnerId, union.familyNodeId);
+    }
+
+    const childrenCenterX =
+      placedPartnerXs.length > 0
+        ? placedPartnerXs.reduce((sum, px) => sum + px + CARD_WIDTH / 2, 0) /
+          placedPartnerXs.length
+        : familyCenterX;
+
+    placeChildren(union, childrenCenterX, origin.y + GENERATION_GAP);
+
+    for (const partnerId of others) {
+      placeExtraUnions(partnerId, direction);
+    }
+  }
+
   function placeExtraUnions(
     personId: string,
     direction: "left" | "right"
   ): void {
-    const origin = personPositions.get(personId);
-
-    if (!origin) {
-      return;
-    }
-
     const unions = extraUnionsOf(personId);
 
-    if (unions.length === 0) {
-      return;
-    }
-
-    const familyCenterY = origin.y + CARD_HEIGHT / 2;
-
-    if (direction === "right") {
-      let cursorX = origin.x + CARD_WIDTH;
-
-      for (const union of unions) {
-        placedFamilies.add(union.id);
-
-        const others = otherPartnersOf(union, personId);
-        const familyCenterX = cursorX + PARTNER_GAP / 2;
-
-        addFamilyNode(union, familyCenterX, familyCenterY);
-        addEdge(personId, union.familyNodeId);
-
-        cursorX += PARTNER_GAP;
-
-        for (const partnerId of others) {
-          placePerson(partnerId, cursorX, origin.y);
-          addEdge(partnerId, union.familyNodeId);
-          cursorX += CARD_WIDTH + PARTNER_GAP;
-        }
-
-        placeChildren(union, familyCenterX, origin.y + GENERATION_GAP);
-
-        for (const partnerId of others) {
-          placeExtraUnions(partnerId, "right");
-        }
-      }
-
-      return;
-    }
-
-    let rightEdge = origin.x;
-
-    for (const union of unions) {
-      placedFamilies.add(union.id);
-
-      const others = otherPartnersOf(union, personId);
-      const familyCenterX = rightEdge - PARTNER_GAP / 2;
-
-      addFamilyNode(union, familyCenterX, familyCenterY);
-      addEdge(personId, union.familyNodeId);
-
-      for (const partnerId of others) {
-        const partnerX = rightEdge - PARTNER_GAP - CARD_WIDTH;
-        placePerson(partnerId, partnerX, origin.y);
-        addEdge(partnerId, union.familyNodeId);
-        rightEdge = partnerX;
-      }
-
-      placeChildren(union, familyCenterX, origin.y + GENERATION_GAP);
-
-      for (const partnerId of others) {
-        placeExtraUnions(partnerId, "left");
-      }
+    for (let index = 0; index < unions.length; index++) {
+      placeExtraUnion(personId, unions[index], direction, index);
     }
   }
 
