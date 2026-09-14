@@ -1,6 +1,12 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
+import {
+  resetFamilyLayoutOverrides,
+  saveFamilyLayoutOverrides,
+  type LayoutNodePosition,
+} from "@/app/family/[id]/actions";
+import type { LayoutOverrideMap } from "@/lib/layout-overrides";
 import PersonDetailsDialog from "@/components/dialogs/PersonDetailsDialog";
 import EditPersonDialog from "@/components/dialogs/EditPersonDialog";
 import EmptyTree from "@/components/family/EmptyTree";
@@ -43,6 +49,7 @@ type Props = {
   familyId: string;
   persons: Person[];
   relationships: Relationship[];
+  layoutOverrides: LayoutOverrideMap;
   canEdit: boolean;
   canAddPerson: boolean;
 };
@@ -51,6 +58,7 @@ export default function FamilyTree({
   familyId,
   persons,
   relationships,
+  layoutOverrides,
   canEdit,
   canAddPerson,
 }: Props) {
@@ -85,6 +93,54 @@ const [deleteOpen, setDeleteOpen] =
   const [searchOpen, setSearchOpen] = useState(false);
   const [focusedPersonId, setFocusedPersonId] = useState<string>();
   const [focusRequest, setFocusRequest] = useState(0);
+  const [arrangeMode, setArrangeMode] = useState(false);
+  const [layoutSaving, setLayoutSaving] = useState(false);
+  const [layoutMessage, setLayoutMessage] = useState("");
+  const arrangePositionsRef = useRef<LayoutNodePosition[]>([]);
+
+  const handleArrangePositionsChange = useCallback(
+    (positions: LayoutNodePosition[]) => {
+      arrangePositionsRef.current = positions;
+    },
+    []
+  );
+
+  async function handleSaveLayout() {
+    setLayoutSaving(true);
+    setLayoutMessage("");
+
+    const result = await saveFamilyLayoutOverrides(
+      familyId,
+      arrangePositionsRef.current
+    );
+
+    setLayoutSaving(false);
+
+    if (!result.ok) {
+      setLayoutMessage(result.error);
+      return;
+    }
+
+    setLayoutMessage("Anordnung gespeichert.");
+    setArrangeMode(false);
+  }
+
+  async function handleResetLayout() {
+    setLayoutSaving(true);
+    setLayoutMessage("");
+
+    const result = await resetFamilyLayoutOverrides(familyId);
+
+    setLayoutSaving(false);
+
+    if (!result.ok) {
+      setLayoutMessage(result.error);
+      return;
+    }
+
+    setLayoutMessage("Auto-Layout wiederhergestellt.");
+    setArrangeMode(false);
+  }
 
   const searchResults = useMemo(() => {
     const query = normalizeSearchText(searchQuery);
@@ -170,12 +226,66 @@ const [deleteOpen, setDeleteOpen] =
         )}
       </div>
 
+      {canEdit && (
+        <div className="mb-4 flex flex-wrap items-center gap-3">
+          <button
+            type="button"
+            onClick={() => {
+              setLayoutMessage("");
+              setArrangeMode((active) => !active);
+            }}
+            className={
+              arrangeMode
+                ? "rounded-lg bg-amber-600 px-4 py-2 text-white hover:bg-amber-700"
+                : "rounded-lg border border-gray-300 px-4 py-2 hover:bg-gray-100"
+            }
+          >
+            {arrangeMode ? "Anordnen beenden" : "Anordnen"}
+          </button>
+
+          {arrangeMode && (
+            <>
+              <button
+                type="button"
+                disabled={layoutSaving}
+                onClick={() => void handleSaveLayout()}
+                className="rounded-lg bg-green-700 px-4 py-2 text-white hover:bg-green-800 disabled:opacity-60"
+              >
+                {layoutSaving ? "Speichern…" : "Anordnung speichern"}
+              </button>
+              <button
+                type="button"
+                disabled={layoutSaving}
+                onClick={() => void handleResetLayout()}
+                className="rounded-lg border border-gray-300 px-4 py-2 hover:bg-gray-100 disabled:opacity-60"
+              >
+                Auto-Layout
+              </button>
+            </>
+          )}
+
+          {arrangeMode && (
+            <p className="text-sm text-gray-600">
+              Personen ziehen — verschiebt den Ast inkl. Nachkommen. Nur
+              Darstellung, keine Beziehungsänderung.
+            </p>
+          )}
+
+          {layoutMessage && (
+            <p className="w-full text-sm text-gray-700">{layoutMessage}</p>
+          )}
+        </div>
+      )}
+
 <TreeView
   persons={persons}
   relationships={relationships}
+  layoutOverrides={layoutOverrides}
   canEdit={canEdit}
+  arrangeMode={arrangeMode}
   focusPersonId={focusedPersonId}
   focusRequest={focusRequest}
+  onArrangePositionsChange={handleArrangePositionsChange}
   onOpenDetails={(person) => {
     setSelectedPerson(person);
     setDetailsOpen(true);

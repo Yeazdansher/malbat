@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Background,
   Controls,
   ReactFlow,
+  type Node,
   type ReactFlowInstance,
 } from "@xyflow/react";
 
@@ -21,6 +22,12 @@ import {
   type Relationship,
 } from "@/lib/tree-engine";
 import { collectSearchBranch } from "@/lib/search-branch";
+import { collectDragGroupNodeIds } from "@/lib/drag-subtree";
+import {
+  applyLayoutOverrides,
+  type LayoutOverrideMap,
+} from "@/lib/layout-overrides";
+import type { LayoutNodePosition } from "@/app/family/[id]/actions";
 
 type Person = {
   id: string;
@@ -45,9 +52,12 @@ type Person = {
 type Props = {
   persons: Person[];
   relationships: Relationship[];
+  layoutOverrides: LayoutOverrideMap;
   canEdit: boolean;
+  arrangeMode: boolean;
   focusPersonId?: string;
   focusRequest: number;
+  onArrangePositionsChange: (positions: LayoutNodePosition[]) => void;
 
   onOpenDetails: (person: Person) => void;
   onOpenRelationship: (person: Person) => void;
@@ -56,12 +66,23 @@ type Props = {
   onAddChild: (parentIds: string[]) => void;
 };
 
+function nodesToPositions(nodes: Node[]): LayoutNodePosition[] {
+  return nodes.map((node) => ({
+    nodeId: node.id,
+    x: node.position.x,
+    y: node.position.y,
+  }));
+}
+
 export default function TreeView({
   persons,
   relationships,
+  layoutOverrides,
   canEdit,
+  arrangeMode,
   focusPersonId,
   focusRequest,
+  onArrangePositionsChange,
   onOpenDetails,
   onOpenRelationship,
   onOpenParents,
@@ -70,6 +91,12 @@ export default function TreeView({
 }: Props) {
   const [flowInstance, setFlowInstance] =
     useState<ReactFlowInstance | null>(null);
+  const [arrangeNodes, setArrangeNodes] = useState<Node[] | null>(null);
+
+  const dragGroupRef = useRef<Set<string>>(new Set());
+  const dragStartPositionsRef = useRef<
+    Record<string, { x: number; y: number }>
+  >({});
 
   const nodeTypes = useMemo(
     () => ({
@@ -86,17 +113,11 @@ export default function TreeView({
     []
   );
 
-  /**
-   * 1. Domänengraph erzeugen
-   */
   const graph = useMemo(
     () => buildTreeGraph(persons, relationships),
     [persons, relationships]
   );
 
-  /**
-   * 2. Layout berechnen
-   */
   const layoutResult = useMemo(() => {
     try {
       return { layout: buildTreeLayout(graph), error: null as string | null };
@@ -107,31 +128,38 @@ export default function TreeView({
     }
   }, [graph]);
 
-  /**
-   * 3. React-Flow-Struktur erzeugen
-   */
-  const { nodes, edges } = useMemo(() => {
+  const layoutWithOverrides = useMemo(() => {
     if (!layoutResult.layout) {
+      return null;
+    }
+
+    return applyLayoutOverrides(layoutResult.layout, layoutOverrides);
+  }, [layoutResult.layout, layoutOverrides]);
+
+  const cardCanEdit = canEdit && !arrangeMode;
+
+  const { nodes, edges } = useMemo(() => {
+    if (!layoutWithOverrides) {
       return { nodes: [], edges: [] };
     }
 
     return buildReactFlowGraph(
       graph,
-      layoutResult.layout,
+      layoutWithOverrides,
       onOpenDetails,
       onOpenRelationship,
       onOpenParents,
       onOpenSiblings,
-      canEdit
+      cardCanEdit
     );
   }, [
     graph,
-    layoutResult.layout,
+    layoutWithOverrides,
     onOpenDetails,
     onOpenRelationship,
     onOpenParents,
     onOpenSiblings,
-    canEdit,
+    cardCanEdit,
   ]);
 
   const branchPersonIds = useMemo(() => {
@@ -142,12 +170,13 @@ export default function TreeView({
     return collectSearchBranch(focusPersonId, relationships);
   }, [focusPersonId, relationships]);
 
-  const displayedNodes = useMemo(
-    () =>
-      nodes.map((node) => {
+  const decorateNodes = useCallback(
+    (sourceNodes: Node[]): Node[] =>
+      sourceNodes.map((node) => {
         if (node.type === "person") {
           return {
             ...node,
+            draggable: arrangeMode,
             data: {
               ...node.data,
               searchHighlighted: node.id === focusPersonId,
@@ -171,6 +200,7 @@ export default function TreeView({
 
           return {
             ...node,
+            draggable: false,
             style: {
               ...node.style,
               outline: onBranch ? "2px solid #f87171" : undefined,
@@ -182,8 +212,41 @@ export default function TreeView({
 
         return node;
       }),
-    [nodes, focusPersonId, branchPersonIds]
+    [arrangeMode, branchPersonIds, focusPersonId]
   );
+
+  const displayedNodes = useMemo(
+    () => decorateNodes(nodes),
+    [decorateNodes, nodes]
+  );
+
+  useEffect(() => {
+    if (!arrangeMode) {
+      setArrangeNodes(null);
+      return;
+    }
+
+    const decorated = decorateNodes(nodes);
+    setArrangeNodes(decorated);
+    onArrangePositionsChange(nodesToPositions(decorated));
+  }, [arrangeMode, nodes, decorateNodes, onArrangePositionsChange]);
+
+  useEffect(() => {
+    if (!arrangeMode) {
+      return;
+    }
+
+    setArrangeNodes((current) => {
+      if (!current) {
+        return current;
+      }
+
+      return decorateNodes(current);
+    });
+  }, [focusPersonId, branchPersonIds, arrangeMode, decorateNodes]);
+
+  const nodesToRender =
+    arrangeMode && arrangeNodes ? arrangeNodes : displayedNodes;
 
   const displayedEdges = useMemo(
     () =>
@@ -219,11 +282,11 @@ export default function TreeView({
   );
 
   useEffect(() => {
-    if (!flowInstance || !focusPersonId) {
+    if (!flowInstance || !focusPersonId || arrangeMode) {
       return;
     }
 
-    const personNode = nodes.find(
+    const personNode = nodesToRender.find(
       (node) => node.id === focusPersonId
     );
 
@@ -239,7 +302,95 @@ export default function TreeView({
         duration: 500,
       }
     );
-  }, [flowInstance, focusPersonId, focusRequest, nodes]);
+  }, [flowInstance, focusPersonId, focusRequest, nodesToRender, arrangeMode]);
+
+  const handleNodeDragStart = useCallback(
+    (_event: MouseEvent | TouchEvent, node: Node) => {
+      if (!arrangeMode || node.type !== "person" || !layoutResult.layout) {
+        return;
+      }
+
+      const group = collectDragGroupNodeIds(
+        node.id,
+        relationships,
+        layoutResult.layout.edges
+      );
+
+      dragGroupRef.current = group;
+
+      const starts: Record<string, { x: number; y: number }> = {};
+      for (const entry of nodesToRender) {
+        if (group.has(entry.id)) {
+          starts[entry.id] = { ...entry.position };
+        }
+      }
+
+      dragStartPositionsRef.current = starts;
+    },
+    [arrangeMode, layoutResult.layout, nodesToRender, relationships]
+  );
+
+  const handleNodeDrag = useCallback(
+    (_event: MouseEvent | TouchEvent, node: Node) => {
+      if (!arrangeMode || !arrangeNodes) {
+        return;
+      }
+
+      const group = dragGroupRef.current;
+      const starts = dragStartPositionsRef.current;
+      const start = starts[node.id];
+
+      if (!start || group.size === 0) {
+        return;
+      }
+
+      const dx = node.position.x - start.x;
+      const dy = node.position.y - start.y;
+
+      setArrangeNodes((current) => {
+        if (!current) {
+          return current;
+        }
+
+        return current.map((entry) => {
+          if (!group.has(entry.id)) {
+            return entry;
+          }
+
+          const origin = starts[entry.id];
+          if (!origin) {
+            return entry;
+          }
+
+          return {
+            ...entry,
+            position: {
+              x: origin.x + dx,
+              y: origin.y + dy,
+            },
+          };
+        });
+      });
+    },
+    [arrangeMode, arrangeNodes]
+  );
+
+  const handleNodeDragStop = useCallback(() => {
+    if (!arrangeMode) {
+      return;
+    }
+
+    dragGroupRef.current = new Set();
+    dragStartPositionsRef.current = {};
+
+    setArrangeNodes((current) => {
+      if (current) {
+        onArrangePositionsChange(nodesToPositions(current));
+      }
+
+      return current;
+    });
+  }, [arrangeMode, onArrangePositionsChange]);
 
   if (layoutResult.error) {
     return (
@@ -259,18 +410,23 @@ export default function TreeView({
 
   return (
     <div
+      className={
+        arrangeMode
+          ? "rounded-2xl ring-2 ring-amber-400 ring-offset-2"
+          : undefined
+      }
       style={{
         width: "100%",
         height: "700px",
       }}
     >
       <ReactFlow
-        nodes={displayedNodes}
+        nodes={nodesToRender}
         edges={displayedEdges}
         nodeTypes={nodeTypes}
         edgeTypes={edgeTypes}
         nodesConnectable={false}
-        nodesDraggable={false}
+        nodesDraggable={arrangeMode}
         elementsSelectable={true}
         panOnDrag
         fitView
@@ -278,8 +434,11 @@ export default function TreeView({
         minZoom={0.1}
         maxZoom={2}
         onInit={setFlowInstance}
+        onNodeDragStart={handleNodeDragStart}
+        onNodeDrag={handleNodeDrag}
+        onNodeDragStop={handleNodeDragStop}
         onNodeClick={(_event, node) => {
-          if (!canEdit || node.type !== "family") {
+          if (!canEdit || arrangeMode || node.type !== "family") {
             return;
           }
 
