@@ -69,6 +69,26 @@ function nodesToPositions(nodes: Node[]): LayoutNodePosition[] {
   }));
 }
 
+function isUiChromeTarget(target: EventTarget | null): boolean {
+  if (!(target instanceof Element)) {
+    return false;
+  }
+
+  return Boolean(
+    target.closest(".react-flow__controls") ||
+      target.closest(".react-flow__attribution") ||
+      target.closest(".react-flow__panel")
+  );
+}
+
+function isNodeTarget(target: EventTarget | null): boolean {
+  if (!(target instanceof Element)) {
+    return false;
+  }
+
+  return Boolean(target.closest(".react-flow__node"));
+}
+
 export default function TreeView({
   persons,
   relationships,
@@ -98,6 +118,14 @@ export default function TreeView({
     starts: Record<string, { x: number; y: number }>;
     startClientX: number;
     startClientY: number;
+    zoom: number;
+  } | null>(null);
+
+  const viewportPanRef = useRef<{
+    startClientX: number;
+    startClientY: number;
+    originX: number;
+    originY: number;
     zoom: number;
   } | null>(null);
 
@@ -198,13 +226,23 @@ export default function TreeView({
   }, []);
 
   const handleArrangePointerDown = useCallback(
-    (personId: string, event: React.PointerEvent) => {
+    (personId: string, event: React.PointerEvent | React.MouseEvent) => {
       if (!arrangeModeRef.current) {
         return;
       }
 
+      if ("button" in event && event.button !== 0) {
+        return;
+      }
+
+      // Verhindert React-Flow-/d3-Zoom-Pan (mousedown), nicht nur pointerdown.
       event.preventDefault();
       event.stopPropagation();
+      if (typeof event.nativeEvent.stopImmediatePropagation === "function") {
+        event.nativeEvent.stopImmediatePropagation();
+      }
+
+      viewportPanRef.current = null;
 
       const group = collectDragGroupNodeIds(
         personId,
@@ -228,11 +266,22 @@ export default function TreeView({
         zoom: flowInstanceRef.current?.getZoom() ?? 1,
       };
 
-      const onMove = (moveEvent: PointerEvent) => {
+      const target = event.currentTarget;
+      if (target instanceof HTMLElement && "pointerId" in event) {
+        try {
+          target.setPointerCapture((event as React.PointerEvent).pointerId);
+        } catch {
+          // ignore capture errors (unsupported targets)
+        }
+      }
+
+      const onMove = (moveEvent: PointerEvent | MouseEvent) => {
         const drag = arrangeDragRef.current;
         if (!drag) {
           return;
         }
+
+        moveEvent.preventDefault();
 
         const dx =
           (moveEvent.clientX - drag.startClientX) / (drag.zoom || 1);
@@ -265,14 +314,82 @@ export default function TreeView({
         window.removeEventListener("pointermove", onMove);
         window.removeEventListener("pointerup", onUp);
         window.removeEventListener("pointercancel", onUp);
+        window.removeEventListener("mousemove", onMove);
+        window.removeEventListener("mouseup", onUp);
         endArrangePointerDrag();
       };
 
       window.addEventListener("pointermove", onMove);
       window.addEventListener("pointerup", onUp);
       window.addEventListener("pointercancel", onUp);
+      window.addEventListener("mousemove", onMove);
+      window.addEventListener("mouseup", onUp);
     },
     [endArrangePointerDrag]
+  );
+
+  const handleArrangePanePointerDown = useCallback(
+    (event: React.PointerEvent<HTMLDivElement>) => {
+      if (!arrangeModeRef.current) {
+        return;
+      }
+
+      if (event.button !== 0) {
+        return;
+      }
+
+      if (arrangeDragRef.current) {
+        return;
+      }
+
+      if (isNodeTarget(event.target) || isUiChromeTarget(event.target)) {
+        return;
+      }
+
+      const instance = flowInstanceRef.current;
+      if (!instance) {
+        return;
+      }
+
+      const viewport = instance.getViewport();
+      viewportPanRef.current = {
+        startClientX: event.clientX,
+        startClientY: event.clientY,
+        originX: viewport.x,
+        originY: viewport.y,
+        zoom: viewport.zoom,
+      };
+
+      event.currentTarget.setPointerCapture(event.pointerId);
+
+      const onMove = (moveEvent: PointerEvent) => {
+        const pan = viewportPanRef.current;
+        const flow = flowInstanceRef.current;
+        if (!pan || !flow) {
+          return;
+        }
+
+        const dx = moveEvent.clientX - pan.startClientX;
+        const dy = moveEvent.clientY - pan.startClientY;
+        flow.setViewport({
+          x: pan.originX + dx,
+          y: pan.originY + dy,
+          zoom: pan.zoom,
+        });
+      };
+
+      const onUp = () => {
+        viewportPanRef.current = null;
+        window.removeEventListener("pointermove", onMove);
+        window.removeEventListener("pointerup", onUp);
+        window.removeEventListener("pointercancel", onUp);
+      };
+
+      window.addEventListener("pointermove", onMove);
+      window.addEventListener("pointerup", onUp);
+      window.addEventListener("pointercancel", onUp);
+    },
+    []
   );
 
   const decorateNodes = useCallback(
@@ -283,7 +400,7 @@ export default function TreeView({
             ...node,
             draggable: false,
             selectable: false,
-            className: "nopan",
+            className: "nopan nodrag",
             zIndex: arrangeMode ? 10 : undefined,
             data: {
               ...node.data,
@@ -315,7 +432,7 @@ export default function TreeView({
             ...node,
             draggable: false,
             selectable: !arrangeMode,
-            className: "nopan",
+            className: "nopan nodrag",
             style: {
               ...node.style,
               outline: onBranch ? "2px solid #f87171" : undefined,
@@ -328,7 +445,7 @@ export default function TreeView({
         return {
           ...node,
           draggable: false,
-          className: "nopan",
+          className: "nopan nodrag",
         };
       }),
     [
@@ -344,6 +461,8 @@ export default function TreeView({
     if (!arrangeMode) {
       setFlowNodes(decorateNodes(baseNodes));
       wasArrangeModeRef.current = false;
+      arrangeDragRef.current = null;
+      viewportPanRef.current = null;
       return;
     }
 
@@ -466,6 +585,9 @@ export default function TreeView({
         width: "100%",
         height: "700px",
       }}
+      onPointerDown={
+        arrangeMode ? handleArrangePanePointerDown : undefined
+      }
     >
       <ReactFlow
         nodes={flowNodes}
@@ -476,12 +598,14 @@ export default function TreeView({
         nodesDraggable={false}
         elementsSelectable={!arrangeMode}
         selectNodesOnDrag={false}
-        panOnDrag
+        // Im Anordnen-Modus: kein d3-Pan — Karten und Pane haben eigene Handler.
+        panOnDrag={!arrangeMode}
         panOnScroll={false}
         zoomOnScroll
         zoomOnPinch
         zoomOnDoubleClick={!arrangeMode}
         noPanClassName="nopan"
+        noDragClassName="nodrag"
         fitView={!arrangeMode}
         fitViewOptions={{ padding: 0.2, minZoom: 0.1, maxZoom: 1.5 }}
         minZoom={0.1}
