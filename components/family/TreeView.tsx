@@ -88,13 +88,28 @@ export default function TreeView({
     useState<ReactFlowInstance | null>(null);
   const [flowNodes, setFlowNodes] = useState<Node[]>([]);
 
-  const dragGroupRef = useRef<Set<string>>(new Set());
-  const dragStartPositionsRef = useRef<
-    Record<string, { x: number; y: number }>
-  >({});
   const wasArrangeModeRef = useRef(false);
   const onArrangePositionsChangeRef = useRef(onArrangePositionsChange);
   onArrangePositionsChangeRef.current = onArrangePositionsChange;
+
+  const arrangeDragRef = useRef<{
+    personId: string;
+    group: Set<string>;
+    starts: Record<string, { x: number; y: number }>;
+    startClientX: number;
+    startClientY: number;
+    zoom: number;
+  } | null>(null);
+
+  const flowNodesRef = useRef(flowNodes);
+  flowNodesRef.current = flowNodes;
+  const flowInstanceRef = useRef(flowInstance);
+  flowInstanceRef.current = flowInstance;
+  const relationshipsRef = useRef(relationships);
+  relationshipsRef.current = relationships;
+  const arrangeModeRef = useRef(arrangeMode);
+  arrangeModeRef.current = arrangeMode;
+  const layoutEdgesRef = useRef<{ source: string; target: string }[]>([]);
 
   const nodeTypes = useMemo(
     () => ({
@@ -125,6 +140,8 @@ export default function TreeView({
       return { layout: null, error: message };
     }
   }, [graph]);
+
+  layoutEdgesRef.current = layoutResult.layout?.edges ?? [];
 
   const layoutWithOverrides = useMemo(() => {
     if (!layoutResult.layout) {
@@ -168,15 +185,104 @@ export default function TreeView({
     return collectSearchBranch(focusPersonId, relationships);
   }, [focusPersonId, relationships]);
 
+  const endArrangePointerDrag = useCallback(() => {
+    if (!arrangeDragRef.current) {
+      return;
+    }
+
+    arrangeDragRef.current = null;
+    setFlowNodes((current) => {
+      onArrangePositionsChangeRef.current(nodesToPositions(current));
+      return current;
+    });
+  }, []);
+
+  const handleArrangePointerDown = useCallback(
+    (personId: string, event: React.PointerEvent) => {
+      if (!arrangeModeRef.current) {
+        return;
+      }
+
+      event.preventDefault();
+      event.stopPropagation();
+
+      const group = collectDragGroupNodeIds(
+        personId,
+        relationshipsRef.current,
+        layoutEdgesRef.current
+      );
+
+      const starts: Record<string, { x: number; y: number }> = {};
+      for (const entry of flowNodesRef.current) {
+        if (group.has(entry.id)) {
+          starts[entry.id] = { ...entry.position };
+        }
+      }
+
+      arrangeDragRef.current = {
+        personId,
+        group,
+        starts,
+        startClientX: event.clientX,
+        startClientY: event.clientY,
+        zoom: flowInstanceRef.current?.getZoom() ?? 1,
+      };
+
+      const onMove = (moveEvent: PointerEvent) => {
+        const drag = arrangeDragRef.current;
+        if (!drag) {
+          return;
+        }
+
+        const dx =
+          (moveEvent.clientX - drag.startClientX) / (drag.zoom || 1);
+        const dy =
+          (moveEvent.clientY - drag.startClientY) / (drag.zoom || 1);
+
+        setFlowNodes((current) =>
+          current.map((entry) => {
+            if (!drag.group.has(entry.id)) {
+              return entry;
+            }
+
+            const origin = drag.starts[entry.id];
+            if (!origin) {
+              return entry;
+            }
+
+            return {
+              ...entry,
+              position: {
+                x: origin.x + dx,
+                y: origin.y + dy,
+              },
+            };
+          })
+        );
+      };
+
+      const onUp = () => {
+        window.removeEventListener("pointermove", onMove);
+        window.removeEventListener("pointerup", onUp);
+        window.removeEventListener("pointercancel", onUp);
+        endArrangePointerDrag();
+      };
+
+      window.addEventListener("pointermove", onMove);
+      window.addEventListener("pointerup", onUp);
+      window.addEventListener("pointercancel", onUp);
+    },
+    [endArrangePointerDrag]
+  );
+
   const decorateNodes = useCallback(
     (sourceNodes: Node[]): Node[] =>
       sourceNodes.map((node) => {
         if (node.type === "person") {
           return {
             ...node,
-            // Explizit true/undefined — false blockiert Drag auch bei nodesDraggable.
-            draggable: arrangeMode ? true : undefined,
-            selectable: true,
+            draggable: false,
+            selectable: false,
             className: "nopan",
             zIndex: arrangeMode ? 10 : undefined,
             data: {
@@ -186,6 +292,9 @@ export default function TreeView({
               searchHighlighted: node.id === focusPersonId,
               branchHighlighted:
                 node.id !== focusPersonId && branchPersonIds.has(node.id),
+              onArrangePointerDown: arrangeMode
+                ? handleArrangePointerDown
+                : undefined,
             },
           };
         }
@@ -222,10 +331,15 @@ export default function TreeView({
           className: "nopan",
         };
       }),
-    [arrangeMode, branchPersonIds, cardCanEdit, focusPersonId]
+    [
+      arrangeMode,
+      branchPersonIds,
+      cardCanEdit,
+      focusPersonId,
+      handleArrangePointerDown,
+    ]
   );
 
-  // Außerhalb Anordnen: immer vom Layout. Beim Einschalten: einmal übernehmen.
   useEffect(() => {
     if (!arrangeMode) {
       setFlowNodes(decorateNodes(baseNodes));
@@ -241,9 +355,8 @@ export default function TreeView({
     }
   }, [arrangeMode, baseNodes, decorateNodes]);
 
-  // Highlight-Flags aktualisieren, Positionen behalten.
   useEffect(() => {
-    if (!arrangeMode) {
+    if (!arrangeMode || arrangeDragRef.current) {
       return;
     }
 
@@ -316,94 +429,15 @@ export default function TreeView({
     );
   }, [flowInstance, focusPersonId, focusRequest, flowNodes, arrangeMode]);
 
-  const handleNodesChange = useCallback(
-    (changes: NodeChange[]) => {
-      setFlowNodes((current) => applyNodeChanges(changes, current));
-    },
-    []
-  );
-
-  const handleNodeDragStart = useCallback(
-    (_event: MouseEvent | TouchEvent, node: Node) => {
-      if (!arrangeMode || node.type !== "person" || !layoutResult.layout) {
-        return;
-      }
-
-      const group = collectDragGroupNodeIds(
-        node.id,
-        relationships,
-        layoutResult.layout.edges
-      );
-      dragGroupRef.current = group;
-
-      const starts: Record<string, { x: number; y: number }> = {};
-      setFlowNodes((current) => {
-        for (const entry of current) {
-          if (group.has(entry.id)) {
-            starts[entry.id] = { ...entry.position };
-          }
-        }
-        dragStartPositionsRef.current = starts;
-        return current;
-      });
-    },
-    [arrangeMode, layoutResult.layout, relationships]
-  );
-
-  const handleNodeDrag = useCallback(
-    (_event: MouseEvent | TouchEvent, node: Node) => {
-      if (!arrangeMode) {
-        return;
-      }
-
-      const group = dragGroupRef.current;
-      const starts = dragStartPositionsRef.current;
-      const start = starts[node.id];
-
-      if (!start || group.size <= 1) {
-        return;
-      }
-
-      const dx = node.position.x - start.x;
-      const dy = node.position.y - start.y;
-
-      setFlowNodes((current) =>
-        current.map((entry) => {
-          if (!group.has(entry.id) || entry.id === node.id) {
-            return entry;
-          }
-
-          const origin = starts[entry.id];
-          if (!origin) {
-            return entry;
-          }
-
-          return {
-            ...entry,
-            position: {
-              x: origin.x + dx,
-              y: origin.y + dy,
-            },
-          };
-        })
-      );
-    },
-    [arrangeMode]
-  );
-
-  const handleNodeDragStop = useCallback(() => {
-    if (!arrangeMode) {
+  const handleNodesChange = useCallback((changes: NodeChange[]) => {
+    // Positionen steuern wir im Anordnen-Modus selbst — nur andere Changes durchlassen.
+    const safeChanges = changes.filter((change) => change.type !== "position");
+    if (safeChanges.length === 0) {
       return;
     }
 
-    dragGroupRef.current = new Set();
-    dragStartPositionsRef.current = {};
-
-    setFlowNodes((current) => {
-      onArrangePositionsChangeRef.current(nodesToPositions(current));
-      return current;
-    });
-  }, [arrangeMode]);
+    setFlowNodes((current) => applyNodeChanges(safeChanges, current));
+  }, []);
 
   if (layoutResult.error) {
     return (
@@ -439,7 +473,7 @@ export default function TreeView({
         nodeTypes={nodeTypes}
         edgeTypes={edgeTypes}
         nodesConnectable={false}
-        nodesDraggable={arrangeMode}
+        nodesDraggable={false}
         elementsSelectable={!arrangeMode}
         selectNodesOnDrag={false}
         panOnDrag
@@ -447,9 +481,6 @@ export default function TreeView({
         zoomOnScroll
         zoomOnPinch
         zoomOnDoubleClick={!arrangeMode}
-        nodeDragThreshold={1}
-        // Eigene Klasse, falls irgendwo versehentlich "nodrag" sitzt.
-        noDragClassName="malbat-no-node-drag"
         noPanClassName="nopan"
         fitView={!arrangeMode}
         fitViewOptions={{ padding: 0.2, minZoom: 0.1, maxZoom: 1.5 }}
@@ -457,9 +488,6 @@ export default function TreeView({
         maxZoom={2}
         onInit={setFlowInstance}
         onNodesChange={handleNodesChange}
-        onNodeDragStart={handleNodeDragStart}
-        onNodeDrag={handleNodeDrag}
-        onNodeDragStop={handleNodeDragStop}
         onNodeClick={(_event, node) => {
           if (!canEdit || arrangeMode || node.type !== "family") {
             return;

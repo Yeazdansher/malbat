@@ -13,23 +13,16 @@ type PersonNodeData = {
   person: {
     id: string;
     family_id: string;
-
     first_name: string;
     last_name: string;
-
     gender: "male" | "female" | "unknown";
-
     birth_date: string | null;
     birth_place: string | null;
-
     is_deceased: boolean;
-
     death_date: string | null;
     death_place: string | null;
-
     notes: string | null;
   };
-
   onOpenDetails: () => void;
   onOpenRelationship: () => void;
   onOpenParents: () => void;
@@ -39,18 +32,13 @@ type PersonNodeData = {
   branchHighlighted?: boolean;
   canEdit: boolean;
   arrangeMode?: boolean;
+  onArrangePointerDown?: (
+    personId: string,
+    event: React.PointerEvent
+  ) => void;
 };
 
-/**
- * Darstellung einer Person innerhalb der
- * neuen Malbat Tree Engine.
- *
- * Die Position wird ausschließlich durch
- * die Layout-Engine bestimmt.
- */
-export default function PersonNode({
-  data,
-}: NodeProps) {
+export default function PersonNode({ data }: NodeProps) {
   const personData = data as PersonNodeData;
   const { person } = personData;
 
@@ -63,7 +51,6 @@ export default function PersonNode({
         isConnectable={false}
         style={{ opacity: 0, pointerEvents: "none" }}
       />
-
       <Handle
         id="child"
         type="source"
@@ -71,7 +58,6 @@ export default function PersonNode({
         isConnectable={false}
         style={{ opacity: 0, pointerEvents: "none" }}
       />
-
       <Handle
         id="partner-left"
         type="source"
@@ -79,7 +65,6 @@ export default function PersonNode({
         isConnectable={false}
         style={{ opacity: 0, pointerEvents: "none" }}
       />
-
       <Handle
         id="partner-right"
         type="source"
@@ -97,35 +82,39 @@ export default function PersonNode({
         style={
           personData.searchHighlighted
             ? {
-                boxShadow:
-                  "0 0 0 4px #ffffff, 0 0 0 8px #ef4444",
+                boxShadow: "0 0 0 4px #ffffff, 0 0 0 8px #ef4444",
               }
             : personData.branchHighlighted
               ? {
-                  boxShadow:
-                    "0 0 0 2px #ffffff, 0 0 0 5px #f87171",
+                  boxShadow: "0 0 0 2px #ffffff, 0 0 0 5px #f87171",
                 }
               : undefined
         }
+        onPointerDownCapture={(event) => {
+          if (!personData.arrangeMode || !personData.onArrangePointerDown) {
+            return;
+          }
+
+          if (event.button !== 0) {
+            return;
+          }
+
+          personData.onArrangePointerDown(person.id, event);
+        }}
       >
         <PersonCard
           firstName={person.first_name}
           lastName={person.last_name}
           gender={person.gender}
           age={
-            calculateAge(
-              person.birth_date,
-              person.death_date
-            ) ?? 0
+            calculateAge(person.birth_date, person.death_date) ?? 0
           }
           isDeceased={person.is_deceased}
           hasParents={personData.hasParents}
           canEdit={personData.canEdit && !personData.arrangeMode}
           arrangeMode={personData.arrangeMode === true}
           onOpenDetails={personData.onOpenDetails}
-          onOpenRelationship={
-            personData.onOpenRelationship
-          }
+          onOpenRelationship={personData.onOpenRelationship}
           onOpenParents={personData.onOpenParents}
           onOpenSiblings={personData.onOpenSiblings}
         />
