@@ -10,9 +10,9 @@ const CARD_WIDTH = 270;
 const CARD_HEIGHT = 176;
 const FAMILY_NODE_SIZE = 32;
 
-const PARTNER_GAP = 120;
-const SIBLING_GAP = 80;
-const FAMILY_GAP = 180;
+const PARTNER_GAP = 56;
+const SIBLING_GAP = 40;
+const FAMILY_GAP = 80;
 const GENERATION_GAP = 260;
 
 const START_X = 100;
@@ -154,6 +154,29 @@ export function buildTreeLayout(graph: TreeGraph): TreeLayout {
     );
   }
 
+  function measureOwnGenerationWidth(personId: string): number {
+    if (!graph.persons.has(personId)) {
+      return 0;
+    }
+
+    const unions = (familiesByPartner.get(personId) ?? []).filter(
+      (family) => !placedFamilies.has(family.id)
+    );
+
+    if (unions.length === 0) {
+      return CARD_WIDTH;
+    }
+
+    let rowWidth = CARD_WIDTH;
+
+    for (const union of unions) {
+      const others = otherPartnersOf(union, personId);
+      rowWidth += others.length * (PARTNER_GAP + CARD_WIDTH);
+    }
+
+    return rowWidth;
+  }
+
   function measurePersonSubtree(
     personId: string,
     stack: Set<string>
@@ -261,6 +284,72 @@ export function buildTreeLayout(graph: TreeGraph): TreeLayout {
     });
   }
 
+  function nodeIdsSnapshot(): Set<string> {
+    return new Set(nodes.map((node) => node.id));
+  }
+
+  function newNodeIdsSince(before: Set<string>): string[] {
+    return nodes
+      .filter((node) => !before.has(node.id))
+      .map((node) => node.id);
+  }
+
+  function subtreeBounds(nodeIds: string[]): { left: number; right: number } {
+    let left = Number.POSITIVE_INFINITY;
+    let right = Number.NEGATIVE_INFINITY;
+
+    for (const id of nodeIds) {
+      const node = nodes.find((entry) => entry.id === id);
+      if (!node) {
+        continue;
+      }
+
+      if (node.type === "person") {
+        left = Math.min(left, node.position.x);
+        right = Math.max(right, node.position.x + CARD_WIDTH);
+      } else {
+        left = Math.min(left, node.position.x);
+        right = Math.max(right, node.position.x + FAMILY_NODE_SIZE);
+      }
+    }
+
+    if (!Number.isFinite(left) || !Number.isFinite(right)) {
+      return { left: 0, right: 0 };
+    }
+
+    return { left, right };
+  }
+
+  function shiftSubtree(nodeIds: string[], dx: number): void {
+    if (dx === 0) {
+      return;
+    }
+
+    for (const id of nodeIds) {
+      const node = nodes.find((entry) => entry.id === id);
+      if (node) {
+        node.position.x += dx;
+      }
+
+      const personPos = personPositions.get(id);
+      if (personPos) {
+        personPos.x += dx;
+      }
+    }
+  }
+
+  function resolveSiblingOverlaps(subtreeNodeIds: string[][]): void {
+    for (let index = 1; index < subtreeNodeIds.length; index++) {
+      const previous = subtreeBounds(subtreeNodeIds[index - 1]);
+      const current = subtreeBounds(subtreeNodeIds[index]);
+      const minLeft = previous.right + SIBLING_GAP;
+
+      if (current.left < minLeft) {
+        shiftSubtree(subtreeNodeIds[index], minLeft - current.left);
+      }
+    }
+  }
+
   function placeChildren(
     family: Family,
     familyCenterX: number,
@@ -272,8 +361,7 @@ export function buildTreeLayout(graph: TreeGraph): TreeLayout {
       return;
     }
 
-    const stack = new Set<string>([family.id]);
-    const childWidths = kids.map((id) => measurePersonSubtree(id, stack));
+    const childWidths = kids.map((id) => measureOwnGenerationWidth(id));
 
     const offsets: number[] = [];
     let offset = 0;
@@ -284,17 +372,24 @@ export function buildTreeLayout(graph: TreeGraph): TreeLayout {
     }
 
     const childCenterSum = offsets.reduce(
-      (sum, childOffset) => sum + childOffset + CARD_WIDTH / 2,
+      (sum, childOffset, index) =>
+        sum + childOffset + childWidths[index] / 2,
       0
     );
     const childCenterAverage = childCenterSum / kids.length;
     const blockLeft = familyCenterX - childCenterAverage;
 
+    const subtreeNodeIds: string[][] = [];
+
     for (let index = 0; index < kids.length; index++) {
       const childId = kids[index];
+      const before = nodeIdsSnapshot();
       placePersonWithPartners(childId, blockLeft + offsets[index], y);
       addEdge(family.familyNodeId, childId);
+      subtreeNodeIds.push(newNodeIdsSince(before));
     }
+
+    resolveSiblingOverlaps(subtreeNodeIds);
   }
 
   function placePersonWithPartners(
@@ -471,8 +566,7 @@ export function buildTreeLayout(graph: TreeGraph): TreeLayout {
         return;
       }
 
-      const stack = new Set<string>([family.id]);
-      const childWidths = kids.map((id) => measurePersonSubtree(id, stack));
+      const childWidths = kids.map((id) => measureOwnGenerationWidth(id));
       const offsets: number[] = [];
       let offset = 0;
 
@@ -482,9 +576,12 @@ export function buildTreeLayout(graph: TreeGraph): TreeLayout {
       }
 
       const totalWidth = offset - SIBLING_GAP;
-      const blockLeft = boxLeft + Math.max(0, (measureFamily(family, new Set()) - totalWidth) / 2);
+      const blockLeft =
+        boxLeft +
+        Math.max(0, (measureFamily(family, new Set()) - totalWidth) / 2);
       const childCenterSum = offsets.reduce(
-        (sum, childOffset) => sum + childOffset + CARD_WIDTH / 2,
+        (sum, childOffset, index) =>
+          sum + childOffset + childWidths[index] / 2,
         0
       );
       const familyCenterX = blockLeft + childCenterSum / kids.length;
@@ -493,11 +590,17 @@ export function buildTreeLayout(graph: TreeGraph): TreeLayout {
 
       addFamilyNode(family, familyCenterX, familyCenterY);
 
+      const subtreeNodeIds: string[][] = [];
+
       for (let index = 0; index < kids.length; index++) {
         const childId = kids[index];
+        const before = nodeIdsSnapshot();
         placePersonWithPartners(childId, blockLeft + offsets[index], y);
         addEdge(family.familyNodeId, childId);
+        subtreeNodeIds.push(newNodeIdsSince(before));
       }
+
+      resolveSiblingOverlaps(subtreeNodeIds);
 
       return;
     }
