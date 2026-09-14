@@ -21,6 +21,11 @@ const malbatDisplay = Fraunces({
 export const metadata: Metadata = {
   title: "MALBAT",
   description: "Familienstammbäume gemeinsam erstellen und verwalten.",
+  icons: {
+    icon: [{ url: "/icon.png", type: "image/png" }],
+    shortcut: "/favicon.ico",
+    apple: "/apple-icon.png",
+  },
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
