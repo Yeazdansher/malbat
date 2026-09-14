@@ -694,8 +694,9 @@ export function buildTreeLayout(graph: TreeGraph): TreeLayout {
   }
 
   /**
-   * Extra-Partner in der Zeile des Ankers, Family-Knoten aber am Anker angedockt
-   * (vertikal versetzt). So entsteht kein Herz zwischen zwei Partnern untereinander.
+   * Extra-Partner in der Zeile des Ankers.
+   * Direkt benachbart: Family-Knoten auf der Verbindungslinie.
+   * Weiter außen: Family-Knoten oberhalb (Brücke über dazwischenliegende Partner).
    */
   function placeExtraUnion(
     personId: string,
@@ -730,16 +731,32 @@ export function buildTreeLayout(graph: TreeGraph): TreeLayout {
       }
     }
 
-    // Family-Knoten am Anker; ab dem 2. Extra vertikal versetzt,
-    // damit er nicht zwischen zwei Extra-Partner-Karten sitzt.
-    const familyCenterX =
-      direction === "right"
-        ? origin.x + CARD_WIDTH + PARTNER_GAP / 2
-        : origin.x - PARTNER_GAP / 2;
+    if (placedPartnerXs.length === 0) {
+      const familyCenterX =
+        direction === "right"
+          ? origin.x + CARD_WIDTH + PARTNER_GAP / 2
+          : origin.x - PARTNER_GAP / 2;
+      addFamilyNode(union, familyCenterX, origin.y + CARD_HEIGHT / 2);
+      addEdge(personId, union.familyNodeId);
+      placeChildren(union, familyCenterX, origin.y + GENERATION_GAP);
+      return;
+    }
+
+    const partnerInnerEdge =
+      direction === "left"
+        ? Math.max(...placedPartnerXs) + CARD_WIDTH
+        : Math.min(...placedPartnerXs);
+    const anchorInnerEdge =
+      direction === "left" ? origin.x : origin.x + CARD_WIDTH;
+
+    // Mittelpunkt zwischen diesem Partner und dem Anker (über ggf. andere Partner hinweg).
+    const familyCenterX = (partnerInnerEdge + anchorInnerEdge) / 2;
+
+    // Erster Extra-Partner: auf der Kartenlinie. Weitere: darüber = Bogen wie markiert.
     const familyCenterY =
-      origin.y +
-      CARD_HEIGHT / 2 -
-      stackIndex * (FAMILY_NODE_SIZE + 20);
+      stackIndex === 0
+        ? origin.y + CARD_HEIGHT / 2
+        : origin.y - 36 - (stackIndex - 1) * (FAMILY_NODE_SIZE + 24);
 
     addFamilyNode(union, familyCenterX, familyCenterY);
     addEdge(personId, union.familyNodeId);
@@ -749,10 +766,8 @@ export function buildTreeLayout(graph: TreeGraph): TreeLayout {
     }
 
     const childrenCenterX =
-      placedPartnerXs.length > 0
-        ? placedPartnerXs.reduce((sum, px) => sum + px + CARD_WIDTH / 2, 0) /
-          placedPartnerXs.length
-        : familyCenterX;
+      placedPartnerXs.reduce((sum, px) => sum + px + CARD_WIDTH / 2, 0) /
+      placedPartnerXs.length;
 
     placeChildren(union, childrenCenterX, origin.y + GENERATION_GAP);
 

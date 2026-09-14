@@ -80,6 +80,18 @@ function siblingBusPath(
   return [path, (sourceX + targetX) / 2, railY];
 }
 
+/** Partner-Kante über dazwischenliegende Personen hinweg (Bogen nach oben). */
+function partnerBridgePath(
+  sourceX: number,
+  sourceY: number,
+  targetX: number,
+  targetY: number
+): [string, number, number] {
+  const railY = Math.min(sourceY, targetY);
+  const path = `M ${sourceX} ${sourceY} L ${sourceX} ${railY} L ${targetX} ${railY} L ${targetX} ${targetY}`;
+  return [path, (sourceX + targetX) / 2, railY];
+}
+
 export default function FamilyEdge({
   id,
   sourceX,
@@ -102,7 +114,7 @@ export default function FamilyEdge({
       : "default";
 
   const otherGeometries = useMemo(() => {
-    if (routing === "sibling-bus") {
+    if (routing === "sibling-bus" || routing === "partner-bridge") {
       return [];
     }
 
@@ -162,6 +174,10 @@ export default function FamilyEdge({
   const [path, labelX, labelY] = useMemo(() => {
     if (routing === "sibling-bus") {
       return siblingBusPath(sourceX, sourceY, targetX, targetY);
+    }
+
+    if (routing === "partner-bridge") {
+      return partnerBridgePath(sourceX, sourceY, targetX, targetY);
     }
 
     const points = getSmoothStepPoints({

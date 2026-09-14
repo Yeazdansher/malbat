@@ -8,6 +8,9 @@ import type {
   Person,
 } from "./types";
 
+const CARD_HEIGHT = 176;
+const FAMILY_NODE_SIZE = 32;
+
 /**
  * Erzeugt ausschließlich React-Flow-Nodes und -Edges.
  *
@@ -133,6 +136,7 @@ export function buildReactFlowGraph(
 
     let sourceHandle: string | undefined;
     let targetHandle: string | undefined;
+    let routing = "default";
 
     if (
       sourceLayout?.type === "person" &&
@@ -146,6 +150,13 @@ export function buildReactFlowGraph(
         : "partner-left";
 
       targetHandle = personOnLeft ? "left" : "right";
+
+      // Family-Knoten deutlich über der Person → Bogen über dazwischenliegende Partner.
+      const personCy = sourceLayout.position.y + CARD_HEIGHT / 2;
+      const familyCy = targetLayout.position.y + FAMILY_NODE_SIZE / 2;
+      if (familyCy < personCy - 20) {
+        routing = "partner-bridge";
+      }
     }
 
     const sourceFamily =
@@ -171,6 +182,10 @@ export function buildReactFlowGraph(
       targetHandle = "parents";
     }
 
+    if (sourceFamily?.kind === "sibling-group") {
+      routing = "sibling-bus";
+    }
+
     return {
       id: `${edge.source}-${edge.target}`,
 
@@ -188,10 +203,7 @@ export function buildReactFlowGraph(
       animated: false,
 
       data: {
-        routing:
-          sourceFamily?.kind === "sibling-group"
-            ? "sibling-bus"
-            : "default",
+        routing,
       },
 
       style: {
