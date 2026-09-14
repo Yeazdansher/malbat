@@ -174,9 +174,11 @@ export default function TreeView({
         if (node.type === "person") {
           return {
             ...node,
-            draggable: arrangeMode,
+            // Explizit true/undefined — false blockiert Drag auch bei nodesDraggable.
+            draggable: arrangeMode ? true : undefined,
             selectable: true,
-            dragHandle: ".person-drag-root",
+            className: "nopan",
+            zIndex: arrangeMode ? 10 : undefined,
             data: {
               ...node.data,
               canEdit: cardCanEdit,
@@ -204,6 +206,7 @@ export default function TreeView({
             ...node,
             draggable: false,
             selectable: !arrangeMode,
+            className: "nopan",
             style: {
               ...node.style,
               outline: onBranch ? "2px solid #f87171" : undefined,
@@ -216,6 +219,7 @@ export default function TreeView({
         return {
           ...node,
           draggable: false,
+          className: "nopan",
         };
       }),
     [arrangeMode, branchPersonIds, cardCanEdit, focusPersonId]
@@ -249,8 +253,20 @@ export default function TreeView({
   const displayedEdges = useMemo(
     () =>
       edges.map((edge) => {
+        const base = arrangeMode
+          ? {
+              ...edge,
+              interactionWidth: 0,
+              focusable: false,
+              style: {
+                ...edge.style,
+                pointerEvents: "none" as const,
+              },
+            }
+          : edge;
+
         if (!focusPersonId || branchPersonIds.size === 0) {
-          return edge;
+          return base;
         }
 
         const sourceOnBranch = branchPersonIds.has(edge.source);
@@ -264,19 +280,20 @@ export default function TreeView({
           (targetIsFamily && sourceOnBranch);
 
         if (!highlighted) {
-          return edge;
+          return base;
         }
 
         return {
-          ...edge,
+          ...base,
           style: {
-            ...edge.style,
+            ...base.style,
             stroke: "#dc2626",
             strokeWidth: 3.5,
+            ...(arrangeMode ? { pointerEvents: "none" as const } : {}),
           },
         };
       }),
-    [edges, branchPersonIds, focusPersonId]
+    [edges, branchPersonIds, focusPersonId, arrangeMode]
   );
 
   useEffect(() => {
@@ -423,12 +440,17 @@ export default function TreeView({
         edgeTypes={edgeTypes}
         nodesConnectable={false}
         nodesDraggable={arrangeMode}
-        elementsSelectable={true}
-        // Anordnen: kein Linksklick-Pan — sonst wandert nur die Karte/Canvas.
-        panOnDrag={!arrangeMode}
-        panOnScroll={arrangeMode}
+        elementsSelectable={!arrangeMode}
+        selectNodesOnDrag={false}
+        panOnDrag
+        panOnScroll={false}
         zoomOnScroll
-        nodeDragThreshold={0}
+        zoomOnPinch
+        zoomOnDoubleClick={!arrangeMode}
+        nodeDragThreshold={1}
+        // Eigene Klasse, falls irgendwo versehentlich "nodrag" sitzt.
+        noDragClassName="malbat-no-node-drag"
+        noPanClassName="nopan"
         fitView={!arrangeMode}
         fitViewOptions={{ padding: 0.2, minZoom: 0.1, maxZoom: 1.5 }}
         minZoom={0.1}

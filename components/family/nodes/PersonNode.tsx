@@ -91,8 +91,8 @@ export default function PersonNode({
       <div
         className={
           personData.arrangeMode
-            ? "person-drag-root rounded-2xl cursor-grab active:cursor-grabbing"
-            : "person-drag-root rounded-2xl"
+            ? "nopan rounded-2xl cursor-grab active:cursor-grabbing"
+            : "nopan rounded-2xl"
         }
         style={
           personData.searchHighlighted

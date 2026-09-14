@@ -266,8 +266,8 @@ const [deleteOpen, setDeleteOpen] =
 
           {arrangeMode && (
             <p className="text-sm text-gray-600">
-              Personen ziehen (Mausrad = Ansicht verschieben). Verschiebt den Ast
-              inkl. Nachkommen — nur Darstellung, keine Beziehungsänderung.
+              Personen ziehen — verschiebt den Ast inkl. Nachkommen. Leerer
+              Hintergrund = Ansicht verschieben. Mausrad = Zoomen.
             </p>
           )}
 

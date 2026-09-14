@@ -41,7 +41,11 @@ export default function PersonCard({
       {canEdit && !hasParents && (
         <button
           type="button"
-          className="nodrag nopan nowheel absolute z-20 left-1/2 top-0 flex h-8 w-8 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border bg-white text-base leading-none hover:bg-green-100"
+          className={
+            canEdit
+              ? "nodrag nopan nowheel absolute z-20 left-1/2 top-0 flex h-8 w-8 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border bg-white text-base leading-none hover:bg-green-100"
+              : ""
+          }
           title="Eltern hinzufügen"
           aria-label="Eltern hinzufügen"
           onPointerDown={(event) => event.stopPropagation()}
@@ -143,7 +147,7 @@ export default function PersonCard({
           disabled={arrangeMode}
           className={
             arrangeMode
-              ? "pointer-events-none w-full cursor-grab rounded border border-gray-200 py-2 text-sm text-gray-400"
+              ? "w-full cursor-grab rounded border border-gray-200 py-2 text-sm text-gray-400"
               : "w-full rounded border border-gray-300 py-2 text-sm transition hover:bg-gray-100"
           }
         >
