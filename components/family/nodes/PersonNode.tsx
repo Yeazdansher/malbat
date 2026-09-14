@@ -38,6 +38,7 @@ type PersonNodeData = {
   hasParents: boolean;
   searchHighlighted?: boolean;
   branchHighlighted?: boolean;
+  descendantHighlighted?: boolean;
   canEdit: boolean;
 };
 
@@ -96,12 +97,17 @@ export default function PersonNode({
                 boxShadow:
                   "0 0 0 4px #ffffff, 0 0 0 8px #ef4444",
               }
-            : personData.branchHighlighted
+            : personData.descendantHighlighted
               ? {
                   boxShadow:
-                    "0 0 0 2px #ffffff, 0 0 0 5px #f87171",
+                    "0 0 0 2px #ffffff, 0 0 0 5px #4ade80",
                 }
-              : undefined
+              : personData.branchHighlighted
+                ? {
+                    boxShadow:
+                      "0 0 0 2px #ffffff, 0 0 0 5px #f87171",
+                  }
+                : undefined
         }
       >
         <PersonCard

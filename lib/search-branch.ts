@@ -15,10 +15,17 @@ const PARENT_TYPES = new Set([
   "adoptive-parent",
 ]);
 
+export type SearchBranchSets = {
+  /** Gesamter Ast inkl. Fokusperson */
+  branch: Set<string>;
+  /** Nur Nachkommen (Kinder und weitere Generationen), ohne Fokus */
+  descendants: Set<string>;
+};
+
 export function collectSearchBranch(
   personId: string,
   relationships: Rel[]
-): Set<string> {
+): SearchBranchSets {
   const parentsOf = new Map<string, string[]>();
   const childrenOf = new Map<string, string[]>();
   const partnersOf = new Map<string, string[]>();
@@ -48,6 +55,7 @@ export function collectSearchBranch(
   }
 
   const branch = new Set<string>([personId]);
+  const descendants = new Set<string>();
 
   const ancestorQueue = [personId];
   while (ancestorQueue.length > 0) {
@@ -66,16 +74,28 @@ export function collectSearchBranch(
     for (const childId of childrenOf.get(current) ?? []) {
       if (!branch.has(childId)) {
         branch.add(childId);
+        descendants.add(childId);
         descendantQueue.push(childId);
       }
     }
   }
 
+  // Partner der Nachkommen → grün (Generation/Haushalt der Kinder)
+  for (const id of [...descendants]) {
+    for (const partnerId of partnersOf.get(id) ?? []) {
+      if (partnerId === personId) continue;
+      branch.add(partnerId);
+      descendants.add(partnerId);
+    }
+  }
+
+  // Partner der Fokusperson und der Vorfahren → rot (nicht Nachkommen)
   for (const id of [...branch]) {
+    if (descendants.has(id)) continue;
     for (const partnerId of partnersOf.get(id) ?? []) {
       branch.add(partnerId);
     }
   }
 
-  return branch;
+  return { branch, descendants };
 }
