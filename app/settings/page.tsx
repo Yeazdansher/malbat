@@ -116,7 +116,13 @@ export default async function SettingsPage() {
 
           {/* Copyright */}
           <div className="pt-4 text-center text-sm text-gray-400">
-            © 2026 Malbat
+            © 2026{" "}
+            <span
+              className="font-semibold tracking-[0.06em]"
+              style={{ fontFamily: "var(--font-malbat), serif" }}
+            >
+              MALBAT
+            </span>
           </div>
 
         </div>

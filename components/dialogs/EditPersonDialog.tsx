@@ -1,8 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState, useTransition } from "react";
 
-import { updatePerson } from "@/app/family/[id]/actions";
+import {
+  removePersonPhoto,
+  updatePerson,
+  uploadPersonPhoto,
+} from "@/app/family/[id]/actions";
 
 type EditPersonDialogProps = {
   open: boolean;
@@ -21,6 +25,7 @@ type EditPersonDialogProps = {
     death_date: string | null;
     death_place: string | null;
     notes: string | null;
+    photo_url?: string | null;
   };
 };
 
@@ -31,30 +36,88 @@ export default function EditPersonDialog({
   personId,
   person,
 }: EditPersonDialogProps) {
-  const [isDeceased, setIsDeceased] = useState(
-    person.is_deceased
-  );
+  const [isDeceased, setIsDeceased] = useState(person.is_deceased);
+  const [pendingPhoto, startPhotoTransition] = useTransition();
+  const photoInputRef = useRef<HTMLInputElement>(null);
 
   if (!open) return null;
+
+  const initials =
+    `${person.first_name.charAt(0)}${person.last_name.charAt(0)}`.toUpperCase();
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
       <div className="max-h-[90vh] w-full max-w-xl overflow-y-auto rounded-2xl bg-white p-8 shadow-xl">
-
         <h2 className="text-2xl font-bold text-green-700">
           Person bearbeiten
         </h2>
+
+        <div className="mt-6 flex items-center gap-4">
+          {person.photo_url ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={person.photo_url}
+              alt=""
+              className="h-20 w-20 rounded-lg object-cover"
+            />
+          ) : (
+            <div className="flex h-20 w-20 items-center justify-center rounded-lg bg-green-700 text-2xl font-bold text-white">
+              {initials}
+            </div>
+          )}
+
+          <div className="flex flex-col gap-2">
+            <input
+              ref={photoInputRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              className="hidden"
+              onChange={(event) => {
+                const file = event.target.files?.[0];
+                if (!file) {
+                  return;
+                }
+
+                const formData = new FormData();
+                formData.set("photo", file);
+                startPhotoTransition(() => {
+                  void uploadPersonPhoto(familyId, personId, formData);
+                });
+              }}
+            />
+
+            <button
+              type="button"
+              disabled={pendingPhoto}
+              onClick={() => photoInputRef.current?.click()}
+              className="text-left text-green-700 hover:underline disabled:opacity-60"
+            >
+              {pendingPhoto ? "Wird hochgeladen…" : "Foto ändern"}
+            </button>
+
+            {person.photo_url && (
+              <button
+                type="button"
+                disabled={pendingPhoto}
+                onClick={() => {
+                  startPhotoTransition(() => {
+                    void removePersonPhoto(familyId, personId);
+                  });
+                }}
+                className="text-left text-sm text-red-600 hover:underline disabled:opacity-60"
+              >
+                Foto entfernen
+              </button>
+            )}
+          </div>
+        </div>
 
         <form
           action={updatePerson.bind(null, familyId, personId)}
           className="mt-8 space-y-5"
         >
-
           <div>
-            <label className="mb-2 block font-medium">
-              Vorname *
-            </label>
-
+            <label className="mb-2 block font-medium">Vorname *</label>
             <input
               name="first_name"
               defaultValue={person.first_name}
@@ -64,10 +127,7 @@ export default function EditPersonDialog({
           </div>
 
           <div>
-            <label className="mb-2 block font-medium">
-              Nachname *
-            </label>
-
+            <label className="mb-2 block font-medium">Nachname *</label>
             <input
               name="last_name"
               defaultValue={person.last_name}
@@ -77,10 +137,7 @@ export default function EditPersonDialog({
           </div>
 
           <div>
-            <label className="mb-2 block font-medium">
-              Geschlecht *
-            </label>
-
+            <label className="mb-2 block font-medium">Geschlecht *</label>
             <select
               name="gender"
               defaultValue={person.gender}
@@ -94,10 +151,7 @@ export default function EditPersonDialog({
           </div>
 
           <div>
-            <label className="mb-2 block font-medium">
-              Geburtsdatum
-            </label>
-
+            <label className="mb-2 block font-medium">Geburtsdatum</label>
             <input
               type="date"
               name="birth_date"
@@ -107,10 +161,7 @@ export default function EditPersonDialog({
           </div>
 
           <div>
-            <label className="mb-2 block font-medium">
-              Geburtsort
-            </label>
-
+            <label className="mb-2 block font-medium">Geburtsort</label>
             <input
               name="birth_place"
               defaultValue={person.birth_place ?? ""}
@@ -125,17 +176,13 @@ export default function EditPersonDialog({
               checked={isDeceased}
               onChange={(e) => setIsDeceased(e.target.checked)}
             />
-
             Verstorben
           </label>
 
           {isDeceased && (
             <>
               <div>
-                <label className="mb-2 block font-medium">
-                  Sterbedatum
-                </label>
-
+                <label className="mb-2 block font-medium">Sterbedatum</label>
                 <input
                   type="date"
                   name="death_date"
@@ -145,10 +192,7 @@ export default function EditPersonDialog({
               </div>
 
               <div>
-                <label className="mb-2 block font-medium">
-                  Sterbeort
-                </label>
-
+                <label className="mb-2 block font-medium">Sterbeort</label>
                 <input
                   name="death_place"
                   defaultValue={person.death_place ?? ""}
@@ -159,10 +203,7 @@ export default function EditPersonDialog({
           )}
 
           <div>
-            <label className="mb-2 block font-medium">
-              Notizen
-            </label>
-
+            <label className="mb-2 block font-medium">Notizen</label>
             <textarea
               name="notes"
               rows={4}
@@ -172,7 +213,6 @@ export default function EditPersonDialog({
           </div>
 
           <div className="flex justify-end gap-4 pt-4">
-
             <button
               type="button"
               onClick={onClose}
@@ -187,11 +227,8 @@ export default function EditPersonDialog({
             >
               Änderungen speichern
             </button>
-
           </div>
-
         </form>
-
       </div>
     </div>
   );

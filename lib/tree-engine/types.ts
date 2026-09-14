@@ -27,6 +27,7 @@ export interface Person {
   death_place: string | null;
 
   notes: string | null;
+  photo_url?: string | null;
 }
 
 /* ----------------------------------------------------------

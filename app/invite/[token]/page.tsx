@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import BrandMark from "@/components/BrandMark";
 import { acceptInvitation } from "./actions";
 import { hashInvitationToken, roleLabel } from "@/lib/invitations";
 import { createClient } from "@/lib/supabase/server";
@@ -56,8 +57,8 @@ export default async function InvitationPage({
   return (
     <main className="flex min-h-screen items-center justify-center bg-gray-100 px-6">
       <div className="w-full max-w-lg rounded-2xl bg-white p-8 shadow-sm">
-        <Link href="/" className="text-3xl font-bold text-green-700">
-          MALBAT
+        <Link href="/" className="inline-block">
+          <BrandMark className="text-3xl text-green-700" />
         </Link>
 
         <h1 className="mt-8 text-2xl font-bold">

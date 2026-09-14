@@ -28,6 +28,7 @@ type Person = {
   death_date: string | null;
   death_place: string | null;
   notes: string | null;
+  photo_url?: string | null;
 };
 
 type Relationship = {
@@ -245,6 +246,7 @@ onAddChild={(parentIds) => {
             deathDate={selectedPerson.death_date}
             deathPlace={selectedPerson.death_place}
             notes={selectedPerson.notes}
+            photoUrl={selectedPerson.photo_url}
             fatherName={selectedRelations.fatherName}
             motherName={selectedRelations.motherName}
             partnerNames={selectedRelations.partnerNames}

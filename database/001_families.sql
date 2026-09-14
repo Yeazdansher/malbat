@@ -17,6 +17,7 @@ create table if not exists public.persons (
   death_date date,
   death_place text,
   notes text,
+  photo_url text,
   created_at timestamptz not null default now()
 );
 

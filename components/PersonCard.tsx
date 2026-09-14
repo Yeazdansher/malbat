@@ -6,6 +6,7 @@ type PersonCardProps = {
   gender: "male" | "female" | "unknown";
   age: number;
   isDeceased: boolean;
+  photoUrl?: string | null;
 
   onOpenDetails: () => void;
   onOpenRelationship: () => void;
@@ -21,6 +22,7 @@ export default function PersonCard({
   gender,
   age,
   isDeceased,
+  photoUrl,
   onOpenDetails,
   onOpenRelationship,
   onOpenParents,
@@ -28,6 +30,9 @@ export default function PersonCard({
   hasParents = false,
   canEdit = true,
 }: PersonCardProps) {
+  const initials =
+    `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
+
   return (
     <div className="relative w-[270px] rounded-md border border-gray-300 bg-white p-4 shadow-sm">
 
@@ -83,15 +88,21 @@ export default function PersonCard({
       )}
 
       <div className="flex gap-3">
-
-        <div className="flex h-14 w-14 items-center justify-center rounded bg-green-700 text-lg font-bold text-white">
-          {`${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase()}
-        </div>
+        {photoUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={photoUrl}
+            alt=""
+            className="h-14 w-14 rounded object-cover"
+          />
+        ) : (
+          <div className="flex h-14 w-14 items-center justify-center rounded bg-green-700 text-lg font-bold text-white">
+            {initials}
+          </div>
+        )}
 
         <div className="flex-1">
-
           <div className="flex items-center gap-2">
-
             <span
               className={
                 gender === "male"
@@ -111,34 +122,25 @@ export default function PersonCard({
             <h3 className="font-semibold leading-5">
               {firstName} {lastName}
             </h3>
-
           </div>
 
           <div className="mt-3 flex items-center gap-2 text-gray-600">
-
             <span className="text-lg">
               {isDeceased ? "✝" : "🎂"}
             </span>
-
             <span>{age} Jahre</span>
-
           </div>
-
         </div>
-
       </div>
 
       <div className="mt-5">
-
         <button
           onClick={onOpenDetails}
           className="w-full rounded border border-gray-300 py-2 text-sm transition hover:bg-gray-100"
         >
           Weitere Details
         </button>
-
       </div>
-
     </div>
   );
 }

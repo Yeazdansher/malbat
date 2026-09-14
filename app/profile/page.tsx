@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 
 import { updateProfile } from "@/app/profile/actions";
 import Header from "@/components/Header";
+import AvatarUpload from "@/components/profile/AvatarUpload";
 import ChangePasswordButton from "@/components/profile/ChangePasswordButton";
 import DeleteAccountButton from "@/components/profile/DeleteAccountButton";
 import PlanManagement from "@/components/profile/PlanManagement";
@@ -104,14 +105,11 @@ export default async function ProfilePage({ searchParams }: PageProps) {
           </p>
         )}
 
-        <div className="mt-8 flex flex-col items-center">
-          <div className="flex h-28 w-28 items-center justify-center rounded-full bg-green-700 text-4xl font-bold text-white">
-            {initials}
-          </div>
-
-          <button className="mt-4 text-green-700 hover:underline">
-            Profilbild ändern
-          </button>
+        <div className="mt-8">
+          <AvatarUpload
+            avatarUrl={profile?.avatar_url ?? null}
+            initials={initials}
+          />
         </div>
 
         <form action={updateProfile} className="mt-10 space-y-6">

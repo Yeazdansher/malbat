@@ -19,6 +19,7 @@ type PersonDetailsDialogProps = {
   deathDate: string | null;
   deathPlace: string | null;
   notes: string | null;
+  photoUrl?: string | null;
   fatherName: string | null;
   motherName: string | null;
   partnerNames: string[];
@@ -56,6 +57,7 @@ export default function PersonDetailsDialog({
   deathDate,
   deathPlace,
   notes,
+  photoUrl,
   fatherName,
   motherName,
   partnerNames,
@@ -74,9 +76,18 @@ export default function PersonDetailsDialog({
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
       <div className="max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-2xl bg-white p-8 shadow-xl sm:p-10">
         <div className="flex items-center gap-5">
-          <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-lg bg-green-700 text-2xl font-bold text-white">
-            {`${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase()}
-          </div>
+          {photoUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={photoUrl}
+              alt=""
+              className="h-20 w-20 shrink-0 rounded-lg object-cover"
+            />
+          ) : (
+            <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-lg bg-green-700 text-2xl font-bold text-white">
+              {`${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase()}
+            </div>
+          )}
 
           <div>
             <h2 className="text-3xl font-bold tracking-tight text-gray-900">

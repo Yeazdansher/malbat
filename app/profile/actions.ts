@@ -4,10 +4,124 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 import { isValidPassword, PASSWORD_REQUIREMENTS } from "@/lib/password";
+import {
+  extensionForImageType,
+  validateImageFile,
+} from "@/lib/storage/images";
 import { createClient } from "@/lib/supabase/server";
 
 function profileRedirectError(message: string): never {
   redirect(`/profile?error=${encodeURIComponent(message)}`);
+}
+
+export async function uploadAvatar(formData: FormData) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    redirect("/login");
+  }
+
+  const validated = validateImageFile(
+    formData.get("avatar") instanceof File
+      ? (formData.get("avatar") as File)
+      : null
+  );
+
+  if (!validated.ok) {
+    profileRedirectError(validated.error);
+  }
+
+  const { file, type } = validated;
+  const ext = extensionForImageType(type);
+  const folder = user.id;
+  const path = `${folder}/avatar.${ext}`;
+
+  const { data: existing } = await supabase.storage
+    .from("avatars")
+    .list(folder);
+
+  if (existing && existing.length > 0) {
+    const paths = existing.map((entry) => `${folder}/${entry.name}`);
+    await supabase.storage.from("avatars").remove(paths);
+  }
+
+  const { error: uploadError } = await supabase.storage
+    .from("avatars")
+    .upload(path, file, {
+      upsert: true,
+      contentType: type,
+      cacheControl: "3600",
+    });
+
+  if (uploadError) {
+    console.error("uploadAvatar (upload):", uploadError);
+    profileRedirectError(
+      "Das Profilbild konnte nicht hochgeladen werden. Bitte versuche es erneut."
+    );
+  }
+
+  const {
+    data: { publicUrl },
+  } = supabase.storage.from("avatars").getPublicUrl(path);
+
+  const avatarUrl = `${publicUrl}?v=${Date.now()}`;
+
+  const { error: profileError } = await supabase
+    .from("profiles")
+    .update({ avatar_url: avatarUrl })
+    .eq("id", user.id);
+
+  if (profileError) {
+    console.error("uploadAvatar (profile):", profileError);
+    profileRedirectError(
+      "Das Profilbild wurde hochgeladen, konnte aber nicht gespeichert werden."
+    );
+  }
+
+  revalidatePath("/profile");
+  revalidatePath("/dashboard");
+  redirect("/profile?updated=1");
+}
+
+export async function removeAvatar() {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    redirect("/login");
+  }
+
+  const folder = user.id;
+  const { data: existing } = await supabase.storage
+    .from("avatars")
+    .list(folder);
+
+  if (existing && existing.length > 0) {
+    await supabase.storage
+      .from("avatars")
+      .remove(existing.map((entry) => `${folder}/${entry.name}`));
+  }
+
+  const { error } = await supabase
+    .from("profiles")
+    .update({ avatar_url: null })
+    .eq("id", user.id);
+
+  if (error) {
+    console.error("removeAvatar:", error);
+    profileRedirectError(
+      "Das Profilbild konnte nicht entfernt werden. Bitte versuche es erneut."
+    );
+  }
+
+  revalidatePath("/profile");
+  revalidatePath("/dashboard");
+  redirect("/profile?updated=1");
 }
 
 export async function updateProfile(formData: FormData) {

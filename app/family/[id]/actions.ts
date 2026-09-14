@@ -9,6 +9,10 @@ import {
   personLimitMessage,
 } from "@/lib/plans";
 import { normalizeRelationshipType, personHasChildren } from "@/lib/relationships";
+import {
+  extensionForImageType,
+  validateImageFile,
+} from "@/lib/storage/images";
 
 async function requirePersonsInFamily(
   supabase: Awaited<ReturnType<typeof createClient>>,
@@ -233,6 +237,154 @@ export async function updatePerson(
 
   redirect(`/family/${familyId}`);
 }
+
+export async function uploadPersonPhoto(
+  familyId: string,
+  personId: string,
+  formData: FormData
+) {
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    throw new Error("Nicht angemeldet.");
+  }
+
+  await requireFamilyEditor(supabase, familyId);
+  await requirePersonsInFamily(supabase, familyId, [personId]);
+
+  const validated = validateImageFile(
+    formData.get("photo") instanceof File
+      ? (formData.get("photo") as File)
+      : null
+  );
+
+  if (!validated.ok) {
+    throw new Error(validated.error);
+  }
+
+  const { file, type } = validated;
+  const ext = extensionForImageType(type);
+  const folder = familyId;
+  const path = `${folder}/${personId}.${ext}`;
+
+  const { data: existing, error: listError } = await supabase.storage
+    .from("person-photos")
+    .list(folder);
+
+  if (listError) {
+    console.error("uploadPersonPhoto (list):", listError);
+    throw new Error(
+      "Das Foto konnte nicht hochgeladen werden. Bitte versuche es erneut."
+    );
+  }
+
+  const previousForPerson =
+    existing?.filter((entry) =>
+      entry.name.startsWith(`${personId}.`)
+    ) ?? [];
+
+  if (previousForPerson.length > 0) {
+    await supabase.storage
+      .from("person-photos")
+      .remove(previousForPerson.map((entry) => `${folder}/${entry.name}`));
+  }
+
+  const { error: uploadError } = await supabase.storage
+    .from("person-photos")
+    .upload(path, file, {
+      upsert: true,
+      contentType: type,
+      cacheControl: "3600",
+    });
+
+  if (uploadError) {
+    console.error("uploadPersonPhoto (upload):", uploadError);
+    throw new Error(
+      "Das Foto konnte nicht hochgeladen werden. Bitte versuche es erneut."
+    );
+  }
+
+  const {
+    data: { publicUrl },
+  } = supabase.storage.from("person-photos").getPublicUrl(path);
+
+  const photoUrl = `${publicUrl}?v=${Date.now()}`;
+
+  const { error: updateError } = await supabase
+    .from("persons")
+    .update({ photo_url: photoUrl })
+    .eq("id", personId)
+    .eq("family_id", familyId);
+
+  if (updateError) {
+    console.error("uploadPersonPhoto (update):", updateError);
+    throw new Error(
+      "Das Foto wurde hochgeladen, konnte aber nicht gespeichert werden."
+    );
+  }
+
+  revalidatePath(`/family/${familyId}`);
+  redirect(`/family/${familyId}`);
+}
+
+export async function removePersonPhoto(
+  familyId: string,
+  personId: string
+) {
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    throw new Error("Nicht angemeldet.");
+  }
+
+  await requireFamilyEditor(supabase, familyId);
+  await requirePersonsInFamily(supabase, familyId, [personId]);
+
+  await deletePersonPhotoFiles(supabase, familyId, personId);
+
+  const { error } = await supabase
+    .from("persons")
+    .update({ photo_url: null })
+    .eq("id", personId)
+    .eq("family_id", familyId);
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  revalidatePath(`/family/${familyId}`);
+  redirect(`/family/${familyId}`);
+}
+
+async function deletePersonPhotoFiles(
+  client: Awaited<ReturnType<typeof createClient>>,
+  familyId: string,
+  personId: string
+) {
+  const { data: files } = await client.storage
+    .from("person-photos")
+    .list(familyId);
+
+  const matches =
+    files?.filter((entry) => entry.name.startsWith(`${personId}.`)) ?? [];
+
+  if (matches.length === 0) {
+    return;
+  }
+
+  await client.storage
+    .from("person-photos")
+    .remove(matches.map((entry) => `${familyId}/${entry.name}`));
+}
+
 export async function createRelationship(
   familyId: string,
   person1Id: string,
@@ -538,7 +690,7 @@ export async function deletePerson(
 
   const { data: person, error: personError } = await supabase
     .from("persons")
-    .select("id")
+    .select("id, photo_url")
     .eq("id", personId)
     .eq("family_id", familyId)
     .single();
@@ -583,6 +735,8 @@ export async function deletePerson(
     throw new Error(asPerson2Error.message);
   }
 
+  await deletePersonPhotoFiles(supabase, familyId, personId);
+
   const { error: deleteError } = await supabase
     .from("persons")
     .delete()
@@ -616,6 +770,7 @@ async function deleteFamilyStorageFiles(
     "family-files",
     "family-documents",
     "family-images",
+    "person-photos",
     "documents",
     "images",
     "families",

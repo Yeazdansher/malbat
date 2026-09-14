@@ -36,7 +36,7 @@ export default function RegisterForm({ invite }: Props) {
         name="firstName"
         type="text"
         placeholder="Vorname"
-        className="w-full rounded-lg border border-gray-300 p-3 focus:border-green-700 focus:outline-none"
+        className="w-full rounded-lg border border-gray-300 p-3 focus:border-[#1f7a45] focus:outline-none"
         required
       />
 
@@ -44,7 +44,7 @@ export default function RegisterForm({ invite }: Props) {
         name="lastName"
         type="text"
         placeholder="Nachname"
-        className="w-full rounded-lg border border-gray-300 p-3 focus:border-green-700 focus:outline-none"
+        className="w-full rounded-lg border border-gray-300 p-3 focus:border-[#1f7a45] focus:outline-none"
         required
       />
 
@@ -52,7 +52,7 @@ export default function RegisterForm({ invite }: Props) {
         name="username"
         type="text"
         placeholder="Benutzername"
-        className="w-full rounded-lg border border-gray-300 p-3 focus:border-green-700 focus:outline-none"
+        className="w-full rounded-lg border border-gray-300 p-3 focus:border-[#1f7a45] focus:outline-none"
         required
       />
 
@@ -60,7 +60,7 @@ export default function RegisterForm({ invite }: Props) {
         name="email"
         type="email"
         placeholder="E-Mail"
-        className="w-full rounded-lg border border-gray-300 p-3 focus:border-green-700 focus:outline-none"
+        className="w-full rounded-lg border border-gray-300 p-3 focus:border-[#1f7a45] focus:outline-none"
         required
       />
 
@@ -71,7 +71,7 @@ export default function RegisterForm({ invite }: Props) {
         minLength={8}
         value={password}
         onChange={(event) => setPassword(event.target.value)}
-        className="w-full rounded-lg border border-gray-300 p-3 focus:border-green-700 focus:outline-none"
+        className="w-full rounded-lg border border-gray-300 p-3 focus:border-[#1f7a45] focus:outline-none"
         required
         aria-describedby="password-rules"
       />
@@ -87,7 +87,7 @@ export default function RegisterForm({ invite }: Props) {
         minLength={8}
         value={confirmPassword}
         onChange={(event) => setConfirmPassword(event.target.value)}
-        className="w-full rounded-lg border border-gray-300 p-3 focus:border-green-700 focus:outline-none"
+        className="w-full rounded-lg border border-gray-300 p-3 focus:border-[#1f7a45] focus:outline-none"
         required
       />
 
@@ -100,7 +100,7 @@ export default function RegisterForm({ invite }: Props) {
       <button
         type="submit"
         disabled={!canSubmit}
-        className="w-full rounded-lg bg-green-700 py-3 text-white transition hover:bg-green-800 disabled:cursor-not-allowed disabled:bg-gray-300 disabled:hover:bg-gray-300"
+        className="w-full rounded-lg bg-[#1f7a45] py-3 font-semibold text-white transition hover:bg-[#19653a] disabled:cursor-not-allowed disabled:bg-gray-300 disabled:hover:bg-gray-300"
       >
         Registrieren
       </button>

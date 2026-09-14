@@ -40,6 +40,7 @@ type Person = {
   death_place: string | null;
 
   notes: string | null;
+  photo_url?: string | null;
 };
 
 type Props = {

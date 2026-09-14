@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { logout } from "@/app/logout/actions";
+import Avatar from "@/components/Avatar";
 
 type Profile = {
   id: string;
@@ -27,9 +28,15 @@ export default function UserMenu({ profile }: UserMenuProps) {
     <div className="relative">
       <button
         onClick={() => setOpen(!open)}
-        className="flex h-10 w-10 items-center justify-center rounded-full bg-green-700 font-semibold text-white"
+        className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full bg-green-700 ring-2 ring-white/25 font-semibold text-white"
+        aria-label="Benutzermenü"
       >
-        {initials}
+        <Avatar
+          url={profile?.avatar_url}
+          initials={initials}
+          sizeClassName="h-10 w-10"
+          textClassName="text-sm font-semibold text-white"
+        />
       </button>
 
       {open && (

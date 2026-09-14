@@ -28,6 +28,7 @@ type PersonNodeData = {
     death_place: string | null;
 
     notes: string | null;
+    photo_url?: string | null;
   };
 
   onOpenDetails: () => void;
@@ -114,6 +115,7 @@ export default function PersonNode({
             ) ?? 0
           }
           isDeceased={person.is_deceased}
+          photoUrl={person.photo_url}
           hasParents={personData.hasParents}
           canEdit={personData.canEdit}
           onOpenDetails={personData.onOpenDetails}
