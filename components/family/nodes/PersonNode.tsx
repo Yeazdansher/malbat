@@ -88,12 +88,19 @@ export default function PersonNode({
       />
 
       <div
-        className={
+        className="rounded-2xl"
+        style={
           personData.searchHighlighted
-            ? "rounded-2xl ring-4 ring-green-500 ring-offset-4"
+            ? {
+                boxShadow:
+                  "0 0 0 4px #ffffff, 0 0 0 8px #ef4444",
+              }
             : personData.branchHighlighted
-              ? "rounded-2xl ring-2 ring-green-400 ring-offset-2"
-              : ""
+              ? {
+                  boxShadow:
+                    "0 0 0 2px #ffffff, 0 0 0 5px #f87171",
+                }
+              : undefined
         }
       >
         <PersonCard

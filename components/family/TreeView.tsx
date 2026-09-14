@@ -173,7 +173,7 @@ export default function TreeView({
             ...node,
             style: {
               ...node.style,
-              outline: onBranch ? "2px solid #4ade80" : undefined,
+              outline: onBranch ? "2px solid #f87171" : undefined,
               outlineOffset: onBranch ? "2px" : undefined,
               borderRadius: onBranch ? "9999px" : undefined,
             },
@@ -210,7 +210,7 @@ export default function TreeView({
           ...edge,
           style: {
             ...edge.style,
-            stroke: "#16a34a",
+            stroke: "#dc2626",
             strokeWidth: 3.5,
           },
         };
