@@ -20,6 +20,7 @@ import {
   buildReactFlowGraph,
   type Relationship,
 } from "@/lib/tree-engine";
+import { collectSearchBranch } from "@/lib/search-branch";
 
 type Person = {
   id: string;
@@ -133,20 +134,88 @@ export default function TreeView({
     canEdit,
   ]);
 
+  const branchPersonIds = useMemo(() => {
+    if (!focusPersonId) {
+      return new Set<string>();
+    }
+
+    return collectSearchBranch(focusPersonId, relationships);
+  }, [focusPersonId, relationships]);
+
   const displayedNodes = useMemo(
     () =>
-      nodes.map((node) =>
-        node.type === "person"
-          ? {
-              ...node,
-              data: {
-                ...node.data,
-                searchHighlighted: node.id === focusPersonId,
-              },
-            }
-          : node
-      ),
-    [nodes, focusPersonId]
+      nodes.map((node) => {
+        if (node.type === "person") {
+          return {
+            ...node,
+            data: {
+              ...node.data,
+              searchHighlighted: node.id === focusPersonId,
+              branchHighlighted:
+                node.id !== focusPersonId && branchPersonIds.has(node.id),
+            },
+          };
+        }
+
+        if (node.type === "family") {
+          const parentIds =
+            node.data &&
+            typeof node.data === "object" &&
+            "parentIds" in node.data &&
+            Array.isArray(node.data.parentIds)
+              ? (node.data.parentIds as string[])
+              : [];
+          const onBranch =
+            focusPersonId !== undefined &&
+            parentIds.some((id) => branchPersonIds.has(id));
+
+          return {
+            ...node,
+            style: {
+              ...node.style,
+              outline: onBranch ? "2px solid #4ade80" : undefined,
+              outlineOffset: onBranch ? "2px" : undefined,
+              borderRadius: onBranch ? "9999px" : undefined,
+            },
+          };
+        }
+
+        return node;
+      }),
+    [nodes, focusPersonId, branchPersonIds]
+  );
+
+  const displayedEdges = useMemo(
+    () =>
+      edges.map((edge) => {
+        if (!focusPersonId || branchPersonIds.size === 0) {
+          return edge;
+        }
+
+        const sourceOnBranch = branchPersonIds.has(edge.source);
+        const targetOnBranch = branchPersonIds.has(edge.target);
+        const sourceIsFamily = edge.source.startsWith("family-node:");
+        const targetIsFamily = edge.target.startsWith("family-node:");
+
+        const highlighted =
+          (sourceOnBranch && targetOnBranch) ||
+          (sourceIsFamily && targetOnBranch) ||
+          (targetIsFamily && sourceOnBranch);
+
+        if (!highlighted) {
+          return edge;
+        }
+
+        return {
+          ...edge,
+          style: {
+            ...edge.style,
+            stroke: "#16a34a",
+            strokeWidth: 3.5,
+          },
+        };
+      }),
+    [edges, branchPersonIds, focusPersonId]
   );
 
   useEffect(() => {
@@ -197,7 +266,7 @@ export default function TreeView({
     >
       <ReactFlow
         nodes={displayedNodes}
-        edges={edges}
+        edges={displayedEdges}
         nodeTypes={nodeTypes}
         edgeTypes={edgeTypes}
         nodesConnectable={false}

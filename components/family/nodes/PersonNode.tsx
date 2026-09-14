@@ -36,6 +36,7 @@ type PersonNodeData = {
   onOpenSiblings: () => void;
   hasParents: boolean;
   searchHighlighted?: boolean;
+  branchHighlighted?: boolean;
   canEdit: boolean;
 };
 
@@ -90,7 +91,9 @@ export default function PersonNode({
         className={
           personData.searchHighlighted
             ? "rounded-2xl ring-4 ring-green-500 ring-offset-4"
-            : ""
+            : personData.branchHighlighted
+              ? "rounded-2xl ring-2 ring-green-400 ring-offset-2"
+              : ""
         }
       >
         <PersonCard
