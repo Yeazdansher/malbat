@@ -126,6 +126,39 @@ export function buildTreeLayout(graph: TreeGraph): TreeLayout {
     return undefined;
   }
 
+  /**
+   * Frau in einer Mann-Frau-Ehe: steht neben dem Mann, nicht in der
+   * Geschwisterreihe der Herkunftsfamilie.
+   */
+  function shouldRelocateBesideHusband(personId: string): boolean {
+    if (genderOf(personId) !== "female") {
+      return false;
+    }
+
+    for (const family of familiesByPartner.get(personId) ?? []) {
+      if (family.kind === "sibling-group") {
+        continue;
+      }
+
+      const preferred = preferredUnionAnchor(family);
+      if (preferred && preferred !== personId) {
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  /** Elternkante zur Herkunftsfamilie, sobald die Frau beim Mann steht. */
+  function linkBirthFamilyEdge(personId: string): void {
+    const birth = familyByChild.get(personId);
+    if (!birth || !placedFamilies.has(birth.id)) {
+      return;
+    }
+
+    addEdge(birth.familyNodeId, personId);
+  }
+
   function pickPlacedUnionAnchor(family: Family): string | undefined {
     const preferred = preferredUnionAnchor(family);
     if (preferred && placedPersons.has(preferred)) {
@@ -242,6 +275,10 @@ export function buildTreeLayout(graph: TreeGraph): TreeLayout {
       return 0;
     }
 
+    if (shouldRelocateBesideHusband(personId)) {
+      return 0;
+    }
+
     const unions = unionsForPerson(personId);
 
     if (unions.length === 0) {
@@ -284,6 +321,10 @@ export function buildTreeLayout(graph: TreeGraph): TreeLayout {
       return 0;
     }
 
+    if (shouldRelocateBesideHusband(personId)) {
+      return 0;
+    }
+
     const unions = unionsOf(personId, stack).filter(
       (family) => !placedFamilies.has(family.id)
     );
@@ -301,7 +342,9 @@ export function buildTreeLayout(graph: TreeGraph): TreeLayout {
 
       stack.add(union.id);
 
-      const kids = childIdsOf(union);
+      const kids = childIdsOf(union).filter(
+        (id) => !shouldRelocateBesideHusband(id)
+      );
       let kidsWidth = 0;
 
       for (let index = 0; index < kids.length; index++) {
@@ -333,7 +376,9 @@ export function buildTreeLayout(graph: TreeGraph): TreeLayout {
     stack.add(family.id);
 
     const rowWidth = partnerRowWidth(family.partners.length);
-    const kids = childIdsOf(family);
+    const kids = childIdsOf(family).filter(
+      (id) => !shouldRelocateBesideHusband(id)
+    );
     let childrenWidth = 0;
 
     for (let index = 0; index < kids.length; index++) {
@@ -613,7 +658,14 @@ export function buildTreeLayout(graph: TreeGraph): TreeLayout {
 
   function captureSubtree(before: Set<string>, rootPersonId: string): string[] {
     const ids = newNodeIdsSince(before);
-    if (!ids.includes(rootPersonId) && placedPersons.has(rootPersonId)) {
+    if (ids.length === 0) {
+      return [];
+    }
+    if (
+      !ids.includes(rootPersonId) &&
+      placedPersons.has(rootPersonId) &&
+      !shouldRelocateBesideHusband(rootPersonId)
+    ) {
       ids.push(rootPersonId);
     }
     return ids;
@@ -640,15 +692,27 @@ export function buildTreeLayout(graph: TreeGraph): TreeLayout {
       return;
     }
 
+    const localKids = kids.filter((id) => !shouldRelocateBesideHusband(id));
+    const relocatedWives = kids.filter((id) => shouldRelocateBesideHusband(id));
+
+    for (const wifeId of relocatedWives) {
+      if (placedPersons.has(wifeId)) {
+        addEdge(family.familyNodeId, wifeId);
+      }
+    }
+
+    if (localKids.length === 0) {
+      return;
+    }
+
     // Nur eigene Generationsbreite vorplanen; Enkel-Kollisionen
-    // werden danach per resolveSiblingOverlaps (echte Bounds) gelöst —
-    // sonst entstehen riesige Leerräume zwischen den Ästen.
-    const childWidths = kids.map((id) => measureOwnGenerationWidth(id));
+    // werden danach per resolveSiblingOverlaps (echte Bounds) gelöst.
+    const childWidths = localKids.map((id) => measureOwnGenerationWidth(id));
 
     const offsets: number[] = [];
     let offset = 0;
 
-    for (let index = 0; index < kids.length; index++) {
+    for (let index = 0; index < localKids.length; index++) {
       offsets.push(offset);
       offset += childWidths[index] + SIBLING_GAP;
     }
@@ -658,13 +722,13 @@ export function buildTreeLayout(graph: TreeGraph): TreeLayout {
         sum + childOffset + childWidths[index] / 2,
       0
     );
-    const childCenterAverage = childCenterSum / kids.length;
+    const childCenterAverage = childCenterSum / localKids.length;
     const blockLeft = familyCenterX - childCenterAverage;
 
     const subtreeNodeIds: string[][] = [];
 
-    for (let index = 0; index < kids.length; index++) {
-      const childId = kids[index];
+    for (let index = 0; index < localKids.length; index++) {
+      const childId = localKids[index];
       const before = nodeIdsSnapshot();
       placePersonWithPartners(childId, blockLeft + offsets[index], y);
       addEdge(family.familyNodeId, childId);
@@ -796,6 +860,7 @@ export function buildTreeLayout(graph: TreeGraph): TreeLayout {
     for (const partnerId of others) {
       placeOrMovePerson(partnerId, cursorX, y);
       addEdge(partnerId, first.familyNodeId);
+      linkBirthFamilyEdge(partnerId);
       cursorX += CARD_WIDTH + PARTNER_GAP;
     }
 
@@ -838,7 +903,9 @@ export function buildTreeLayout(graph: TreeGraph): TreeLayout {
 
       stack.add(union.id);
 
-      const kids = childIdsOf(union);
+      const kids = childIdsOf(union).filter(
+        (id) => !shouldRelocateBesideHusband(id)
+      );
       let kidsWidth = 0;
 
       for (let index = 0; index < kids.length; index++) {
@@ -882,6 +949,7 @@ export function buildTreeLayout(graph: TreeGraph): TreeLayout {
       for (const partnerId of others) {
         cursorX += PARTNER_GAP;
         placeOrMovePerson(partnerId, cursorX, origin.y);
+        linkBirthFamilyEdge(partnerId);
         placedPartnerXs.push(cursorX);
         cursorX += CARD_WIDTH;
       }
@@ -890,6 +958,7 @@ export function buildTreeLayout(graph: TreeGraph): TreeLayout {
       for (const partnerId of others) {
         cursorX -= PARTNER_GAP + CARD_WIDTH;
         placeOrMovePerson(partnerId, cursorX, origin.y);
+        linkBirthFamilyEdge(partnerId);
         placedPartnerXs.push(cursorX);
       }
     }
@@ -974,11 +1043,20 @@ export function buildTreeLayout(graph: TreeGraph): TreeLayout {
         return;
       }
 
-      const childWidths = kids.map((id) => measureOwnGenerationWidth(id));
+      const localKids = kids.filter((id) => !shouldRelocateBesideHusband(id));
+      const relocatedWives = kids.filter((id) =>
+        shouldRelocateBesideHusband(id)
+      );
+
+      if (localKids.length === 0) {
+        return;
+      }
+
+      const childWidths = localKids.map((id) => measureOwnGenerationWidth(id));
       const offsets: number[] = [];
       let offset = 0;
 
-      for (let index = 0; index < kids.length; index++) {
+      for (let index = 0; index < localKids.length; index++) {
         offsets.push(offset);
         offset += childWidths[index] + SIBLING_GAP;
       }
@@ -992,16 +1070,22 @@ export function buildTreeLayout(graph: TreeGraph): TreeLayout {
           sum + childOffset + childWidths[index] / 2,
         0
       );
-      const familyCenterX = blockLeft + childCenterSum / kids.length;
+      const familyCenterX = blockLeft + childCenterSum / localKids.length;
       // Sammelschiene knapp über den Karten; Knoten sitzt auf der Schiene.
       const familyCenterY = y - 36;
 
       addFamilyNode(family, familyCenterX, familyCenterY);
 
+      for (const wifeId of relocatedWives) {
+        if (placedPersons.has(wifeId)) {
+          addEdge(family.familyNodeId, wifeId);
+        }
+      }
+
       const subtreeNodeIds: string[][] = [];
 
-      for (let index = 0; index < kids.length; index++) {
-        const childId = kids[index];
+      for (let index = 0; index < localKids.length; index++) {
+        const childId = localKids[index];
         const before = nodeIdsSnapshot();
         placePersonWithPartners(childId, blockLeft + offsets[index], y);
         addEdge(family.familyNodeId, childId);
@@ -1135,6 +1219,56 @@ export function buildTreeLayout(graph: TreeGraph): TreeLayout {
   }
 
   resolveSiblingOverlaps(topLevelSubtrees, FAMILY_GAP);
+
+  /**
+   * Cousinen-Ehen: Ehefrau fest neben den Mann setzen, falls sie
+   * noch in der Herkunftsreihe lag — danach Überlappungen lösen.
+   */
+  function reconcileRelocatedWives(): void {
+    for (const family of graph.families.values()) {
+      if (family.kind === "sibling-group") {
+        continue;
+      }
+
+      const husbandId = preferredUnionAnchor(family);
+      if (!husbandId || !placedPersons.has(husbandId)) {
+        continue;
+      }
+
+      const origin = personPositions.get(husbandId);
+      if (!origin) {
+        continue;
+      }
+
+      const wives = otherPartnersOf(family, husbandId).filter((id) =>
+        shouldRelocateBesideHusband(id)
+      );
+
+      if (wives.length === 0) {
+        continue;
+      }
+
+      let cursorX = origin.x + CARD_WIDTH + PARTNER_GAP;
+
+      for (const wifeId of wives) {
+        placeOrMovePerson(wifeId, cursorX, origin.y);
+        linkBirthFamilyEdge(wifeId);
+        addEdge(wifeId, family.familyNodeId);
+        addEdge(husbandId, family.familyNodeId);
+        cursorX += CARD_WIDTH + PARTNER_GAP;
+      }
+
+      if (nodes.some((node) => node.id === family.familyNodeId)) {
+        moveFamilyNodeTo(
+          family.familyNodeId,
+          origin.x + CARD_WIDTH + PARTNER_GAP / 2,
+          origin.y + CARD_HEIGHT / 2
+        );
+      }
+    }
+  }
+
+  reconcileRelocatedWives();
   resolveAllPersonOverlaps();
 
   return { nodes, edges };
