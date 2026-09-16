@@ -640,14 +640,10 @@ export function buildTreeLayout(graph: TreeGraph): TreeLayout {
       return;
     }
 
-    // Volle Astbreite inkl. Enkel — sonst rücken Nachbaräste bei Kindern
-    // in der mittleren Generation nicht genug auseinander.
-    const childWidths = kids.map((id) =>
-      Math.max(
-        measureOwnGenerationWidth(id),
-        measurePersonSubtree(id, new Set([family.id]))
-      )
-    );
+    // Nur eigene Generationsbreite vorplanen; Enkel-Kollisionen
+    // werden danach per resolveSiblingOverlaps (echte Bounds) gelöst —
+    // sonst entstehen riesige Leerräume zwischen den Ästen.
+    const childWidths = kids.map((id) => measureOwnGenerationWidth(id));
 
     const offsets: number[] = [];
     let offset = 0;
@@ -978,12 +974,7 @@ export function buildTreeLayout(graph: TreeGraph): TreeLayout {
         return;
       }
 
-      const childWidths = kids.map((id) =>
-        Math.max(
-          measureOwnGenerationWidth(id),
-          measurePersonSubtree(id, new Set([family.id]))
-        )
-      );
+      const childWidths = kids.map((id) => measureOwnGenerationWidth(id));
       const offsets: number[] = [];
       let offset = 0;
 
@@ -1099,8 +1090,6 @@ export function buildTreeLayout(graph: TreeGraph): TreeLayout {
 
   const rootFamilies = [...graph.families.values()].filter(isRootFamily);
 
-  let cursorX = START_X;
-
   const familiesToPlace =
     rootFamilies.length > 0
       ? rootFamilies
@@ -1108,16 +1097,13 @@ export function buildTreeLayout(graph: TreeGraph): TreeLayout {
 
   const topLevelSubtrees: string[][] = [];
 
+  // Alle Wurzeläste zuerst übereinander legen, dann nur so weit
+  // auseinanderschieben wie die echten Teilbaum-Bounds brauchen.
   for (const family of familiesToPlace) {
-    const width = measureFamily(family, new Set());
     const before = nodeIdsSnapshot();
-    placeFamily(family, cursorX, START_Y);
+    placeFamily(family, START_X, START_Y);
     topLevelSubtrees.push(newNodeIdsSince(before));
-    cursorX += width + FAMILY_GAP;
   }
-
-  // Cousinen-/Nachbaräste: volle Teilbaum-Breite inkl. Enkel auseinanderschieben.
-  resolveSiblingOverlaps(topLevelSubtrees, FAMILY_GAP);
 
   for (const family of graph.families.values()) {
     if (placedFamilies.has(family.id)) {
@@ -1131,11 +1117,9 @@ export function buildTreeLayout(graph: TreeGraph): TreeLayout {
       continue;
     }
 
-    const width = measureFamily(family, new Set());
     const before = nodeIdsSnapshot();
-    placeFamily(family, cursorX, START_Y);
+    placeFamily(family, START_X, START_Y);
     topLevelSubtrees.push(newNodeIdsSince(before));
-    cursorX += width + FAMILY_GAP;
   }
 
   resolveSiblingOverlaps(topLevelSubtrees, FAMILY_GAP);
@@ -1145,10 +1129,12 @@ export function buildTreeLayout(graph: TreeGraph): TreeLayout {
       continue;
     }
 
-    placePersonWithPartners(personId, cursorX, START_Y);
-    cursorX += CARD_WIDTH + SIBLING_GAP;
+    const before = nodeIdsSnapshot();
+    placePersonWithPartners(personId, START_X, START_Y);
+    topLevelSubtrees.push(newNodeIdsSince(before));
   }
 
+  resolveSiblingOverlaps(topLevelSubtrees, FAMILY_GAP);
   resolveAllPersonOverlaps();
 
   return { nodes, edges };
