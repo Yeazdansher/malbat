@@ -782,20 +782,61 @@ export function buildTreeLayout(graph: TreeGraph): TreeLayout {
       );
   }
 
-  function shiftGroupByLeaders(leaders: string[], dx: number): void {
-    if (Math.abs(dx) <= 0.5) {
-      return;
-    }
+  function groupSubtreeIds(leaders: string[]): string[] {
     const ids = new Set<string>();
     for (const leaderId of leaders) {
       for (const id of ownedSubtreeIds(leaderId)) {
         ids.add(id);
       }
     }
-    shiftSubtree([...ids], dx);
+    return [...ids];
   }
 
-  /** Leader einer Gruppe eng aneinander (Partner-/Geschwisterabstand). */
+  /**
+   * Anker zum Verschieben eines Astes: Eltern (andere Zeile), sonst die Leader.
+   * So bleiben Kinder unter den Eltern, wenn Äste auseinanderrücken.
+   */
+  function branchAnchors(blockKey: string, leaders: string[]): string[] {
+    const familyId = blockKey.startsWith("union:")
+      ? blockKey.slice("union:".length)
+      : blockKey.startsWith("birth:")
+        ? blockKey.slice("birth:".length)
+        : null;
+
+    if (familyId) {
+      const family = graph.families.get(familyId);
+      if (family) {
+        const parents = family.partners.filter(
+          (id) => placedPersons.has(id) && !shouldRelocateBesideHusband(id)
+        );
+        if (parents.length > 0 && leaders.length > 0) {
+          const leaderY = personPositions.get(leaders[0])?.y;
+          const parentY = personPositions.get(parents[0])?.y;
+          if (
+            leaderY !== undefined &&
+            parentY !== undefined &&
+            Math.round(leaderY) !== Math.round(parentY)
+          ) {
+            return parents;
+          }
+        }
+      }
+    }
+
+    return leaders;
+  }
+
+  function shiftGroupByLeaders(leaders: string[], dx: number): void {
+    if (Math.abs(dx) <= 0.5 || leaders.length === 0) {
+      return;
+    }
+    shiftSubtree(groupSubtreeIds(leaders), dx);
+  }
+
+  /**
+   * Leader eng setzen, aber volle Unterbaum-Breite einhalten —
+   * sonst werden Kind-Äste platt gequetscht.
+   */
   function compactGroupLeaders(
     leaders: string[],
     members: string[],
@@ -811,6 +852,7 @@ export function buildTreeLayout(graph: TreeGraph): TreeLayout {
     }
 
     let cursor = firstPos.x;
+    let placedSubtreeIds: string[] = [];
 
     for (let index = 0; index < leaders.length; index++) {
       const leaderId = leaders[index];
@@ -819,12 +861,31 @@ export function buildTreeLayout(graph: TreeGraph): TreeLayout {
         continue;
       }
 
+      const gap =
+        index > 0
+          ? arePartners(leaders[index - 1], leaderId)
+            ? PARTNER_GAP
+            : SIBLING_GAP
+          : 0;
+
       if (index > 0) {
-        const prevId = leaders[index - 1];
-        cursor += arePartners(prevId, leaderId) ? PARTNER_GAP : SIBLING_GAP;
+        cursor += gap;
       }
 
       shiftGroupByLeaders([leaderId], cursor - leaderPos.x);
+
+      if (placedSubtreeIds.length > 0) {
+        const extra = requiredOverlapShift(
+          placedSubtreeIds,
+          ownedSubtreeIds(leaderId),
+          gap
+        );
+        if (extra > 0.5) {
+          shiftGroupByLeaders([leaderId], extra);
+        }
+      }
+
+      placedSubtreeIds = placedSubtreeIds.concat(ownedSubtreeIds(leaderId));
 
       const placedLeaders = leaders.slice(0, index + 1);
       const onRowIds = members.filter((id) => {
@@ -877,8 +938,8 @@ export function buildTreeLayout(graph: TreeGraph): TreeLayout {
   }
 
   /**
-   * Pro Generation: Blöcke eng halten, unter den Eltern zentrieren,
-   * dann Kollisionen nach rechts auflösen (ohne wieder alles nach links zu ziehen).
+   * Blöcke eng halten, Kinder unter Eltern zentrieren, Äste bei Kollision
+   * als Ganzes (Eltern+Kinder) auseinanderschieben.
    */
   function packGenerationFamilyBlocks(): void {
     const rows = new Map<number, string[]>();
@@ -893,8 +954,14 @@ export function buildTreeLayout(graph: TreeGraph): TreeLayout {
       }
     }
 
-    // Oben → unten: Eltern stehen, Kinder darunter ausrichten.
     const sortedYs = [...rows.keys()].sort((a, b) => a - b);
+
+    type PackedGroup = {
+      key: string;
+      members: string[];
+      leaders: string[];
+      idealCenter: number;
+    };
 
     for (const yKey of sortedYs) {
       const personIds = rows.get(yKey);
@@ -917,13 +984,6 @@ export function buildTreeLayout(graph: TreeGraph): TreeLayout {
         (a, b) =>
           generationBlockSortX(a[0], a[1]) - generationBlockSortX(b[0], b[1])
       );
-
-      type PackedGroup = {
-        key: string;
-        members: string[];
-        leaders: string[];
-        idealCenter: number;
-      };
 
       const packed: PackedGroup[] = [];
 
@@ -952,55 +1012,20 @@ export function buildTreeLayout(graph: TreeGraph): TreeLayout {
         });
       }
 
-      // Kollisionen: rechte Gruppe nach rechts, Ideal der linken bleibt.
-      packed.sort(
-        (a, b) => minPersonX(a.members) - minPersonX(b.members)
-      );
+      // Äste trennen: rechten Eltern-Ast verschieben (Kinder bleiben darunter).
+      packed.sort((a, b) => a.idealCenter - b.idealCenter);
 
       for (let index = 1; index < packed.length; index++) {
-        const leftBounds = rowMembersBounds(packed[index - 1].members, yKey);
-        const rightBounds = rowMembersBounds(packed[index].members, yKey);
-        if (!leftBounds || !rightBounds) {
-          continue;
-        }
-
-        const needed = leftBounds.right + FAMILY_GAP - rightBounds.left;
+        const left = packed[index - 1];
+        const right = packed[index];
+        const needed = requiredOverlapShift(
+          groupSubtreeIds(left.leaders),
+          groupSubtreeIds(right.leaders),
+          FAMILY_GAP
+        );
         if (needed > 0.5) {
-          shiftGroupByLeaders(packed[index].leaders, needed);
+          shiftGroupByLeaders(branchAnchors(right.key, right.leaders), needed);
         }
-      }
-
-      // So nah wie möglich zurück zum Eltern-Zentrum, ohne Nachbarn zu überlappen.
-      for (let index = 0; index < packed.length; index++) {
-        const group = packed[index];
-        const bounds = rowMembersBounds(group.members, yKey);
-        if (!bounds) {
-          continue;
-        }
-
-        const currentCenter = (bounds.left + bounds.right) / 2;
-        let dx = group.idealCenter - currentCenter;
-        if (Math.abs(dx) <= 0.5) {
-          continue;
-        }
-
-        if (dx < 0 && index > 0) {
-          const leftBounds = rowMembersBounds(packed[index - 1].members, yKey);
-          if (leftBounds) {
-            const minLeft = leftBounds.right + FAMILY_GAP;
-            dx = Math.max(dx, minLeft - bounds.left);
-          }
-        }
-
-        if (dx > 0 && index < packed.length - 1) {
-          const rightBounds = rowMembersBounds(packed[index + 1].members, yKey);
-          if (rightBounds) {
-            const maxRight = rightBounds.left - FAMILY_GAP;
-            dx = Math.min(dx, maxRight - bounds.right);
-          }
-        }
-
-        shiftGroupByLeaders(group.leaders, dx);
       }
     }
 

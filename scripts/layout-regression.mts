@@ -331,4 +331,100 @@ function scenarioSameBranchCousins(): void {
 scenarioUncleGeneration();
 scenarioCousins();
 scenarioSameBranchCousins();
+scenarioSiblingBranches();
 console.log("ALL LAYOUT REGRESSIONS PASSED");
+
+/** Fall D: Mehrere Brüder mit eigenen Kinderscharen — Äste müssen Platz machen. */
+function scenarioSiblingBranches(): void {
+  const persons = [
+    person("root", "Root", "male"),
+    person("a", "A", "male", "1950"),
+    person("b", "B", "male", "1952"),
+    person("c", "C", "male", "1954"),
+    person("wa", "Wa", "female", "1951"),
+    person("wb", "Wb", "female", "1953"),
+    person("wc", "Wc", "female", "1955"),
+    person("a1", "A1", "male", "1980"),
+    person("a2", "A2", "male", "1981"),
+    person("a3", "A3", "male", "1982"),
+    person("a4", "A4", "male", "1983"),
+    person("a5", "A5", "male", "1984"),
+    person("b1", "B1", "male", "1985"),
+    person("b2", "B2", "male", "1986"),
+    person("c1", "C1", "male", "1987"),
+    person("c2", "C2", "male", "1988"),
+    person("c3", "C3", "male", "1989"),
+  ];
+
+  const relationships: Relationship[] = [
+    { person1_id: "root", person2_id: "a", relationship_type: "father" },
+    { person1_id: "root", person2_id: "b", relationship_type: "father" },
+    { person1_id: "root", person2_id: "c", relationship_type: "father" },
+    { person1_id: "a", person2_id: "wa", relationship_type: "partner" },
+    { person1_id: "b", person2_id: "wb", relationship_type: "partner" },
+    { person1_id: "c", person2_id: "wc", relationship_type: "partner" },
+    ...["a1", "a2", "a3", "a4", "a5"].flatMap((id) => [
+      {
+        person1_id: "a",
+        person2_id: id,
+        relationship_type: "father" as const,
+      },
+      {
+        person1_id: "wa",
+        person2_id: id,
+        relationship_type: "mother" as const,
+      },
+    ]),
+    ...["b1", "b2"].flatMap((id) => [
+      {
+        person1_id: "b",
+        person2_id: id,
+        relationship_type: "father" as const,
+      },
+      {
+        person1_id: "wb",
+        person2_id: id,
+        relationship_type: "mother" as const,
+      },
+    ]),
+    ...["c1", "c2", "c3"].flatMap((id) => [
+      {
+        person1_id: "c",
+        person2_id: id,
+        relationship_type: "father" as const,
+      },
+      {
+        person1_id: "wc",
+        person2_id: id,
+        relationship_type: "mother" as const,
+      },
+    ]),
+  ];
+
+  const layout = buildTreeLayout(buildTreeGraph(persons, relationships));
+  noOverlaps(layout);
+  wifeBesideHusband(layout, "a", "wa");
+  wifeBesideHusband(layout, "b", "wb");
+  wifeBesideHusband(layout, "c", "wc");
+
+  const aKids = ["a1", "a2", "a3", "a4", "a5"];
+  const bKids = ["b1", "b2"];
+  const cKids = ["c1", "c2", "c3"];
+
+  childrenUnderParents(layout, ["a", "wa"], aKids, CARD * 1.5);
+  childrenUnderParents(layout, ["b", "wb"], bKids, CARD * 1.5);
+  childrenUnderParents(layout, ["c", "wc"], cKids, CARD * 1.5);
+
+  assert(contiguousIds(layout, aKids), "A-kids not contiguous");
+  assert(contiguousIds(layout, bKids), "B-kids not contiguous");
+  assert(contiguousIds(layout, cKids), "C-kids not contiguous");
+
+  const aRight = Math.max(...aKids.map((id) => pos(layout, id).x + CARD));
+  const bLeft = Math.min(...bKids.map((id) => pos(layout, id).x));
+  const bRight = Math.max(...bKids.map((id) => pos(layout, id).x + CARD));
+  const cLeft = Math.min(...cKids.map((id) => pos(layout, id).x));
+  assert(aRight + 40 <= bLeft + 0.5, `A/B branches not separated: ${aRight} vs ${bLeft}`);
+  assert(bRight + 40 <= cLeft + 0.5, `B/C branches not separated: ${bRight} vs ${cLeft}`);
+
+  console.log("OK scenarioSiblingBranches");
+}
