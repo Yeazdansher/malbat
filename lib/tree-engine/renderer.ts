@@ -9,6 +9,7 @@ import type {
 } from "./types";
 
 const CARD_HEIGHT = 176;
+const CARD_WIDTH = 270;
 const FAMILY_NODE_SIZE = 32;
 
 /**
@@ -172,6 +173,13 @@ export function buildReactFlowGraph(
     ) {
       sourceHandle = "children";
       targetHandle = "parent";
+
+      // Kind weit seitlich (Cousinen-Ehe): Schiene über den Karten, nicht durch sie.
+      const sourceCx = sourceLayout.position.x + FAMILY_NODE_SIZE / 2;
+      const targetCx = targetLayout.position.x + CARD_WIDTH / 2;
+      if (Math.abs(targetCx - sourceCx) > CARD_WIDTH) {
+        routing = "parent-bridge";
+      }
     }
 
     if (
