@@ -595,6 +595,236 @@ export function buildTreeLayout(graph: TreeGraph): TreeLayout {
     }
   }
 
+  /**
+   * Block-Schlüssel einer Person in einer Generationszeile:
+   * Ehe-Union (Mann/Frau) hat Vorrang vor Herkunft — so bleiben Paare und
+   * ihre Kinder ein Block und mischen sich nicht in fremde Geschwisterreihen.
+   */
+  function generationBlockKey(personId: string): string {
+    for (const family of familiesByPartner.get(personId) ?? []) {
+      if (family.kind === "sibling-group") {
+        continue;
+      }
+
+      const anchor = preferredUnionAnchor(family);
+      if (
+        anchor === personId ||
+        (anchor !== undefined && shouldRelocateBesideHusband(personId))
+      ) {
+        return `union:${family.id}`;
+      }
+    }
+
+    const birth = familyByChild.get(personId);
+    if (birth) {
+      return `birth:${birth.id}`;
+    }
+
+    return `solo:${personId}`;
+  }
+
+  /** Alle Knoten, die mit einem Generations-Block mitverschoben werden müssen. */
+  function unitIdsForGenerationBlock(
+    blockKey: string,
+    membersOnRow: string[]
+  ): string[] {
+    const ids = new Set<string>(membersOnRow);
+
+    if (blockKey.startsWith("union:")) {
+      const family = graph.families.get(blockKey.slice("union:".length));
+      if (family) {
+        ids.add(family.familyNodeId);
+        for (const partnerId of family.partners) {
+          if (placedPersons.has(partnerId)) {
+            ids.add(partnerId);
+          }
+        }
+        for (const childId of family.children) {
+          if (placedPersons.has(childId)) {
+            ids.add(childId);
+          }
+        }
+      }
+      return [...ids];
+    }
+
+    if (blockKey.startsWith("birth:")) {
+      const family = graph.families.get(blockKey.slice("birth:".length));
+      if (!family) {
+        return [...ids];
+      }
+
+      for (const childId of family.children) {
+        if (!placedPersons.has(childId) || shouldRelocateBesideHusband(childId)) {
+          continue;
+        }
+
+        ids.add(childId);
+
+        // Eigene Ehe des Geschwisters inkl. Kinder mitnehmen.
+        for (const union of familiesByPartner.get(childId) ?? []) {
+          if (union.kind === "sibling-group") {
+            continue;
+          }
+          if (preferredUnionAnchor(union) !== childId) {
+            continue;
+          }
+
+          ids.add(union.familyNodeId);
+          for (const partnerId of union.partners) {
+            if (placedPersons.has(partnerId)) {
+              ids.add(partnerId);
+            }
+          }
+          for (const grandChildId of union.children) {
+            if (placedPersons.has(grandChildId)) {
+              ids.add(grandChildId);
+            }
+          }
+        }
+      }
+
+      return [...ids];
+    }
+
+    return [...ids];
+  }
+
+  function blockMembersContiguous(
+    memberIds: string[],
+    sortedRow: string[]
+  ): boolean {
+    const memberSet = new Set(memberIds);
+    const indices: number[] = [];
+
+    for (let index = 0; index < sortedRow.length; index++) {
+      if (memberSet.has(sortedRow[index])) {
+        indices.push(index);
+      }
+    }
+
+    if (indices.length <= 1) {
+      return true;
+    }
+
+    return indices[indices.length - 1] - indices[0] + 1 === indices.length;
+  }
+
+  function minPersonX(personIds: string[]): number {
+    let min = Number.POSITIVE_INFINITY;
+    for (const id of personIds) {
+      const pos = personPositions.get(id);
+      if (pos) {
+        min = Math.min(min, pos.x);
+      }
+    }
+    return min;
+  }
+
+  function maxPersonRight(personIds: string[]): number {
+    let max = Number.NEGATIVE_INFINITY;
+    for (const id of personIds) {
+      const pos = personPositions.get(id);
+      if (pos) {
+        max = Math.max(max, pos.x + CARD_WIDTH);
+      }
+    }
+    return max;
+  }
+
+  /**
+   * Pro Generation: Familienblöcke geschlossen halten.
+   * Verhindert z. B. Kind der Cousinen-Ehe mitten in der Herkunftsgeschwisterreihe.
+   */
+  function packGenerationFamilyBlocks(): void {
+    const rows = new Map<number, string[]>();
+
+    for (const [id, pos] of personPositions) {
+      const yKey = Math.round(pos.y);
+      const row = rows.get(yKey);
+      if (row) {
+        row.push(id);
+      } else {
+        rows.set(yKey, [id]);
+      }
+    }
+
+    const sortedYs = [...rows.keys()].sort((a, b) => a - b);
+
+    for (const yKey of sortedYs) {
+      const personIds = rows.get(yKey);
+      if (!personIds || personIds.length < 2) {
+        continue;
+      }
+
+      const groups = new Map<string, string[]>();
+      for (const id of personIds) {
+        const key = generationBlockKey(id);
+        const list = groups.get(key);
+        if (list) {
+          list.push(id);
+        } else {
+          groups.set(key, [id]);
+        }
+      }
+
+      if (groups.size < 2) {
+        continue;
+      }
+
+      const sortedRow = [...personIds].sort(
+        (a, b) =>
+          (personPositions.get(a)?.x ?? 0) - (personPositions.get(b)?.x ?? 0)
+      );
+
+      let needsRepack = false;
+      for (const members of groups.values()) {
+        if (!blockMembersContiguous(members, sortedRow)) {
+          needsRepack = true;
+          break;
+        }
+      }
+
+      if (!needsRepack) {
+        continue;
+      }
+
+      const orderedGroups = [...groups.entries()].sort(
+        (a, b) => minPersonX(a[1]) - minPersonX(b[1])
+      );
+
+      let cursor = Number.NEGATIVE_INFINITY;
+
+      for (const [blockKey, members] of orderedGroups) {
+        const onRow = [...members].sort(
+          (a, b) =>
+            (personPositions.get(a)?.x ?? 0) - (personPositions.get(b)?.x ?? 0)
+        );
+
+        if (onRow.length === 0) {
+          continue;
+        }
+
+        const blockLeft = minPersonX(onRow);
+        if (!Number.isFinite(blockLeft)) {
+          continue;
+        }
+
+        const targetLeft =
+          cursor === Number.NEGATIVE_INFINITY
+            ? blockLeft
+            : cursor + FAMILY_GAP;
+        const dx = targetLeft - blockLeft;
+
+        if (Math.abs(dx) > 0.5) {
+          shiftSubtree(unitIdsForGenerationBlock(blockKey, onRow), dx);
+        }
+
+        cursor = maxPersonRight(onRow);
+      }
+    }
+  }
+
   function requiredOverlapShift(
     leftIds: string[],
     rightIds: string[],
@@ -1268,6 +1498,12 @@ export function buildTreeLayout(graph: TreeGraph): TreeLayout {
     }
   }
 
+  reconcileRelocatedWives();
+  // Zweimal: erst Kind-Zeilen entflechten (verschiebt ggf. Eltern), dann Eltern-Zeilen.
+  packGenerationFamilyBlocks();
+  packGenerationFamilyBlocks();
+  resolveAllPersonOverlaps();
+  // Partner nach dem Packen noch einmal fest neben den Mann.
   reconcileRelocatedWives();
   resolveAllPersonOverlaps();
 
