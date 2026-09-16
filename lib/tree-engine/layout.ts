@@ -28,9 +28,7 @@ const GENDER_ORDER: Record<string, number> = {
  * Rekursive Layout-Engine.
  *
  * Partner einer Person stehen neben dieser Person.
- * Bei Mann-Frau-Ehen bleibt der Mann in seiner Herkunftsfamilie;
- * die Frau wandert zu ihm (auch bei Cousinen-Ehen).
- * Kinder haengen am Familienpunkt der Eltern
+ * Kinder hängen am Familienpunkt der Eltern
  * und werden unter diesem Punkt ausgerichtet.
  * Schwiegerkinder sind keine Kinder.
  */
@@ -89,60 +87,6 @@ export function buildTreeLayout(graph: TreeGraph): TreeLayout {
 
       return a.localeCompare(b);
     });
-  }
-
-  function genderOf(personId: string): "male" | "female" | "unknown" {
-    return graph.persons.get(personId)?.gender ?? "unknown";
-  }
-
-  /**
-   * Bei Mann-Frau-Ehen: nur der Mann "besitzt" die Union (Frau wandert zu ihm).
-   * Sonst: bisheriges Verhalten (jeder darf claimen).
-   */
-  function canClaimUnion(personId: string, family: Family): boolean {
-    if (family.kind === "sibling-group") {
-      return false;
-    }
-
-    const males = family.partners.filter((id) => genderOf(id) === "male");
-    const females = family.partners.filter((id) => genderOf(id) === "female");
-
-    if (males.length === 1 && females.length >= 1) {
-      return males[0] === personId;
-    }
-
-    return true;
-  }
-
-  /** Bevorzugter Anker einer Union (Mann bei Mann-Frau). */
-  function preferredUnionAnchor(family: Family): string | undefined {
-    const males = family.partners.filter((id) => genderOf(id) === "male");
-    const females = family.partners.filter((id) => genderOf(id) === "female");
-
-    if (males.length === 1 && females.length >= 1) {
-      return males[0];
-    }
-
-    return undefined;
-  }
-
-  function pickPlacedUnionAnchor(family: Family): string | undefined {
-    const preferred = preferredUnionAnchor(family);
-    if (preferred && placedPersons.has(preferred)) {
-      return preferred;
-    }
-
-    const placed = family.partners.filter((id) => placedPersons.has(id));
-    if (placed.length === 0) {
-      return undefined;
-    }
-
-    // Noch kein Mann platziert: nicht an der Frau andocken (sonst wandert der Mann zu ihr).
-    if (preferred && !placedPersons.has(preferred)) {
-      return undefined;
-    }
-
-    return placed.find((id) => canClaimUnion(id, family)) ?? placed[0];
   }
 
   function addEdge(source: string, target: string): void {
@@ -383,28 +327,6 @@ export function buildTreeLayout(graph: TreeGraph): TreeLayout {
     });
   }
 
-  /**
-   * Platziert oder verschiebt eine Person (z. B. Ehefrau zur Familie des Mannes).
-   */
-  function placeOrMovePerson(personId: string, x: number, y: number): void {
-    if (!graph.persons.has(personId)) {
-      return;
-    }
-
-    if (!placedPersons.has(personId)) {
-      placePerson(personId, x, y);
-      return;
-    }
-
-    personPositions.set(personId, { x, y });
-    const node = nodes.find(
-      (entry) => entry.type === "person" && entry.id === personId
-    );
-    if (node) {
-      node.position = { x, y };
-    }
-  }
-
   function nodeIdsSnapshot(): Set<string> {
     return new Set(nodes.map((node) => node.id));
   }
@@ -632,7 +554,6 @@ export function buildTreeLayout(graph: TreeGraph): TreeLayout {
   function unionsForPerson(personId: string): Family[] {
     return (familiesByPartner.get(personId) ?? [])
       .filter((family) => !placedFamilies.has(family.id))
-      .filter((family) => canClaimUnion(personId, family))
       .sort((a, b) => a.id.localeCompare(b.id));
   }
 
@@ -675,15 +596,6 @@ export function buildTreeLayout(graph: TreeGraph): TreeLayout {
     x: number,
     y: number
   ): void {
-    // Bereits als Partnerin beim Mann platziert → nicht erneut in der Herkunftsreihe andocken.
-    if (placedPersons.has(personId)) {
-      const claimable = unionsForPerson(personId);
-      if (claimable.length > 0) {
-        placeExtraUnions(personId, preferredExtraDirection(personId));
-      }
-      return;
-    }
-
     const unions = unionsForPerson(personId);
     const extraUnionsList = unions.slice(1);
 
@@ -720,7 +632,7 @@ export function buildTreeLayout(graph: TreeGraph): TreeLayout {
     cursorX += PARTNER_GAP;
 
     for (const partnerId of others) {
-      placeOrMovePerson(partnerId, cursorX, y);
+      placePerson(partnerId, cursorX, y);
       addEdge(partnerId, first.familyNodeId);
       cursorX += CARD_WIDTH + PARTNER_GAP;
     }
@@ -743,8 +655,7 @@ export function buildTreeLayout(graph: TreeGraph): TreeLayout {
 
   function extraUnionsOf(personId: string): Family[] {
     return (familiesByPartner.get(personId) ?? []).filter(
-      (family) =>
-        !placedFamilies.has(family.id) && canClaimUnion(personId, family)
+      (family) => !placedFamilies.has(family.id)
     );
   }
 
@@ -807,7 +718,7 @@ export function buildTreeLayout(graph: TreeGraph): TreeLayout {
       let cursorX = personPartnerExtent(personId, "right");
       for (const partnerId of others) {
         cursorX += PARTNER_GAP;
-        placeOrMovePerson(partnerId, cursorX, origin.y);
+        placePerson(partnerId, cursorX, origin.y);
         placedPartnerXs.push(cursorX);
         cursorX += CARD_WIDTH;
       }
@@ -815,7 +726,7 @@ export function buildTreeLayout(graph: TreeGraph): TreeLayout {
       let cursorX = personPartnerExtent(personId, "left");
       for (const partnerId of others) {
         cursorX -= PARTNER_GAP + CARD_WIDTH;
-        placeOrMovePerson(partnerId, cursorX, origin.y);
+        placePerson(partnerId, cursorX, origin.y);
         placedPartnerXs.push(cursorX);
       }
     }
@@ -882,7 +793,7 @@ export function buildTreeLayout(graph: TreeGraph): TreeLayout {
     }
 
     // Familie hängt schon an einer platzierten Person → außen anhängen, keine neue Reihe.
-    const placedAnchor = pickPlacedUnionAnchor(family);
+    const placedAnchor = family.partners.find((id) => placedPersons.has(id));
     if (placedAnchor && family.kind !== "sibling-group") {
       placeExtraUnions(placedAnchor, preferredExtraDirection(placedAnchor));
       return;
@@ -1034,7 +945,9 @@ export function buildTreeLayout(graph: TreeGraph): TreeLayout {
       continue;
     }
 
-    const placedPartner = pickPlacedUnionAnchor(family);
+    const placedPartner = family.partners.find((id) =>
+      placedPersons.has(id)
+    );
 
     if (placedPartner) {
       placeExtraUnions(placedPartner, preferredExtraDirection(placedPartner));
