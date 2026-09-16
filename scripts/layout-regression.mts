@@ -8,6 +8,7 @@ import type { Person, Relationship } from "../lib/tree-engine/types.ts";
 
 const CARD = 270;
 const GAP = 40;
+const FAMILY_GAP = 80;
 
 function person(
   id: string,
@@ -64,6 +65,11 @@ function noOverlaps(layout: ReturnType<typeof buildTreeLayout>): void {
       assert(
         gap >= GAP - 0.5,
         `overlap at y=${y}: ${row[i - 1].id} / ${row[i].id} gap=${gap}`
+      );
+      // Nach dem Eng-Packen: kein nutzloser Leerraum zwischen Karten.
+      assert(
+        gap <= FAMILY_GAP + 0.5,
+        `huge gap at y=${y}: ${row[i - 1].id} / ${row[i].id} gap=${gap}`
       );
     }
   }
@@ -232,6 +238,26 @@ function scenarioCousins(): void {
   const mistefaY = Math.round(pos(layout, "mistefa").y);
   assert(kawaY !== mistefaY, "kawa should be generation below ahmad sibs");
 
+  // Bedran-Söhne bleiben zusammen; Mistefa (andere Herkunft) nicht dazwischen.
+  const mixeberY = Math.round(pos(layout, "mixeber").y);
+  const row = layout.nodes
+    .filter(
+      (n) => n.type === "person" && Math.round(n.position.y) === mixeberY
+    )
+    .map((n) => ({ id: n.id, x: n.position.x }))
+    .sort((a, b) => a.x - b.x)
+    .map((n) => n.id);
+  const mazinIdx = row.indexOf("mazin");
+  const mixeberIdx = row.indexOf("mixeber");
+  const mistefaIdx = row.indexOf("mistefa");
+  assert(mazinIdx >= 0 && mixeberIdx >= 0 && mistefaIdx >= 0, "missing persons");
+  const lo = Math.min(mazinIdx, mixeberIdx);
+  const hi = Math.max(mazinIdx, mixeberIdx);
+  assert(
+    mistefaIdx < lo || mistefaIdx > hi,
+    `mistefa interleaved in bedran sons: ${row.join(",")}`
+  );
+
   console.log("OK scenarioCousins");
 }
 
@@ -264,6 +290,25 @@ function scenarioSameBranchCousins(): void {
   const layout = buildTreeLayout(buildTreeGraph(persons, relationships));
   wifeBesideHusband(layout, "keora", "jiyana");
   noOverlaps(layout);
+
+  const keoraY = Math.round(pos(layout, "keora").y);
+  const row = layout.nodes
+    .filter(
+      (n) => n.type === "person" && Math.round(n.position.y) === keoraY
+    )
+    .map((n) => ({ id: n.id, x: n.position.x }))
+    .sort((a, b) => a.x - b.x)
+    .map((n) => n.id);
+  const alanIdx = row.indexOf("alan");
+  const keoraIdx = row.indexOf("keora");
+  const armancIdx = row.indexOf("armanc");
+  const lo = Math.min(alanIdx, keoraIdx);
+  const hi = Math.max(alanIdx, keoraIdx);
+  assert(
+    armancIdx < lo || armancIdx > hi,
+    `armanc interleaved in ahmad sons: ${row.join(",")}`
+  );
+
   console.log("OK scenarioSameBranchCousins");
 }
 
