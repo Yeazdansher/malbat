@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useRef, useState, useTransition } from "react";
 
 import {
@@ -36,8 +37,10 @@ export default function EditPersonDialog({
   personId,
   person,
 }: EditPersonDialogProps) {
+  const router = useRouter();
   const [isDeceased, setIsDeceased] = useState(person.is_deceased);
   const [pendingPhoto, startPhotoTransition] = useTransition();
+  const [pendingSave, startSaveTransition] = useTransition();
   const photoInputRef = useRef<HTMLInputElement>(null);
 
   if (!open) return null;
@@ -78,10 +81,12 @@ export default function EditPersonDialog({
                   return;
                 }
 
-                const formData = new FormData();
-                formData.set("photo", file);
-                startPhotoTransition(() => {
-                  void uploadPersonPhoto(familyId, personId, formData);
+                const data = new FormData();
+                data.set("photo", file);
+
+                startPhotoTransition(async () => {
+                  await uploadPersonPhoto(familyId, personId, data);
+                  router.refresh();
                 });
               }}
             />
@@ -90,9 +95,9 @@ export default function EditPersonDialog({
               type="button"
               disabled={pendingPhoto}
               onClick={() => photoInputRef.current?.click()}
-              className="text-left text-green-700 hover:underline disabled:opacity-60"
+              className="text-left text-sm text-green-700 hover:underline disabled:opacity-60"
             >
-              {pendingPhoto ? "Wird hochgeladen…" : "Foto ändern"}
+              {person.photo_url ? "Foto ändern" : "Foto hochladen"}
             </button>
 
             {person.photo_url && (
@@ -100,8 +105,9 @@ export default function EditPersonDialog({
                 type="button"
                 disabled={pendingPhoto}
                 onClick={() => {
-                  startPhotoTransition(() => {
-                    void removePersonPhoto(familyId, personId);
+                  startPhotoTransition(async () => {
+                    await removePersonPhoto(familyId, personId);
+                    router.refresh();
                   });
                 }}
                 className="text-left text-sm text-red-600 hover:underline disabled:opacity-60"
@@ -113,8 +119,14 @@ export default function EditPersonDialog({
         </div>
 
         <form
-          action={updatePerson.bind(null, familyId, personId)}
           className="mt-8 space-y-5"
+          action={(formData) => {
+            startSaveTransition(async () => {
+              await updatePerson(familyId, personId, formData);
+              onClose();
+              router.refresh();
+            });
+          }}
         >
           <div>
             <label className="mb-2 block font-medium">Vorname *</label>
@@ -217,15 +229,17 @@ export default function EditPersonDialog({
               type="button"
               onClick={onClose}
               className="rounded-lg border px-5 py-3"
+              disabled={pendingSave}
             >
               Abbrechen
             </button>
 
             <button
               type="submit"
-              className="rounded-lg bg-green-700 px-5 py-3 text-white hover:bg-green-800"
+              disabled={pendingSave}
+              className="rounded-lg bg-green-700 px-5 py-3 text-white hover:bg-green-800 disabled:opacity-60"
             >
-              Änderungen speichern
+              {pendingSave ? "Speichern…" : "Änderungen speichern"}
             </button>
           </div>
         </form>

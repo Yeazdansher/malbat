@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { useState, useTransition } from "react";
 
 import { createPerson } from "@/app/family/[id]/actions";
 
@@ -22,45 +23,49 @@ export default function AddPersonDialog({
   secondRelatedPersonId,
   relationshipType,
 }: AddPersonDialogProps) {
+  const router = useRouter();
   const [isDeceased, setIsDeceased] = useState(false);
+  const [pending, startTransition] = useTransition();
 
   if (!open) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
       <div className="max-h-[90vh] w-full max-w-xl overflow-y-auto rounded-2xl bg-white p-8 shadow-xl">
-
         <h2 className="text-2xl font-bold text-green-700">
           Person hinzufügen
         </h2>
 
         <form
-          action={createPerson.bind(null, familyId)}
           className="mt-8 space-y-5"
+          action={(formData) => {
+            startTransition(async () => {
+              await createPerson(familyId, formData);
+              onClose();
+              router.refresh();
+            });
+          }}
         >
-        
-        <input
-  type="hidden"
-  name="related_person_id"
-  value={relatedPersonId ?? ""}
-/>
+          <input
+            type="hidden"
+            name="related_person_id"
+            value={relatedPersonId ?? ""}
+          />
 
-<input
-  type="hidden"
-  name="second_related_person_id"
-  value={secondRelatedPersonId ?? ""}
-/>
+          <input
+            type="hidden"
+            name="second_related_person_id"
+            value={secondRelatedPersonId ?? ""}
+          />
 
-<input
-  type="hidden"
-  name="relationship_type"
-  value={relationshipType ?? ""}
-/>
+          <input
+            type="hidden"
+            name="relationship_type"
+            value={relationshipType ?? ""}
+          />
+
           <div>
-            <label className="mb-2 block font-medium">
-              Vorname *
-            </label>
-
+            <label className="mb-2 block font-medium">Vorname *</label>
             <input
               name="first_name"
               className="w-full rounded-lg border p-3"
@@ -69,10 +74,7 @@ export default function AddPersonDialog({
           </div>
 
           <div>
-            <label className="mb-2 block font-medium">
-              Nachname *
-            </label>
-
+            <label className="mb-2 block font-medium">Nachname *</label>
             <input
               name="last_name"
               className="w-full rounded-lg border p-3"
@@ -81,10 +83,7 @@ export default function AddPersonDialog({
           </div>
 
           <div>
-            <label className="mb-2 block font-medium">
-              Geschlecht *
-            </label>
-
+            <label className="mb-2 block font-medium">Geschlecht *</label>
             <select
               name="gender"
               className="w-full rounded-lg border p-3"
@@ -94,26 +93,14 @@ export default function AddPersonDialog({
               <option value="" disabled>
                 Bitte auswählen
               </option>
-
-              <option value="male">
-                Männlich
-              </option>
-
-              <option value="female">
-                Weiblich
-              </option>
-
-              <option value="unknown">
-                Unbekannt
-              </option>
+              <option value="male">Männlich</option>
+              <option value="female">Weiblich</option>
+              <option value="unknown">Unbekannt</option>
             </select>
           </div>
 
           <div>
-            <label className="mb-2 block font-medium">
-              Geburtsdatum
-            </label>
-
+            <label className="mb-2 block font-medium">Geburtsdatum</label>
             <input
               type="date"
               name="birth_date"
@@ -122,10 +109,7 @@ export default function AddPersonDialog({
           </div>
 
           <div>
-            <label className="mb-2 block font-medium">
-              Geburtsort
-            </label>
-
+            <label className="mb-2 block font-medium">Geburtsort</label>
             <input
               name="birth_place"
               className="w-full rounded-lg border p-3"
@@ -139,17 +123,13 @@ export default function AddPersonDialog({
               checked={isDeceased}
               onChange={(e) => setIsDeceased(e.target.checked)}
             />
-
             Verstorben
           </label>
 
           {isDeceased && (
             <>
               <div>
-                <label className="mb-2 block font-medium">
-                  Sterbedatum
-                </label>
-
+                <label className="mb-2 block font-medium">Sterbedatum</label>
                 <input
                   type="date"
                   name="death_date"
@@ -158,10 +138,7 @@ export default function AddPersonDialog({
               </div>
 
               <div>
-                <label className="mb-2 block font-medium">
-                  Sterbeort
-                </label>
-
+                <label className="mb-2 block font-medium">Sterbeort</label>
                 <input
                   name="death_place"
                   className="w-full rounded-lg border p-3"
@@ -171,10 +148,7 @@ export default function AddPersonDialog({
           )}
 
           <div>
-            <label className="mb-2 block font-medium">
-              Notizen
-            </label>
-
+            <label className="mb-2 block font-medium">Notizen</label>
             <textarea
               name="notes"
               rows={4}
@@ -183,26 +157,24 @@ export default function AddPersonDialog({
           </div>
 
           <div className="flex justify-end gap-4 pt-4">
-
             <button
               type="button"
               onClick={onClose}
               className="rounded-lg border px-5 py-3"
+              disabled={pending}
             >
               Abbrechen
             </button>
 
             <button
               type="submit"
-              className="rounded-lg bg-green-700 px-5 py-3 text-white hover:bg-green-800"
+              disabled={pending}
+              className="rounded-lg bg-green-700 px-5 py-3 text-white hover:bg-green-800 disabled:opacity-60"
             >
-              Speichern
+              {pending ? "Speichern…" : "Speichern"}
             </button>
-
           </div>
-
         </form>
-
       </div>
     </div>
   );

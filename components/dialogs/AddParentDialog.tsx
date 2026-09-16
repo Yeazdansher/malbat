@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { createParentsForChild } from "@/app/family/[id]/actions";
 
@@ -41,6 +42,7 @@ export default function AddParentDialog({
   persons,
   canCreateNew,
 }: Props) {
+  const router = useRouter();
   const initialParent = {
     ...emptyParent,
     mode: canCreateNew ? "new" : "existing",
@@ -180,7 +182,7 @@ export default function AddParentDialog({
                   mother
                 );
                 onClose();
-                window.location.reload();
+                router.refresh();
               } catch (caught) {
                 setSaving(false);
                 setError(

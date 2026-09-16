@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { deletePerson } from "@/app/family/[id]/actions";
 
@@ -18,6 +19,7 @@ export default function DeletePersonDialog({
   familyId,
   personId,
 }: Props) {
+  const router = useRouter();
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [blocked, setBlocked] = useState(hasChildren);
@@ -96,7 +98,7 @@ Diese Aktion kann nicht rückgängig gemacht werden.`}
                 }
 
                 onClose();
-                window.location.reload();
+                router.refresh();
               } catch (caught) {
                 setSaving(false);
                 setError(

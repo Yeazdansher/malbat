@@ -153,7 +153,7 @@ export default async function FamilyPage({
   }
 
   return (
-    <FamilyTreeEntrance familyName={family.name}>
+    <FamilyTreeEntrance familyId={family.id} familyName={family.name}>
       <div className="flex h-dvh flex-col overflow-hidden bg-white">
         <Header
           backHref="/dashboard"

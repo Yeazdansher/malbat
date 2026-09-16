@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import AddPersonDialog from "./AddPersonDialog";
 import { createRelationship } from "@/app/family/[id]/actions";
@@ -27,6 +28,7 @@ export default function AddPartnerDialog({
   canCreateNew,
   persons,
 }: Props) {
+  const router = useRouter();
   const [mode, setMode] =
     useState<"new" | "existing">(
       canCreateNew ? "new" : "existing"
@@ -157,7 +159,7 @@ export default function AddPartnerDialog({
                 );
 
                 onClose();
-                window.location.reload();
+                router.refresh();
 
               }}
               className="rounded-lg bg-green-700 px-5 py-3 text-white"
@@ -173,7 +175,10 @@ export default function AddPartnerDialog({
 
       <AddPersonDialog
         open={addPersonOpen}
-        onClose={() => setAddPersonOpen(false)}
+        onClose={() => {
+          setAddPersonOpen(false);
+          onClose();
+        }}
         familyId={familyId}
         relatedPersonId={relatedPersonId}
         relationshipType="partner"

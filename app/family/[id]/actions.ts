@@ -182,8 +182,6 @@ if (relatedPersonId) {
   }
 
   revalidatePath(`/family/${familyId}`);
-
-  redirect(`/family/${familyId}`);
 }
 
 export async function updatePerson(
@@ -234,8 +232,6 @@ export async function updatePerson(
   }
 
   revalidatePath(`/family/${familyId}`);
-
-  redirect(`/family/${familyId}`);
 }
 
 export async function uploadPersonPhoto(
@@ -328,7 +324,6 @@ export async function uploadPersonPhoto(
   }
 
   revalidatePath(`/family/${familyId}`);
-  redirect(`/family/${familyId}`);
 }
 
 export async function removePersonPhoto(
@@ -361,7 +356,6 @@ export async function removePersonPhoto(
   }
 
   revalidatePath(`/family/${familyId}`);
-  redirect(`/family/${familyId}`);
 }
 
 async function deletePersonPhotoFiles(

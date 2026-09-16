@@ -5,22 +5,38 @@ import { useEffect, useState, type ReactNode } from "react";
 type PageEntranceProps = {
   eyebrow: string;
   title: string;
+  /** Stable key so the intro only plays once per browser session */
+  storageKey?: string;
   children: ReactNode;
 };
 
 /**
- * Ruhige Einstiegsphase, danach weiches Einblenden des Seiteninhalts.
+ * Ruhige Einstiegsphase nur beim ersten Besuch in dieser Session.
  */
 export default function PageEntrance({
   eyebrow,
   title,
+  storageKey,
   children,
 }: PageEntranceProps) {
-  const [introMounted, setIntroMounted] = useState(true);
+  const key = storageKey ? `malbat-entrance:${storageKey}` : null;
+  const [playIntro, setPlayIntro] = useState<boolean | null>(null);
   const [introShown, setIntroShown] = useState(false);
+  const [introMounted, setIntroMounted] = useState(true);
   const [contentShown, setContentShown] = useState(false);
 
   useEffect(() => {
+    const alreadySeen = key ? sessionStorage.getItem(key) === "1" : false;
+
+    if (alreadySeen) {
+      setPlayIntro(false);
+      setContentShown(true);
+      setIntroMounted(false);
+      return;
+    }
+
+    setPlayIntro(true);
+
     const frame = window.requestAnimationFrame(() => {
       setIntroShown(true);
     });
@@ -28,6 +44,9 @@ export default function PageEntrance({
     const startContent = window.setTimeout(() => {
       setIntroShown(false);
       setContentShown(true);
+      if (key) {
+        sessionStorage.setItem(key, "1");
+      }
     }, 1200);
 
     const unmountIntro = window.setTimeout(() => {
@@ -39,7 +58,15 @@ export default function PageEntrance({
       window.clearTimeout(startContent);
       window.clearTimeout(unmountIntro);
     };
-  }, []);
+  }, [key]);
+
+  if (playIntro === null) {
+    return <div className="opacity-0">{children}</div>;
+  }
+
+  if (!playIntro) {
+    return <>{children}</>;
+  }
 
   return (
     <>

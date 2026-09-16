@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import AddPersonDialog from "./AddPersonDialog";
 import { addSiblingToPerson } from "@/app/family/[id]/actions";
@@ -27,6 +28,7 @@ export default function AddSiblingDialog({
   canCreateNew,
   persons,
 }: Props) {
+  const router = useRouter();
   const [mode, setMode] = useState<"new" | "existing">(
     canCreateNew ? "new" : "existing"
   );
@@ -124,7 +126,7 @@ export default function AddSiblingDialog({
                 );
 
                 onClose();
-                window.location.reload();
+                router.refresh();
               }}
             >
               Weiter
@@ -135,7 +137,10 @@ export default function AddSiblingDialog({
 
       <AddPersonDialog
         open={addPersonOpen}
-        onClose={() => setAddPersonOpen(false)}
+        onClose={() => {
+          setAddPersonOpen(false);
+          onClose();
+        }}
         familyId={familyId}
         relatedPersonId={relatedPersonId}
         relationshipType="sibling"
