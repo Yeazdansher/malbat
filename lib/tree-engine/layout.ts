@@ -490,6 +490,66 @@ export function buildTreeLayout(graph: TreeGraph): TreeLayout {
     }
   }
 
+  /** Verschiebt alle Knoten ab minX nach rechts (hält Teilbäume zusammen). */
+  function shiftEverythingFromX(minX: number, dx: number): void {
+    if (dx === 0) {
+      return;
+    }
+
+    for (const node of nodes) {
+      if (node.position.x + 0.5 >= minX) {
+        node.position.x += dx;
+      }
+    }
+
+    for (const pos of personPositions.values()) {
+      if (pos.x + 0.5 >= minX) {
+        pos.x += dx;
+      }
+    }
+  }
+
+  /** Gleiche Generation: Kartenüberlappungen auflösen. */
+  function resolveAllPersonOverlaps(): void {
+    const rows = new Map<number, { id: string; x: number }[]>();
+
+    for (const [id, pos] of personPositions) {
+      const yKey = Math.round(pos.y);
+      const row = rows.get(yKey);
+      if (row) {
+        row.push({ id, x: pos.x });
+      } else {
+        rows.set(yKey, [{ id, x: pos.x }]);
+      }
+    }
+
+    for (const row of rows.values()) {
+      row.sort((a, b) => a.x - b.x);
+
+      for (let index = 1; index < row.length; index++) {
+        const left = row[index - 1];
+        const right = row[index];
+        const leftPos = personPositions.get(left.id);
+        const rightPos = personPositions.get(right.id);
+        if (!leftPos || !rightPos) {
+          continue;
+        }
+
+        const needed = leftPos.x + CARD_WIDTH + SIBLING_GAP - rightPos.x;
+        if (needed <= 0) {
+          continue;
+        }
+
+        const minX = rightPos.x;
+        shiftEverythingFromX(minX, needed);
+
+        for (let j = index; j < row.length; j++) {
+          row[j].x += needed;
+        }
+      }
+    }
+  }
+
   function requiredOverlapShift(leftIds: string[], rightIds: string[]): number {
     const leftByY = boundsByGeneration(leftIds);
     const rightByY = boundsByGeneration(rightIds);
@@ -1054,6 +1114,8 @@ export function buildTreeLayout(graph: TreeGraph): TreeLayout {
     placePersonWithPartners(personId, cursorX, START_Y);
     cursorX += CARD_WIDTH + SIBLING_GAP;
   }
+
+  resolveAllPersonOverlaps();
 
   return { nodes, edges };
 }
