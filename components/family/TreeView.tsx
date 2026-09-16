@@ -311,11 +311,17 @@ export default function TreeView({
         nodesDraggable={false}
         elementsSelectable={true}
         panOnDrag
-        fitView
         fitViewOptions={{ padding: 0.2, minZoom: 0.1, maxZoom: 1.5 }}
         minZoom={0.1}
         maxZoom={2}
-        onInit={setFlowInstance}
+        onInit={(instance) => {
+          setFlowInstance(instance);
+          void instance.fitView({
+            padding: 0.2,
+            minZoom: 0.1,
+            maxZoom: 1.5,
+          });
+        }}
         onNodeClick={(_event, node) => {
           if (!canEdit || node.type !== "family") {
             return;

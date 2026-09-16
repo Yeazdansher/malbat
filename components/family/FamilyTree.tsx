@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import PersonDetailsDialog from "@/components/dialogs/PersonDetailsDialog";
 import EditPersonDialog from "@/components/dialogs/EditPersonDialog";
 import EmptyTree from "@/components/family/EmptyTree";
@@ -93,6 +93,21 @@ const [deleteOpen, setDeleteOpen] =
   const [searchOpen, setSearchOpen] = useState(false);
   const [focusedPersonId, setFocusedPersonId] = useState<string>();
   const [focusRequest, setFocusRequest] = useState(0);
+
+  // Nach Soft-Refresh Personendaten in offenem Dialog aktualisieren.
+  useEffect(() => {
+    if (!selectedPerson) return;
+    const updated = persons.find((person) => person.id === selectedPerson.id);
+    if (!updated) {
+      setSelectedPerson(null);
+      setDetailsOpen(false);
+      setEditOpen(false);
+      return;
+    }
+    if (updated !== selectedPerson) {
+      setSelectedPerson(updated);
+    }
+  }, [persons, selectedPerson]);
 
   const selectedRelations = useMemo(() => {
     if (!selectedPerson) {
