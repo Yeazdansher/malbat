@@ -126,39 +126,6 @@ export function buildTreeLayout(graph: TreeGraph): TreeLayout {
     return undefined;
   }
 
-  /**
-   * Frau in einer Mann-Frau-Ehe: steht neben dem Mann, nicht in der
-   * Geschwisterreihe der Herkunftsfamilie (vermeidet lange Partnerlinien).
-   */
-  function shouldRelocateBesideHusband(personId: string): boolean {
-    if (genderOf(personId) !== "female") {
-      return false;
-    }
-
-    for (const family of familiesByPartner.get(personId) ?? []) {
-      if (family.kind === "sibling-group") {
-        continue;
-      }
-
-      const preferred = preferredUnionAnchor(family);
-      if (preferred && preferred !== personId) {
-        return true;
-      }
-    }
-
-    return false;
-  }
-
-  /** Elternkante zur Herkunftsfamilie, sobald die Frau beim Mann steht. */
-  function linkBirthFamilyEdge(personId: string): void {
-    const birth = familyByChild.get(personId);
-    if (!birth || !placedFamilies.has(birth.id)) {
-      return;
-    }
-
-    addEdge(birth.familyNodeId, personId);
-  }
-
   function pickPlacedUnionAnchor(family: Family): string | undefined {
     const preferred = preferredUnionAnchor(family);
     if (preferred && placedPersons.has(preferred)) {
@@ -275,11 +242,6 @@ export function buildTreeLayout(graph: TreeGraph): TreeLayout {
       return 0;
     }
 
-    // Platzbedarf liegt beim Mann; Herkunftsreihe reserviert nichts.
-    if (shouldRelocateBesideHusband(personId)) {
-      return 0;
-    }
-
     const unions = unionsForPerson(personId);
 
     if (unions.length === 0) {
@@ -322,10 +284,6 @@ export function buildTreeLayout(graph: TreeGraph): TreeLayout {
       return 0;
     }
 
-    if (shouldRelocateBesideHusband(personId)) {
-      return 0;
-    }
-
     const unions = unionsOf(personId, stack).filter(
       (family) => !placedFamilies.has(family.id)
     );
@@ -343,9 +301,7 @@ export function buildTreeLayout(graph: TreeGraph): TreeLayout {
 
       stack.add(union.id);
 
-      const kids = childIdsOf(union).filter(
-        (id) => !shouldRelocateBesideHusband(id)
-      );
+      const kids = childIdsOf(union);
       let kidsWidth = 0;
 
       for (let index = 0; index < kids.length; index++) {
@@ -377,9 +333,7 @@ export function buildTreeLayout(graph: TreeGraph): TreeLayout {
     stack.add(family.id);
 
     const rowWidth = partnerRowWidth(family.partners.length);
-    const kids = childIdsOf(family).filter(
-      (id) => !shouldRelocateBesideHusband(id)
-    );
+    const kids = childIdsOf(family);
     let childrenWidth = 0;
 
     for (let index = 0; index < kids.length; index++) {
@@ -596,226 +550,11 @@ export function buildTreeLayout(graph: TreeGraph): TreeLayout {
     }
   }
 
-  /**
-   * Partner-Union (Mann+Frau+Kinder) oder Herkunft — für gemeinsames Verschieben.
-   * Umgezogene Ehefrauen gehören zur Ehe-Union, nicht zur Herkunftsreihe.
-   */
-  function birthFamilyUnitIds(personId: string): string[] {
-    for (const family of familiesByPartner.get(personId) ?? []) {
-      if (family.kind === "sibling-group") {
-        continue;
-      }
-
-      const anchor = preferredUnionAnchor(family);
-      if (anchor === personId || (anchor && shouldRelocateBesideHusband(personId))) {
-        const ids = new Set<string>([family.familyNodeId]);
-        for (const partnerId of family.partners) {
-          if (graph.persons.has(partnerId)) {
-            ids.add(partnerId);
-          }
-        }
-        for (const childId of family.children) {
-          if (graph.persons.has(childId) && placedPersons.has(childId)) {
-            ids.add(childId);
-          }
-        }
-        return [...ids];
-      }
-    }
-
-    const birth = familyByChild.get(personId);
-    if (!birth) {
-      return [personId];
-    }
-
-    const ids = new Set<string>([birth.familyNodeId]);
-
-    for (const partnerId of birth.partners) {
-      if (graph.persons.has(partnerId)) {
-        ids.add(partnerId);
-      }
-    }
-
-    for (const childId of birth.children) {
-      if (
-        graph.persons.has(childId) &&
-        placedPersons.has(childId) &&
-        !shouldRelocateBesideHusband(childId)
-      ) {
-        ids.add(childId);
-      }
-    }
-
-    return [...ids];
-  }
-
-  function rowGroupKey(personId: string): string {
-    for (const family of familiesByPartner.get(personId) ?? []) {
-      if (family.kind === "sibling-group") {
-        continue;
-      }
-
-      const anchor = preferredUnionAnchor(family);
-      if (anchor === personId || (anchor && shouldRelocateBesideHusband(personId))) {
-        return family.id;
-      }
-    }
-
-    return familyByChild.get(personId)?.id ?? `solo:${personId}`;
-  }
-
-  function groupMinX(memberIds: string[]): number {
-    let min = Number.POSITIVE_INFINITY;
-    for (const id of memberIds) {
-      const pos = personPositions.get(id);
-      if (pos) {
-        min = Math.min(min, pos.x);
-      }
-    }
-    return min;
-  }
-
-  function groupMaxRight(memberIds: string[]): number {
-    let max = Number.NEGATIVE_INFINITY;
-    for (const id of memberIds) {
-      const pos = personPositions.get(id);
-      if (pos) {
-        max = Math.max(max, pos.x + CARD_WIDTH);
-      }
-    }
-    return max;
-  }
-
-  function birthGroupsInterleave(
-    membersA: string[],
-    membersB: string[],
-    yKey: number
-  ): boolean {
-    const row = [...membersA, ...membersB]
-      .map((id) => {
-        const pos = personPositions.get(id);
-        return pos && Math.round(pos.y) === yKey ? { id, x: pos.x } : null;
-      })
-      .filter((entry): entry is { id: string; x: number } => entry !== null)
-      .sort((a, b) => a.x - b.x);
-
-    if (row.length < 2) {
-      return false;
-    }
-
-    const setA = new Set(membersA);
-    let lastGroup: "a" | "b" | null = null;
-    let switches = 0;
-
-    for (const entry of row) {
-      const group = setA.has(entry.id) ? "a" : "b";
-      if (lastGroup && group !== lastGroup) {
-        switches += 1;
-      }
-      lastGroup = group;
-    }
-
-    // Mehr als ein Wechsel = echte Verschachtelung (A B A …).
-    return switches > 1;
-  }
-
-  /**
-   * Verhindert, dass Kinder einer Familie in der Geschwisterreihe einer anderen
-   * Familie landen (Cousin-Ehe: Kind unter dem Paar vs. Herkunftsgeschwister der Frau).
-   */
-  function separateInterleavedBirthFamilies(): void {
-    const rows = new Map<number, string[]>();
-
-    for (const [id, pos] of personPositions) {
-      const yKey = Math.round(pos.y);
-      const row = rows.get(yKey);
-      if (row) {
-        row.push(id);
-      } else {
-        rows.set(yKey, [id]);
-      }
-    }
-
-    for (const [yKey, personIds] of rows) {
-      const groups = new Map<string, string[]>();
-
-      for (const id of personIds) {
-        const key = rowGroupKey(id);
-        const list = groups.get(key);
-        if (list) {
-          list.push(id);
-        } else {
-          groups.set(key, [id]);
-        }
-      }
-
-      if (groups.size < 2) {
-        continue;
-      }
-
-      const ordered = [...groups.entries()].sort(
-        (a, b) => groupMinX(a[1]) - groupMinX(b[1])
-      );
-
-      let hasInterleave = false;
-      for (let i = 0; i < ordered.length; i++) {
-        for (let j = i + 1; j < ordered.length; j++) {
-          if (birthGroupsInterleave(ordered[i][1], ordered[j][1], yKey)) {
-            hasInterleave = true;
-            break;
-          }
-        }
-        if (hasInterleave) {
-          break;
-        }
-      }
-
-      if (!hasInterleave) {
-        continue;
-      }
-
-      // Blöcke links nach rechts ohne Verschachtelung neu setzen.
-      let cursor = Number.NEGATIVE_INFINITY;
-
-      for (const [, members] of ordered) {
-        const onRow = members
-          .filter((id) => {
-            const pos = personPositions.get(id);
-            return pos && Math.round(pos.y) === yKey;
-          })
-          .sort(
-            (a, b) =>
-              (personPositions.get(a)?.x ?? 0) - (personPositions.get(b)?.x ?? 0)
-          );
-
-        if (onRow.length === 0) {
-          continue;
-        }
-
-        const blockLeft = groupMinX(onRow);
-        const blockRight = groupMaxRight(onRow);
-        const targetLeft =
-          cursor === Number.NEGATIVE_INFINITY
-            ? blockLeft
-            : cursor + FAMILY_GAP;
-        const dx = targetLeft - blockLeft;
-
-        if (dx !== 0) {
-          const unit = new Set<string>();
-          for (const id of onRow) {
-            for (const unitId of birthFamilyUnitIds(id)) {
-              unit.add(unitId);
-            }
-          }
-          shiftSubtree([...unit], dx);
-        }
-
-        cursor = groupMaxRight(onRow);
-      }
-    }
-  }
-
-  function requiredOverlapShift(leftIds: string[], rightIds: string[]): number {
+  function requiredOverlapShift(
+    leftIds: string[],
+    rightIds: string[],
+    gap: number = SIBLING_GAP
+  ): number {
     const leftByY = boundsByGeneration(leftIds);
     const rightByY = boundsByGeneration(rightIds);
     let shift = 0;
@@ -826,7 +565,7 @@ export function buildTreeLayout(graph: TreeGraph): TreeLayout {
         continue;
       }
 
-      const needed = leftBounds.right + SIBLING_GAP - rightBounds.left;
+      const needed = leftBounds.right + gap - rightBounds.left;
       if (needed > shift) {
         shift = needed;
       }
@@ -835,11 +574,18 @@ export function buildTreeLayout(graph: TreeGraph): TreeLayout {
     return shift;
   }
 
-  function resolveSiblingOverlaps(subtreeNodeIds: string[][]): void {
+  function resolveSiblingOverlaps(
+    subtreeNodeIds: string[][],
+    gap: number = SIBLING_GAP
+  ): void {
     const groups = subtreeNodeIds.filter((ids) => ids.length > 0);
 
     for (let index = 1; index < groups.length; index++) {
-      const shift = requiredOverlapShift(groups[index - 1], groups[index]);
+      const shift = requiredOverlapShift(
+        groups[index - 1],
+        groups[index],
+        gap
+      );
       if (shift > 0) {
         shiftSubtree(groups[index], shift);
       }
@@ -867,16 +613,7 @@ export function buildTreeLayout(graph: TreeGraph): TreeLayout {
 
   function captureSubtree(before: Set<string>, rootPersonId: string): string[] {
     const ids = newNodeIdsSince(before);
-    // Nur neu erzeugte Knoten zum Packen. Bereits woanders platzierte Personen
-    // (z. B. Ehefrau beim Mann) nicht in die Geschwistergruppe der Herkunft ziehen.
-    if (ids.length === 0) {
-      return [];
-    }
-    if (
-      !ids.includes(rootPersonId) &&
-      placedPersons.has(rootPersonId) &&
-      !shouldRelocateBesideHusband(rootPersonId)
-    ) {
+    if (!ids.includes(rootPersonId) && placedPersons.has(rootPersonId)) {
       ids.push(rootPersonId);
     }
     return ids;
@@ -903,26 +640,19 @@ export function buildTreeLayout(graph: TreeGraph): TreeLayout {
       return;
     }
 
-    const localKids = kids.filter((id) => !shouldRelocateBesideHusband(id));
-    const relocatedWives = kids.filter((id) => shouldRelocateBesideHusband(id));
-
-    // Herkunftskanten zu Frauen, die schon beim Mann stehen.
-    for (const wifeId of relocatedWives) {
-      if (placedPersons.has(wifeId)) {
-        addEdge(family.familyNodeId, wifeId);
-      }
-    }
-
-    if (localKids.length === 0) {
-      return;
-    }
-
-    const childWidths = localKids.map((id) => measureOwnGenerationWidth(id));
+    // Volle Astbreite inkl. Enkel — sonst rücken Nachbaräste bei Kindern
+    // in der mittleren Generation nicht genug auseinander.
+    const childWidths = kids.map((id) =>
+      Math.max(
+        measureOwnGenerationWidth(id),
+        measurePersonSubtree(id, new Set([family.id]))
+      )
+    );
 
     const offsets: number[] = [];
     let offset = 0;
 
-    for (let index = 0; index < localKids.length; index++) {
+    for (let index = 0; index < kids.length; index++) {
       offsets.push(offset);
       offset += childWidths[index] + SIBLING_GAP;
     }
@@ -932,13 +662,13 @@ export function buildTreeLayout(graph: TreeGraph): TreeLayout {
         sum + childOffset + childWidths[index] / 2,
       0
     );
-    const childCenterAverage = childCenterSum / localKids.length;
+    const childCenterAverage = childCenterSum / kids.length;
     const blockLeft = familyCenterX - childCenterAverage;
 
     const subtreeNodeIds: string[][] = [];
 
-    for (let index = 0; index < localKids.length; index++) {
-      const childId = localKids[index];
+    for (let index = 0; index < kids.length; index++) {
+      const childId = kids[index];
       const before = nodeIdsSnapshot();
       placePersonWithPartners(childId, blockLeft + offsets[index], y);
       addEdge(family.familyNodeId, childId);
@@ -1070,7 +800,6 @@ export function buildTreeLayout(graph: TreeGraph): TreeLayout {
     for (const partnerId of others) {
       placeOrMovePerson(partnerId, cursorX, y);
       addEdge(partnerId, first.familyNodeId);
-      linkBirthFamilyEdge(partnerId);
       cursorX += CARD_WIDTH + PARTNER_GAP;
     }
 
@@ -1113,9 +842,7 @@ export function buildTreeLayout(graph: TreeGraph): TreeLayout {
 
       stack.add(union.id);
 
-      const kids = childIdsOf(union).filter(
-        (id) => !shouldRelocateBesideHusband(id)
-      );
+      const kids = childIdsOf(union);
       let kidsWidth = 0;
 
       for (let index = 0; index < kids.length; index++) {
@@ -1159,7 +886,6 @@ export function buildTreeLayout(graph: TreeGraph): TreeLayout {
       for (const partnerId of others) {
         cursorX += PARTNER_GAP;
         placeOrMovePerson(partnerId, cursorX, origin.y);
-        linkBirthFamilyEdge(partnerId);
         placedPartnerXs.push(cursorX);
         cursorX += CARD_WIDTH;
       }
@@ -1168,7 +894,6 @@ export function buildTreeLayout(graph: TreeGraph): TreeLayout {
       for (const partnerId of others) {
         cursorX -= PARTNER_GAP + CARD_WIDTH;
         placeOrMovePerson(partnerId, cursorX, origin.y);
-        linkBirthFamilyEdge(partnerId);
         placedPartnerXs.push(cursorX);
       }
     }
@@ -1253,20 +978,16 @@ export function buildTreeLayout(graph: TreeGraph): TreeLayout {
         return;
       }
 
-      const localKids = kids.filter((id) => !shouldRelocateBesideHusband(id));
-      const relocatedWives = kids.filter((id) =>
-        shouldRelocateBesideHusband(id)
+      const childWidths = kids.map((id) =>
+        Math.max(
+          measureOwnGenerationWidth(id),
+          measurePersonSubtree(id, new Set([family.id]))
+        )
       );
-
-      if (localKids.length === 0) {
-        return;
-      }
-
-      const childWidths = localKids.map((id) => measureOwnGenerationWidth(id));
       const offsets: number[] = [];
       let offset = 0;
 
-      for (let index = 0; index < localKids.length; index++) {
+      for (let index = 0; index < kids.length; index++) {
         offsets.push(offset);
         offset += childWidths[index] + SIBLING_GAP;
       }
@@ -1280,22 +1001,16 @@ export function buildTreeLayout(graph: TreeGraph): TreeLayout {
           sum + childOffset + childWidths[index] / 2,
         0
       );
-      const familyCenterX = blockLeft + childCenterSum / localKids.length;
+      const familyCenterX = blockLeft + childCenterSum / kids.length;
       // Sammelschiene knapp über den Karten; Knoten sitzt auf der Schiene.
       const familyCenterY = y - 36;
 
       addFamilyNode(family, familyCenterX, familyCenterY);
 
-      for (const wifeId of relocatedWives) {
-        if (placedPersons.has(wifeId)) {
-          addEdge(family.familyNodeId, wifeId);
-        }
-      }
-
       const subtreeNodeIds: string[][] = [];
 
-      for (let index = 0; index < localKids.length; index++) {
-        const childId = localKids[index];
+      for (let index = 0; index < kids.length; index++) {
+        const childId = kids[index];
         const before = nodeIdsSnapshot();
         placePersonWithPartners(childId, blockLeft + offsets[index], y);
         addEdge(family.familyNodeId, childId);
@@ -1391,11 +1106,18 @@ export function buildTreeLayout(graph: TreeGraph): TreeLayout {
       ? rootFamilies
       : [...graph.families.values()];
 
+  const topLevelSubtrees: string[][] = [];
+
   for (const family of familiesToPlace) {
     const width = measureFamily(family, new Set());
+    const before = nodeIdsSnapshot();
     placeFamily(family, cursorX, START_Y);
+    topLevelSubtrees.push(newNodeIdsSince(before));
     cursorX += width + FAMILY_GAP;
   }
+
+  // Cousinen-/Nachbaräste: volle Teilbaum-Breite inkl. Enkel auseinanderschieben.
+  resolveSiblingOverlaps(topLevelSubtrees, FAMILY_GAP);
 
   for (const family of graph.families.values()) {
     if (placedFamilies.has(family.id)) {
@@ -1410,9 +1132,13 @@ export function buildTreeLayout(graph: TreeGraph): TreeLayout {
     }
 
     const width = measureFamily(family, new Set());
+    const before = nodeIdsSnapshot();
     placeFamily(family, cursorX, START_Y);
+    topLevelSubtrees.push(newNodeIdsSince(before));
     cursorX += width + FAMILY_GAP;
   }
+
+  resolveSiblingOverlaps(topLevelSubtrees, FAMILY_GAP);
 
   for (const personId of graph.persons.keys()) {
     if (placedPersons.has(personId)) {
@@ -1423,56 +1149,6 @@ export function buildTreeLayout(graph: TreeGraph): TreeLayout {
     cursorX += CARD_WIDTH + SIBLING_GAP;
   }
 
-  /**
-   * Abschluss: Ehefrauen fest neben den Mann setzen (Cousin-Ehen),
-   * falls Packing/Herkunft sie noch verschoben hat — danach Überlappungen lösen.
-   */
-  function reconcileRelocatedWives(): void {
-    for (const family of graph.families.values()) {
-      if (family.kind === "sibling-group") {
-        continue;
-      }
-
-      const husbandId = preferredUnionAnchor(family);
-      if (!husbandId || !placedPersons.has(husbandId)) {
-        continue;
-      }
-
-      const origin = personPositions.get(husbandId);
-      if (!origin) {
-        continue;
-      }
-
-      const wives = otherPartnersOf(family, husbandId).filter((id) =>
-        shouldRelocateBesideHusband(id)
-      );
-
-      if (wives.length === 0) {
-        continue;
-      }
-
-      let cursorX = origin.x + CARD_WIDTH + PARTNER_GAP;
-
-      for (const wifeId of wives) {
-        placeOrMovePerson(wifeId, cursorX, origin.y);
-        linkBirthFamilyEdge(wifeId);
-        addEdge(wifeId, family.familyNodeId);
-        addEdge(husbandId, family.familyNodeId);
-        cursorX += CARD_WIDTH + PARTNER_GAP;
-      }
-
-      if (nodes.some((node) => node.id === family.familyNodeId)) {
-        moveFamilyNodeTo(
-          family.familyNodeId,
-          origin.x + CARD_WIDTH + PARTNER_GAP / 2,
-          origin.y + CARD_HEIGHT / 2
-        );
-      }
-    }
-  }
-
-  reconcileRelocatedWives();
-  separateInterleavedBirthFamilies();
   resolveAllPersonOverlaps();
 
   return { nodes, edges };
