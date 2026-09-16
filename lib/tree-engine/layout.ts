@@ -596,6 +596,225 @@ export function buildTreeLayout(graph: TreeGraph): TreeLayout {
     }
   }
 
+  /**
+   * Partner-Union (Mann+Frau+Kinder) oder Herkunft — für gemeinsames Verschieben.
+   * Umgezogene Ehefrauen gehören zur Ehe-Union, nicht zur Herkunftsreihe.
+   */
+  function birthFamilyUnitIds(personId: string): string[] {
+    for (const family of familiesByPartner.get(personId) ?? []) {
+      if (family.kind === "sibling-group") {
+        continue;
+      }
+
+      const anchor = preferredUnionAnchor(family);
+      if (anchor === personId || (anchor && shouldRelocateBesideHusband(personId))) {
+        const ids = new Set<string>([family.familyNodeId]);
+        for (const partnerId of family.partners) {
+          if (graph.persons.has(partnerId)) {
+            ids.add(partnerId);
+          }
+        }
+        for (const childId of family.children) {
+          if (graph.persons.has(childId) && placedPersons.has(childId)) {
+            ids.add(childId);
+          }
+        }
+        return [...ids];
+      }
+    }
+
+    const birth = familyByChild.get(personId);
+    if (!birth) {
+      return [personId];
+    }
+
+    const ids = new Set<string>([birth.familyNodeId]);
+
+    for (const partnerId of birth.partners) {
+      if (graph.persons.has(partnerId)) {
+        ids.add(partnerId);
+      }
+    }
+
+    for (const childId of birth.children) {
+      if (
+        graph.persons.has(childId) &&
+        placedPersons.has(childId) &&
+        !shouldRelocateBesideHusband(childId)
+      ) {
+        ids.add(childId);
+      }
+    }
+
+    return [...ids];
+  }
+
+  function rowGroupKey(personId: string): string {
+    for (const family of familiesByPartner.get(personId) ?? []) {
+      if (family.kind === "sibling-group") {
+        continue;
+      }
+
+      const anchor = preferredUnionAnchor(family);
+      if (anchor === personId || (anchor && shouldRelocateBesideHusband(personId))) {
+        return family.id;
+      }
+    }
+
+    return familyByChild.get(personId)?.id ?? `solo:${personId}`;
+  }
+
+  function groupMinX(memberIds: string[]): number {
+    let min = Number.POSITIVE_INFINITY;
+    for (const id of memberIds) {
+      const pos = personPositions.get(id);
+      if (pos) {
+        min = Math.min(min, pos.x);
+      }
+    }
+    return min;
+  }
+
+  function groupMaxRight(memberIds: string[]): number {
+    let max = Number.NEGATIVE_INFINITY;
+    for (const id of memberIds) {
+      const pos = personPositions.get(id);
+      if (pos) {
+        max = Math.max(max, pos.x + CARD_WIDTH);
+      }
+    }
+    return max;
+  }
+
+  function birthGroupsInterleave(
+    membersA: string[],
+    membersB: string[],
+    yKey: number
+  ): boolean {
+    const row = [...membersA, ...membersB]
+      .map((id) => {
+        const pos = personPositions.get(id);
+        return pos && Math.round(pos.y) === yKey ? { id, x: pos.x } : null;
+      })
+      .filter((entry): entry is { id: string; x: number } => entry !== null)
+      .sort((a, b) => a.x - b.x);
+
+    if (row.length < 2) {
+      return false;
+    }
+
+    const setA = new Set(membersA);
+    let lastGroup: "a" | "b" | null = null;
+    let switches = 0;
+
+    for (const entry of row) {
+      const group = setA.has(entry.id) ? "a" : "b";
+      if (lastGroup && group !== lastGroup) {
+        switches += 1;
+      }
+      lastGroup = group;
+    }
+
+    // Mehr als ein Wechsel = echte Verschachtelung (A B A …).
+    return switches > 1;
+  }
+
+  /**
+   * Verhindert, dass Kinder einer Familie in der Geschwisterreihe einer anderen
+   * Familie landen (Cousin-Ehe: Kind unter dem Paar vs. Herkunftsgeschwister der Frau).
+   */
+  function separateInterleavedBirthFamilies(): void {
+    const rows = new Map<number, string[]>();
+
+    for (const [id, pos] of personPositions) {
+      const yKey = Math.round(pos.y);
+      const row = rows.get(yKey);
+      if (row) {
+        row.push(id);
+      } else {
+        rows.set(yKey, [id]);
+      }
+    }
+
+    for (const [yKey, personIds] of rows) {
+      const groups = new Map<string, string[]>();
+
+      for (const id of personIds) {
+        const key = rowGroupKey(id);
+        const list = groups.get(key);
+        if (list) {
+          list.push(id);
+        } else {
+          groups.set(key, [id]);
+        }
+      }
+
+      if (groups.size < 2) {
+        continue;
+      }
+
+      const ordered = [...groups.entries()].sort(
+        (a, b) => groupMinX(a[1]) - groupMinX(b[1])
+      );
+
+      let hasInterleave = false;
+      for (let i = 0; i < ordered.length; i++) {
+        for (let j = i + 1; j < ordered.length; j++) {
+          if (birthGroupsInterleave(ordered[i][1], ordered[j][1], yKey)) {
+            hasInterleave = true;
+            break;
+          }
+        }
+        if (hasInterleave) {
+          break;
+        }
+      }
+
+      if (!hasInterleave) {
+        continue;
+      }
+
+      // Blöcke links nach rechts ohne Verschachtelung neu setzen.
+      let cursor = Number.NEGATIVE_INFINITY;
+
+      for (const [, members] of ordered) {
+        const onRow = members
+          .filter((id) => {
+            const pos = personPositions.get(id);
+            return pos && Math.round(pos.y) === yKey;
+          })
+          .sort(
+            (a, b) =>
+              (personPositions.get(a)?.x ?? 0) - (personPositions.get(b)?.x ?? 0)
+          );
+
+        if (onRow.length === 0) {
+          continue;
+        }
+
+        const blockLeft = groupMinX(onRow);
+        const blockRight = groupMaxRight(onRow);
+        const targetLeft =
+          cursor === Number.NEGATIVE_INFINITY
+            ? blockLeft
+            : cursor + FAMILY_GAP;
+        const dx = targetLeft - blockLeft;
+
+        if (dx !== 0) {
+          const unit = new Set<string>();
+          for (const id of onRow) {
+            for (const unitId of birthFamilyUnitIds(id)) {
+              unit.add(unitId);
+            }
+          }
+          shiftSubtree([...unit], dx);
+        }
+
+        cursor = groupMaxRight(onRow);
+      }
+    }
+  }
+
   function requiredOverlapShift(leftIds: string[], rightIds: string[]): number {
     const leftByY = boundsByGeneration(leftIds);
     const rightByY = boundsByGeneration(rightIds);
@@ -1253,6 +1472,7 @@ export function buildTreeLayout(graph: TreeGraph): TreeLayout {
   }
 
   reconcileRelocatedWives();
+  separateInterleavedBirthFamilies();
   resolveAllPersonOverlaps();
 
   return { nodes, edges };
