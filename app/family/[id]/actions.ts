@@ -87,6 +87,16 @@ if (relatedPersonId) {
       relationshipType,
       relatedPerson?.gender ?? "unknown"
     );
+
+  if (
+    (relationshipType === "partner" ||
+      normalizedRelationshipType === "partner") &&
+    relatedPerson?.gender === "female"
+  ) {
+    throw new Error(
+      "Partnerinnen werden beim Mann angelegt, nicht bei der Frau."
+    );
+  }
 }
 
   const { data: newPerson, error } = await supabase
@@ -412,6 +422,15 @@ export async function createRelationship(
       relationshipType,
       person1?.gender ?? "unknown"
     );
+
+  if (
+    normalizedRelationshipType === "partner" &&
+    person1?.gender === "female"
+  ) {
+    throw new Error(
+      "Partnerinnen werden beim Mann angelegt, nicht bei der Frau."
+    );
+  }
 
   let from = person1Id;
   let to = person2Id;

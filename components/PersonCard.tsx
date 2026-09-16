@@ -70,20 +70,22 @@ export default function PersonCard({
             👥
           </button>
 
-          <button
-            type="button"
-            className="nodrag nopan nowheel absolute z-20 right-0 top-1/2 flex h-8 w-8 translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border bg-white text-base leading-none hover:bg-green-100"
-            title="Partner hinzufügen"
-            aria-label="Partner hinzufügen"
-            onPointerDown={(event) => event.stopPropagation()}
-            onClick={(event) => {
-              event.preventDefault();
-              event.stopPropagation();
-              onOpenRelationship();
-            }}
-          >
-            👩‍❤️‍👨
-          </button>
+          {gender !== "female" && (
+            <button
+              type="button"
+              className="nodrag nopan nowheel absolute z-20 right-0 top-1/2 flex h-8 w-8 translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border bg-white text-base leading-none hover:bg-green-100"
+              title="Partner hinzufügen"
+              aria-label="Partner hinzufügen"
+              onPointerDown={(event) => event.stopPropagation()}
+              onClick={(event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                onOpenRelationship();
+              }}
+            >
+              👩‍❤️‍👨
+            </button>
+          )}
         </>
       )}
 

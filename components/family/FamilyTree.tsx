@@ -235,6 +235,9 @@ const [deleteOpen, setDeleteOpen] =
             setDetailsOpen(true);
           }}
           onOpenRelationship={(person) => {
+            if (person.gender === "female") {
+              return;
+            }
             setSelectedPerson(person);
             setPartnerOpen(true);
           }}
