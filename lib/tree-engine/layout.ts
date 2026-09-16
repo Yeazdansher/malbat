@@ -697,33 +697,46 @@ export function buildTreeLayout(graph: TreeGraph): TreeLayout {
     return false;
   }
 
-  /** Sortierschlüssel: Eltern-/Paar-Anker, damit Kinder nah an den Eltern bleiben. */
+  /** Eltern-/Paar-Mittelpunkt (Kartenmitte), Ziel für Kind-Blöcke. */
+  function generationBlockIdealCenter(
+    blockKey: string,
+    members: string[]
+  ): number {
+    const familyId = blockKey.startsWith("union:")
+      ? blockKey.slice("union:".length)
+      : blockKey.startsWith("birth:")
+        ? blockKey.slice("birth:".length)
+        : null;
+
+    if (familyId) {
+      const family = graph.families.get(familyId);
+      if (family) {
+        const centers = family.partners
+          .map((id) => {
+            const pos = personPositions.get(id);
+            return pos ? pos.x + CARD_WIDTH / 2 : undefined;
+          })
+          .filter((x): x is number => x !== undefined);
+        if (centers.length > 0) {
+          return centers.reduce((sum, x) => sum + x, 0) / centers.length;
+        }
+      }
+    }
+
+    const xs = members
+      .map((id) => personPositions.get(id))
+      .filter((pos): pos is { x: number; y: number } => Boolean(pos));
+    if (xs.length === 0) {
+      return 0;
+    }
+    const left = Math.min(...xs.map((pos) => pos.x));
+    const right = Math.max(...xs.map((pos) => pos.x + CARD_WIDTH));
+    return (left + right) / 2;
+  }
+
+  /** Sortierschlüssel = Idealzentrum der Eltern. */
   function generationBlockSortX(blockKey: string, members: string[]): number {
-    if (blockKey.startsWith("union:")) {
-      const family = graph.families.get(blockKey.slice("union:".length));
-      if (family) {
-        const partnerXs = family.partners
-          .map((id) => personPositions.get(id)?.x)
-          .filter((x): x is number => x !== undefined);
-        if (partnerXs.length > 0) {
-          return partnerXs.reduce((sum, x) => sum + x, 0) / partnerXs.length;
-        }
-      }
-    }
-
-    if (blockKey.startsWith("birth:")) {
-      const family = graph.families.get(blockKey.slice("birth:".length));
-      if (family) {
-        const partnerXs = family.partners
-          .map((id) => personPositions.get(id)?.x)
-          .filter((x): x is number => x !== undefined);
-        if (partnerXs.length > 0) {
-          return partnerXs.reduce((sum, x) => sum + x, 0) / partnerXs.length;
-        }
-      }
-    }
-
-    return minPersonX(members);
+    return generationBlockIdealCenter(blockKey, members);
   }
 
   function minPersonX(personIds: string[]): number {
@@ -737,15 +750,99 @@ export function buildTreeLayout(graph: TreeGraph): TreeLayout {
     return min;
   }
 
-  function rowMembersRight(memberIds: string[], yKey: number): number {
-    let max = Number.NEGATIVE_INFINITY;
+  function rowMembersBounds(
+    memberIds: string[],
+    yKey: number
+  ): { left: number; right: number } | null {
+    let left = Number.POSITIVE_INFINITY;
+    let right = Number.NEGATIVE_INFINITY;
     for (const id of memberIds) {
       const pos = personPositions.get(id);
       if (pos && Math.round(pos.y) === yKey) {
-        max = Math.max(max, pos.x + CARD_WIDTH);
+        left = Math.min(left, pos.x);
+        right = Math.max(right, pos.x + CARD_WIDTH);
       }
     }
-    return max;
+    if (!Number.isFinite(left) || !Number.isFinite(right)) {
+      return null;
+    }
+    return { left, right };
+  }
+
+  function rowMembersRight(memberIds: string[], yKey: number): number {
+    return rowMembersBounds(memberIds, yKey)?.right ?? Number.NEGATIVE_INFINITY;
+  }
+
+  function groupLeaders(members: string[]): string[] {
+    return members
+      .filter((id) => !shouldRelocateBesideHusband(id))
+      .sort(
+        (a, b) =>
+          (personPositions.get(a)?.x ?? 0) - (personPositions.get(b)?.x ?? 0)
+      );
+  }
+
+  function shiftGroupByLeaders(leaders: string[], dx: number): void {
+    if (Math.abs(dx) <= 0.5) {
+      return;
+    }
+    const ids = new Set<string>();
+    for (const leaderId of leaders) {
+      for (const id of ownedSubtreeIds(leaderId)) {
+        ids.add(id);
+      }
+    }
+    shiftSubtree([...ids], dx);
+  }
+
+  /** Leader einer Gruppe eng aneinander (Partner-/Geschwisterabstand). */
+  function compactGroupLeaders(
+    leaders: string[],
+    members: string[],
+    yKey: number
+  ): void {
+    if (leaders.length === 0) {
+      return;
+    }
+
+    const firstPos = personPositions.get(leaders[0]);
+    if (!firstPos) {
+      return;
+    }
+
+    let cursor = firstPos.x;
+
+    for (let index = 0; index < leaders.length; index++) {
+      const leaderId = leaders[index];
+      const leaderPos = personPositions.get(leaderId);
+      if (!leaderPos) {
+        continue;
+      }
+
+      if (index > 0) {
+        const prevId = leaders[index - 1];
+        cursor += arePartners(prevId, leaderId) ? PARTNER_GAP : SIBLING_GAP;
+      }
+
+      shiftGroupByLeaders([leaderId], cursor - leaderPos.x);
+
+      const placedLeaders = leaders.slice(0, index + 1);
+      const onRowIds = members.filter((id) => {
+        const pos = personPositions.get(id);
+        if (!pos || Math.round(pos.y) !== yKey) {
+          return false;
+        }
+        if (placedLeaders.includes(id)) {
+          return true;
+        }
+        return (
+          shouldRelocateBesideHusband(id) &&
+          placedLeaders.some((lid) => arePartners(lid, id))
+        );
+      });
+      const right = rowMembersRight(onRowIds, yKey);
+      cursor = Number.isFinite(right) ? right : cursor + CARD_WIDTH;
+    }
   }
 
   function recenterUnionFamilyNodes(): void {
@@ -780,9 +877,8 @@ export function buildTreeLayout(graph: TreeGraph): TreeLayout {
   }
 
   /**
-   * Pro Generation: Blöcke geschlossen und eng packen.
-   * Schließt Löcher (keine Riesenlücken) und verhindert Durchmischung.
-   * Verschiebt nur ownedSubtree — Eltern bleiben in ihrer Zeile stehen.
+   * Pro Generation: Blöcke eng halten, unter den Eltern zentrieren,
+   * dann Kollisionen nach rechts auflösen (ohne wieder alles nach links zu ziehen).
    */
   function packGenerationFamilyBlocks(): void {
     const rows = new Map<number, string[]>();
@@ -797,12 +893,12 @@ export function buildTreeLayout(graph: TreeGraph): TreeLayout {
       }
     }
 
-    // Oben → unten: Eltern zuerst fixieren, Kinder danach ausrichten.
+    // Oben → unten: Eltern stehen, Kinder darunter ausrichten.
     const sortedYs = [...rows.keys()].sort((a, b) => a - b);
 
     for (const yKey of sortedYs) {
       const personIds = rows.get(yKey);
-      if (!personIds || personIds.length < 2) {
+      if (!personIds || personIds.length < 1) {
         continue;
       }
 
@@ -822,64 +918,89 @@ export function buildTreeLayout(graph: TreeGraph): TreeLayout {
           generationBlockSortX(a[0], a[1]) - generationBlockSortX(b[0], b[1])
       );
 
-      let cursor = minPersonX(personIds);
-      if (!Number.isFinite(cursor)) {
-        continue;
-      }
+      type PackedGroup = {
+        key: string;
+        members: string[];
+        leaders: string[];
+        idealCenter: number;
+      };
 
-      for (let groupIndex = 0; groupIndex < orderedGroups.length; groupIndex++) {
-        const [, members] = orderedGroups[groupIndex];
-        const leaders = members
-          .filter((id) => !shouldRelocateBesideHusband(id))
-          .sort(
-            (a, b) =>
-              (personPositions.get(a)?.x ?? 0) - (personPositions.get(b)?.x ?? 0)
-          );
+      const packed: PackedGroup[] = [];
 
+      for (const [blockKey, members] of orderedGroups) {
+        const leaders = groupLeaders(members);
         if (leaders.length === 0) {
           continue;
         }
 
-        if (groupIndex > 0) {
-          cursor += FAMILY_GAP;
+        compactGroupLeaders(leaders, members, yKey);
+
+        const bounds = rowMembersBounds(members, yKey);
+        if (!bounds) {
+          continue;
         }
 
-        for (let index = 0; index < leaders.length; index++) {
-          const leaderId = leaders[index];
-          const leaderPos = personPositions.get(leaderId);
-          if (!leaderPos) {
-            continue;
-          }
+        const idealCenter = generationBlockIdealCenter(blockKey, members);
+        const currentCenter = (bounds.left + bounds.right) / 2;
+        shiftGroupByLeaders(leaders, idealCenter - currentCenter);
 
-          if (index > 0) {
-            const prevId = leaders[index - 1];
-            cursor += arePartners(prevId, leaderId) ? PARTNER_GAP : SIBLING_GAP;
-          }
+        packed.push({
+          key: blockKey,
+          members,
+          leaders,
+          idealCenter,
+        });
+      }
 
-          const dx = cursor - leaderPos.x;
-          if (Math.abs(dx) > 0.5) {
-            shiftSubtree(ownedSubtreeIds(leaderId), dx);
-          }
+      // Kollisionen: rechte Gruppe nach rechts, Ideal der linken bleibt.
+      packed.sort(
+        (a, b) => minPersonX(a.members) - minPersonX(b.members)
+      );
 
-          // Nur bereits platzierte Leader (+ deren Partnerinnen in dieser Zeile),
-          // nicht noch unverschobene Geschwister weiter rechts.
-          const placedLeaders = leaders.slice(0, index + 1);
-          const onRowIds = members.filter((id) => {
-            const pos = personPositions.get(id);
-            if (!pos || Math.round(pos.y) !== yKey) {
-              return false;
-            }
-            if (placedLeaders.includes(id)) {
-              return true;
-            }
-            return (
-              shouldRelocateBesideHusband(id) &&
-              placedLeaders.some((leaderId) => arePartners(leaderId, id))
-            );
-          });
-          const right = rowMembersRight(onRowIds, yKey);
-          cursor = Number.isFinite(right) ? right : cursor + CARD_WIDTH;
+      for (let index = 1; index < packed.length; index++) {
+        const leftBounds = rowMembersBounds(packed[index - 1].members, yKey);
+        const rightBounds = rowMembersBounds(packed[index].members, yKey);
+        if (!leftBounds || !rightBounds) {
+          continue;
         }
+
+        const needed = leftBounds.right + FAMILY_GAP - rightBounds.left;
+        if (needed > 0.5) {
+          shiftGroupByLeaders(packed[index].leaders, needed);
+        }
+      }
+
+      // So nah wie möglich zurück zum Eltern-Zentrum, ohne Nachbarn zu überlappen.
+      for (let index = 0; index < packed.length; index++) {
+        const group = packed[index];
+        const bounds = rowMembersBounds(group.members, yKey);
+        if (!bounds) {
+          continue;
+        }
+
+        const currentCenter = (bounds.left + bounds.right) / 2;
+        let dx = group.idealCenter - currentCenter;
+        if (Math.abs(dx) <= 0.5) {
+          continue;
+        }
+
+        if (dx < 0 && index > 0) {
+          const leftBounds = rowMembersBounds(packed[index - 1].members, yKey);
+          if (leftBounds) {
+            const minLeft = leftBounds.right + FAMILY_GAP;
+            dx = Math.max(dx, minLeft - bounds.left);
+          }
+        }
+
+        if (dx > 0 && index < packed.length - 1) {
+          const rightBounds = rowMembersBounds(packed[index + 1].members, yKey);
+          if (rightBounds) {
+            const maxRight = rightBounds.left - FAMILY_GAP;
+            dx = Math.min(dx, maxRight - bounds.right);
+          }
+        }
+
+        shiftGroupByLeaders(group.leaders, dx);
       }
     }
 
@@ -1560,10 +1681,6 @@ export function buildTreeLayout(graph: TreeGraph): TreeLayout {
   }
 
   reconcileRelocatedWives();
-  packGenerationFamilyBlocks();
-  reconcileRelocatedWives();
-  resolveAllPersonOverlaps();
-  // Resolve schiebt nur nach rechts — danach erneut eng packen.
   packGenerationFamilyBlocks();
   reconcileRelocatedWives();
   resolveAllPersonOverlaps();

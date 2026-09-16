@@ -8,7 +8,6 @@ import type { Person, Relationship } from "../lib/tree-engine/types.ts";
 
 const CARD = 270;
 const GAP = 40;
-const FAMILY_GAP = 80;
 
 function person(
   id: string,
@@ -66,13 +65,28 @@ function noOverlaps(layout: ReturnType<typeof buildTreeLayout>): void {
         gap >= GAP - 0.5,
         `overlap at y=${y}: ${row[i - 1].id} / ${row[i].id} gap=${gap}`
       );
-      // Nach dem Eng-Packen: kein nutzloser Leerraum zwischen Karten.
-      assert(
-        gap <= FAMILY_GAP + 0.5,
-        `huge gap at y=${y}: ${row[i - 1].id} / ${row[i].id} gap=${gap}`
-      );
     }
   }
+}
+
+/** Kind-Block-Mitte nahe der Eltern-Mitte (keine unnötige Links-Verschiebung). */
+function childrenUnderParents(
+  layout: ReturnType<typeof buildTreeLayout>,
+  parentIds: string[],
+  childIds: string[],
+  maxDrift = CARD
+): void {
+  const parents = parentIds.map((id) => pos(layout, id));
+  const children = childIds.map((id) => pos(layout, id));
+  const parentCenter =
+    parents.reduce((sum, p) => sum + p.x + CARD / 2, 0) / parents.length;
+  const childLeft = Math.min(...children.map((p) => p.x));
+  const childRight = Math.max(...children.map((p) => p.x + CARD));
+  const childCenter = (childLeft + childRight) / 2;
+  assert(
+    Math.abs(childCenter - parentCenter) <= maxDrift + 0.5,
+    `children not under parents: childCenter=${childCenter} parentCenter=${parentCenter} drift=${Math.abs(childCenter - parentCenter)}`
+  );
 }
 
 function contiguousIds(
@@ -165,6 +179,7 @@ function scenarioUncleGeneration(): void {
   const layout = buildTreeLayout(buildTreeGraph(persons, relationships));
   wifeBesideHusband(layout, "mixeber", "perdenesin");
   noOverlaps(layout);
+  childrenUnderParents(layout, ["mixeber", "perdenesin"], ["kawa"]);
 
   const kawa = pos(layout, "kawa");
   const mistefa = pos(layout, "mistefa");
@@ -233,6 +248,7 @@ function scenarioCousins(): void {
   const layout = buildTreeLayout(buildTreeGraph(persons, relationships));
   wifeBesideHusband(layout, "mixeber", "perdenesin");
   noOverlaps(layout);
+  childrenUnderParents(layout, ["mixeber", "perdenesin"], ["kawa"]);
 
   const kawaY = Math.round(pos(layout, "kawa").y);
   const mistefaY = Math.round(pos(layout, "mistefa").y);
