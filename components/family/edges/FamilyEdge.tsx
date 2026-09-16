@@ -92,22 +92,6 @@ function partnerBridgePath(
   return [path, (sourceX + targetX) / 2, railY];
 }
 
-/**
- * Lange Herkunftskante zur Ehefrau beim Mann: Schiene etwas oberhalb der
- * normalen Kindersammelschiene, damit sie nicht mit den Geschwisterlinien
- * der Zielbranche verschmilzt.
- */
-function parentDetourPath(
-  sourceX: number,
-  sourceY: number,
-  targetX: number,
-  targetY: number
-): [string, number, number] {
-  const railY = Math.min(sourceY, targetY) - 32;
-  const path = `M ${sourceX} ${sourceY} L ${sourceX} ${railY} L ${targetX} ${railY} L ${targetX} ${targetY}`;
-  return [path, (sourceX + targetX) / 2, railY];
-}
-
 export default function FamilyEdge({
   id,
   sourceX,
@@ -130,11 +114,7 @@ export default function FamilyEdge({
       : "default";
 
   const otherGeometries = useMemo(() => {
-    if (
-      routing === "sibling-bus" ||
-      routing === "partner-bridge" ||
-      routing === "parent-detour"
-    ) {
+    if (routing === "sibling-bus" || routing === "partner-bridge") {
       return [];
     }
 
@@ -198,10 +178,6 @@ export default function FamilyEdge({
 
     if (routing === "partner-bridge") {
       return partnerBridgePath(sourceX, sourceY, targetX, targetY);
-    }
-
-    if (routing === "parent-detour") {
-      return parentDetourPath(sourceX, sourceY, targetX, targetY);
     }
 
     const points = getSmoothStepPoints({
