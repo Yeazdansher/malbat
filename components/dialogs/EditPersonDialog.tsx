@@ -1,6 +1,5 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { useRef, useState, useTransition } from "react";
 
 import {
@@ -8,6 +7,7 @@ import {
   updatePerson,
   uploadPersonPhoto,
 } from "@/app/family/[id]/actions";
+import { useTreeRefresh } from "@/components/family/useTreeRefresh";
 
 type EditPersonDialogProps = {
   open: boolean;
@@ -37,7 +37,7 @@ export default function EditPersonDialog({
   personId,
   person,
 }: EditPersonDialogProps) {
-  const router = useRouter();
+  const refreshTree = useTreeRefresh();
   const [isDeceased, setIsDeceased] = useState(person.is_deceased);
   const [pendingPhoto, startPhotoTransition] = useTransition();
   const [pendingSave, startSaveTransition] = useTransition();
@@ -86,7 +86,7 @@ export default function EditPersonDialog({
 
                 startPhotoTransition(async () => {
                   await uploadPersonPhoto(familyId, personId, data);
-                  router.refresh();
+                  refreshTree();
                 });
               }}
             />
@@ -107,7 +107,7 @@ export default function EditPersonDialog({
                 onClick={() => {
                   startPhotoTransition(async () => {
                     await removePersonPhoto(familyId, personId);
-                    router.refresh();
+                    refreshTree();
                   });
                 }}
                 className="text-left text-sm text-red-600 hover:underline disabled:opacity-60"
@@ -124,7 +124,7 @@ export default function EditPersonDialog({
             startSaveTransition(async () => {
               await updatePerson(familyId, personId, formData);
               onClose();
-              router.refresh();
+              refreshTree();
             });
           }}
         >

@@ -1,9 +1,9 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { useState } from "react";
 import AddPersonDialog from "./AddPersonDialog";
 import { addSiblingToPerson } from "@/app/family/[id]/actions";
+import { useTreeRefresh } from "@/components/family/useTreeRefresh";
 
 type Props = {
   open: boolean;
@@ -28,7 +28,7 @@ export default function AddSiblingDialog({
   canCreateNew,
   persons,
 }: Props) {
-  const router = useRouter();
+  const refreshTree = useTreeRefresh();
   const [mode, setMode] = useState<"new" | "existing">(
     canCreateNew ? "new" : "existing"
   );
@@ -126,7 +126,7 @@ export default function AddSiblingDialog({
                 );
 
                 onClose();
-                router.refresh();
+                refreshTree();
               }}
             >
               Weiter

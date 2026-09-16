@@ -1,8 +1,8 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { createParentsForChild } from "@/app/family/[id]/actions";
+import { useTreeRefresh } from "@/components/family/useTreeRefresh";
 
 type PersonOption = {
   id: string;
@@ -42,7 +42,7 @@ export default function AddParentDialog({
   persons,
   canCreateNew,
 }: Props) {
-  const router = useRouter();
+  const refreshTree = useTreeRefresh();
   const initialParent = {
     ...emptyParent,
     mode: canCreateNew ? "new" : "existing",
@@ -182,7 +182,7 @@ export default function AddParentDialog({
                   mother
                 );
                 onClose();
-                router.refresh();
+                refreshTree();
               } catch (caught) {
                 setSaving(false);
                 setError(

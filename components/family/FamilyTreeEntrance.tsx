@@ -9,16 +9,11 @@ type FamilyTreeEntranceProps = {
 };
 
 export default function FamilyTreeEntrance({
-  familyId,
   familyName,
   children,
 }: FamilyTreeEntranceProps) {
   return (
-    <PageEntrance
-      eyebrow="Stammbaum"
-      title={familyName}
-      storageKey={`family:${familyId}`}
-    >
+    <PageEntrance eyebrow="Stammbaum" title={familyName}>
       {children}
     </PageEntrance>
   );

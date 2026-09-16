@@ -2,40 +2,30 @@
 
 import { useEffect, useState, type ReactNode } from "react";
 
+import { consumeSkipFamilyEntrance } from "@/lib/family-entrance";
+
 type PageEntranceProps = {
   eyebrow: string;
   title: string;
-  /** Stable key: intro only once per family per browser session */
-  storageKey?: string;
   children: ReactNode;
 };
 
 /**
- * 1) Erstes Oeffnen: Name-Animation, dann Inhalt.
- * 2) Spaeter in derselben Session (auch nach Soft-Refresh): sofort Inhalt, keine Animation.
+ * Uebergang beim Oeffnen des Stammbaums (z. B. vom Dashboard).
+ * Soft-Refresh bei Personen-Aenderungen ueberspringt die Animation.
  */
 export default function PageEntrance({
   eyebrow,
   title,
-  storageKey,
   children,
 }: PageEntranceProps) {
-  const key = storageKey ? `malbat-entrance:${storageKey}` : null;
-
   const [mode, setMode] = useState<"loading" | "intro" | "ready">("loading");
   const [introVisible, setIntroVisible] = useState(false);
 
   useEffect(() => {
-    const alreadySeen = key ? sessionStorage.getItem(key) === "1" : false;
-
-    if (alreadySeen) {
+    if (consumeSkipFamilyEntrance()) {
       setMode("ready");
       return;
-    }
-
-    // Sofort merken, damit Soft-Refresh waehrend/nach der Animation nicht erneut startet.
-    if (key) {
-      sessionStorage.setItem(key, "1");
     }
 
     setMode("intro");
@@ -46,20 +36,23 @@ export default function PageEntrance({
 
     const reveal = window.setTimeout(() => {
       setIntroVisible(false);
+    }, 1100);
+
+    const ready = window.setTimeout(() => {
       setMode("ready");
-    }, 1400);
+    }, 1600);
 
     return () => {
       window.cancelAnimationFrame(show);
       window.clearTimeout(reveal);
+      window.clearTimeout(ready);
     };
-  }, [key]);
+  }, []);
 
   if (mode === "loading") {
-    // Kurzer Platzhalter ohne Inhalt-Flash; Intro folgt im naechsten Tick.
     return (
-      <div className="flex h-dvh items-center justify-center bg-[#0c1a12]/40">
-        <div className="px-6 text-center">
+      <div className="flex h-dvh items-center justify-center bg-[#0c1a12]">
+        <div className="px-6 text-center opacity-0">
           <p className="text-sm tracking-[0.22em] text-white/70 uppercase">
             {eyebrow}
           </p>
@@ -78,16 +71,15 @@ export default function PageEntrance({
     <>
       {mode === "intro" && (
         <div
-          className={`fixed inset-0 z-40 flex items-center justify-center bg-[#0c1a12]/40 transition-opacity duration-700 ${
+          className={`fixed inset-0 z-40 flex items-center justify-center bg-[#0c1a12] transition-opacity duration-700 ${
             introVisible ? "opacity-100" : "opacity-0"
           }`}
-          aria-hidden={!introVisible}
         >
           <div
-            className={`px-6 text-center transition-all duration-700 ${
+            className={`px-6 text-center transition-all duration-700 ease-out ${
               introVisible
                 ? "translate-y-0 scale-100 opacity-100"
-                : "translate-y-2 scale-[0.98] opacity-0"
+                : "translate-y-3 scale-95 opacity-0"
             }`}
           >
             <p className="text-sm tracking-[0.22em] text-white/70 uppercase">

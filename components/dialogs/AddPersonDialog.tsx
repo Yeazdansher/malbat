@@ -1,9 +1,9 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 
 import { createPerson } from "@/app/family/[id]/actions";
+import { useTreeRefresh } from "@/components/family/useTreeRefresh";
 
 type AddPersonDialogProps = {
   familyId: string;
@@ -23,7 +23,7 @@ export default function AddPersonDialog({
   secondRelatedPersonId,
   relationshipType,
 }: AddPersonDialogProps) {
-  const router = useRouter();
+  const refreshTree = useTreeRefresh();
   const [isDeceased, setIsDeceased] = useState(false);
   const [pending, startTransition] = useTransition();
 
@@ -42,7 +42,7 @@ export default function AddPersonDialog({
             startTransition(async () => {
               await createPerson(familyId, formData);
               onClose();
-              router.refresh();
+              refreshTree();
             });
           }}
         >
