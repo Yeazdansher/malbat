@@ -43,6 +43,8 @@ export function buildTreeLayout(graph: TreeGraph): TreeLayout {
   const personPositions = new Map<string, { x: number; y: number }>();
   const subtreeWidth = new Map<string, number>();
   const edgeKeys = new Set<string>();
+  /** Ehepartnerinnen, die am Mann hängen — nicht von Herkunfts-Packing zurückschieben. */
+  const spouseAnchored = new Set<string>();
 
   const familiesByPartner = new Map<string, Family[]>();
   const familyByChild = new Map<string, Family>();
@@ -524,6 +526,10 @@ export function buildTreeLayout(graph: TreeGraph): TreeLayout {
     }
 
     for (const id of nodeIds) {
+      if (spouseAnchored.has(id)) {
+        continue;
+      }
+
       const node = nodes.find((entry) => entry.id === id);
       if (node) {
         node.position.x += dx;
@@ -532,66 +538,6 @@ export function buildTreeLayout(graph: TreeGraph): TreeLayout {
       const personPos = personPositions.get(id);
       if (personPos) {
         personPos.x += dx;
-      }
-    }
-  }
-
-  /** Verschiebt alle Knoten ab minX nach rechts (hält Teilbäume zusammen). */
-  function shiftEverythingFromX(minX: number, dx: number): void {
-    if (dx === 0) {
-      return;
-    }
-
-    for (const node of nodes) {
-      if (node.position.x + 0.5 >= minX) {
-        node.position.x += dx;
-      }
-    }
-
-    for (const pos of personPositions.values()) {
-      if (pos.x + 0.5 >= minX) {
-        pos.x += dx;
-      }
-    }
-  }
-
-  /** Gleiche Generation: Kartenüberlappungen auflösen. */
-  function resolveAllPersonOverlaps(): void {
-    const rows = new Map<number, { id: string; x: number }[]>();
-
-    for (const [id, pos] of personPositions) {
-      const yKey = Math.round(pos.y);
-      const row = rows.get(yKey);
-      if (row) {
-        row.push({ id, x: pos.x });
-      } else {
-        rows.set(yKey, [{ id, x: pos.x }]);
-      }
-    }
-
-    for (const row of rows.values()) {
-      row.sort((a, b) => a.x - b.x);
-
-      for (let index = 1; index < row.length; index++) {
-        const left = row[index - 1];
-        const right = row[index];
-        const leftPos = personPositions.get(left.id);
-        const rightPos = personPositions.get(right.id);
-        if (!leftPos || !rightPos) {
-          continue;
-        }
-
-        const needed = leftPos.x + CARD_WIDTH + SIBLING_GAP - rightPos.x;
-        if (needed <= 0) {
-          continue;
-        }
-
-        const minX = rightPos.x;
-        shiftEverythingFromX(minX, needed);
-
-        for (let j = index; j < row.length; j++) {
-          row[j].x += needed;
-        }
       }
     }
   }
@@ -647,15 +593,16 @@ export function buildTreeLayout(graph: TreeGraph): TreeLayout {
   }
 
   function captureSubtree(before: Set<string>, rootPersonId: string): string[] {
-    const ids = newNodeIdsSince(before);
+    const ids = newNodeIdsSince(before).filter((id) => !spouseAnchored.has(id));
     // Nur neu erzeugte Knoten zum Packen. Bereits woanders platzierte Personen
-    // (z. B. Ehefrau beim Mann) nicht in die Geschwistergruppe der Herkunft ziehen.
+    // (z. B. Ehefrau beim Mann) nicht in die Geschwistergruppe ziehen.
     if (ids.length === 0) {
       return [];
     }
     if (
       !ids.includes(rootPersonId) &&
       placedPersons.has(rootPersonId) &&
+      !spouseAnchored.has(rootPersonId) &&
       !shouldRelocateBesideHusband(rootPersonId)
     ) {
       ids.push(rootPersonId);
@@ -850,6 +797,7 @@ export function buildTreeLayout(graph: TreeGraph): TreeLayout {
 
     for (const partnerId of others) {
       placeOrMovePerson(partnerId, cursorX, y);
+      spouseAnchored.add(partnerId);
       addEdge(partnerId, first.familyNodeId);
       linkBirthFamilyEdge(partnerId);
       cursorX += CARD_WIDTH + PARTNER_GAP;
@@ -940,6 +888,7 @@ export function buildTreeLayout(graph: TreeGraph): TreeLayout {
       for (const partnerId of others) {
         cursorX += PARTNER_GAP;
         placeOrMovePerson(partnerId, cursorX, origin.y);
+        spouseAnchored.add(partnerId);
         linkBirthFamilyEdge(partnerId);
         placedPartnerXs.push(cursorX);
         cursorX += CARD_WIDTH;
@@ -949,6 +898,7 @@ export function buildTreeLayout(graph: TreeGraph): TreeLayout {
       for (const partnerId of others) {
         cursorX -= PARTNER_GAP + CARD_WIDTH;
         placeOrMovePerson(partnerId, cursorX, origin.y);
+        spouseAnchored.add(partnerId);
         linkBirthFamilyEdge(partnerId);
         placedPartnerXs.push(cursorX);
       }
@@ -1206,7 +1156,7 @@ export function buildTreeLayout(graph: TreeGraph): TreeLayout {
 
   /**
    * Abschluss: Ehefrauen fest neben den Mann setzen (Cousin-Ehen),
-   * falls Packing/Herkunft sie noch verschoben hat — danach Überlappungen lösen.
+   * falls Packing/Herkunft sie noch verschoben hat.
    */
   function reconcileRelocatedWives(): void {
     for (const family of graph.families.values()) {
@@ -1236,6 +1186,7 @@ export function buildTreeLayout(graph: TreeGraph): TreeLayout {
 
       for (const wifeId of wives) {
         placeOrMovePerson(wifeId, cursorX, origin.y);
+        spouseAnchored.add(wifeId);
         linkBirthFamilyEdge(wifeId);
         addEdge(wifeId, family.familyNodeId);
         addEdge(husbandId, family.familyNodeId);
@@ -1253,7 +1204,6 @@ export function buildTreeLayout(graph: TreeGraph): TreeLayout {
   }
 
   reconcileRelocatedWives();
-  resolveAllPersonOverlaps();
 
   return { nodes, edges };
 }
