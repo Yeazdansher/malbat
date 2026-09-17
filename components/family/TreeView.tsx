@@ -301,7 +301,7 @@ export default function TreeView({
   }
 
   return (
-    <div className="h-full w-full">
+    <div className="relative z-0 h-full w-full">
       <ReactFlow
         nodes={displayedNodes}
         edges={displayedEdges}

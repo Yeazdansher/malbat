@@ -40,10 +40,11 @@ export default function UserMenu({ profile }: UserMenuProps) {
       </button>
 
       {open && (
-        <div className="absolute right-0 mt-2 w-56 rounded-xl border bg-white shadow-lg">
+        <div className="absolute right-0 z-50 mt-2 w-56 rounded-xl border bg-white shadow-lg">
           <Link
             href="/profile"
             className="block px-4 py-3 hover:bg-gray-100"
+            onClick={() => setOpen(false)}
           >
             👤 Mein Profil
           </Link>
@@ -51,6 +52,7 @@ export default function UserMenu({ profile }: UserMenuProps) {
           <Link
             href="/settings"
             className="block px-4 py-3 hover:bg-gray-100"
+            onClick={() => setOpen(false)}
           >
             ⚙️ Einstellungen
           </Link>
