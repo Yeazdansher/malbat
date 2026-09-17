@@ -1,6 +1,5 @@
 import Link from "next/link";
 import BrandMark from "@/components/BrandMark";
-import LocaleSwitcher from "@/components/LocaleSwitcher";
 import UserMenu from "./UserMenu";
 import { getTranslator } from "@/lib/i18n/server";
 
@@ -76,13 +75,7 @@ export default async function Header({
           )}
         </div>
 
-        <div className="flex shrink-0 items-center gap-3">
-          <LocaleSwitcher
-            compact
-            className={glass ? "text-white" : "text-gray-800"}
-          />
-          <UserMenu profile={profile} />
-        </div>
+        <UserMenu profile={profile} />
       </div>
     </header>
   );

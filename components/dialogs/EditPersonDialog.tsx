@@ -8,6 +8,7 @@ import {
   uploadPersonPhoto,
 } from "@/app/family/[id]/actions";
 import { useTreeRefresh } from "@/components/family/useTreeRefresh";
+import { useTranslations } from "@/lib/i18n/client";
 
 type EditPersonDialogProps = {
   open: boolean;
@@ -37,6 +38,7 @@ export default function EditPersonDialog({
   personId,
   person,
 }: EditPersonDialogProps) {
+  const t = useTranslations("person");
   const refreshTree = useTreeRefresh();
   const [isDeceased, setIsDeceased] = useState(person.is_deceased);
   const [pendingPhoto, startPhotoTransition] = useTransition();
@@ -52,7 +54,7 @@ export default function EditPersonDialog({
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
       <div className="max-h-[90vh] w-full max-w-xl overflow-y-auto rounded-2xl bg-white p-8 shadow-xl">
         <h2 className="text-2xl font-bold text-green-700">
-          Person bearbeiten
+          {t("editTitle")}
         </h2>
 
         <div className="mt-6 flex items-center gap-4">
@@ -97,7 +99,7 @@ export default function EditPersonDialog({
               onClick={() => photoInputRef.current?.click()}
               className="text-left text-sm text-green-700 hover:underline disabled:opacity-60"
             >
-              {person.photo_url ? "Foto ändern" : "Foto hochladen"}
+              {person.photo_url ? t("changePhoto") : t("uploadPhoto")}
             </button>
 
             {person.photo_url && (
@@ -112,7 +114,7 @@ export default function EditPersonDialog({
                 }}
                 className="text-left text-sm text-red-600 hover:underline disabled:opacity-60"
               >
-                Foto entfernen
+                {t("removePhoto")}
               </button>
             )}
           </div>
@@ -129,7 +131,9 @@ export default function EditPersonDialog({
           }}
         >
           <div>
-            <label className="mb-2 block font-medium">Vorname *</label>
+            <label className="mb-2 block font-medium">
+              {t("firstName")} {t("requiredMark")}
+            </label>
             <input
               name="first_name"
               defaultValue={person.first_name}
@@ -139,7 +143,9 @@ export default function EditPersonDialog({
           </div>
 
           <div>
-            <label className="mb-2 block font-medium">Nachname *</label>
+            <label className="mb-2 block font-medium">
+              {t("lastName")} {t("requiredMark")}
+            </label>
             <input
               name="last_name"
               defaultValue={person.last_name}
@@ -149,21 +155,23 @@ export default function EditPersonDialog({
           </div>
 
           <div>
-            <label className="mb-2 block font-medium">Geschlecht *</label>
+            <label className="mb-2 block font-medium">
+              {t("gender")} {t("requiredMark")}
+            </label>
             <select
               name="gender"
               defaultValue={person.gender}
               className="w-full rounded-lg border p-3"
               required
             >
-              <option value="male">Männlich</option>
-              <option value="female">Weiblich</option>
-              <option value="unknown">Unbekannt</option>
+              <option value="male">{t("genderMale")}</option>
+              <option value="female">{t("genderFemale")}</option>
+              <option value="unknown">{t("genderUnknown")}</option>
             </select>
           </div>
 
           <div>
-            <label className="mb-2 block font-medium">Geburtsdatum</label>
+            <label className="mb-2 block font-medium">{t("birthDate")}</label>
             <input
               type="date"
               name="birth_date"
@@ -173,7 +181,7 @@ export default function EditPersonDialog({
           </div>
 
           <div>
-            <label className="mb-2 block font-medium">Geburtsort</label>
+            <label className="mb-2 block font-medium">{t("birthPlace")}</label>
             <input
               name="birth_place"
               defaultValue={person.birth_place ?? ""}
@@ -188,13 +196,13 @@ export default function EditPersonDialog({
               checked={isDeceased}
               onChange={(e) => setIsDeceased(e.target.checked)}
             />
-            Verstorben
+            {t("deceased")}
           </label>
 
           {isDeceased && (
             <>
               <div>
-                <label className="mb-2 block font-medium">Sterbedatum</label>
+                <label className="mb-2 block font-medium">{t("deathDate")}</label>
                 <input
                   type="date"
                   name="death_date"
@@ -204,7 +212,7 @@ export default function EditPersonDialog({
               </div>
 
               <div>
-                <label className="mb-2 block font-medium">Sterbeort</label>
+                <label className="mb-2 block font-medium">{t("deathPlace")}</label>
                 <input
                   name="death_place"
                   defaultValue={person.death_place ?? ""}
@@ -215,7 +223,7 @@ export default function EditPersonDialog({
           )}
 
           <div>
-            <label className="mb-2 block font-medium">Notizen</label>
+            <label className="mb-2 block font-medium">{t("notes")}</label>
             <textarea
               name="notes"
               rows={4}
@@ -231,7 +239,7 @@ export default function EditPersonDialog({
               className="rounded-lg border px-5 py-3"
               disabled={pendingSave}
             >
-              Abbrechen
+              {t("cancel")}
             </button>
 
             <button
@@ -239,7 +247,7 @@ export default function EditPersonDialog({
               disabled={pendingSave}
               className="rounded-lg bg-green-700 px-5 py-3 text-white hover:bg-green-800 disabled:opacity-60"
             >
-              {pendingSave ? "Speichern…" : "Änderungen speichern"}
+              {pendingSave ? t("saving") : t("save")}
             </button>
           </div>
         </form>

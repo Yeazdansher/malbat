@@ -5,6 +5,7 @@ import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 
 import { updateFamilyDetails } from "@/app/dashboard/actions";
+import { useTranslations } from "@/lib/i18n/client";
 
 type Props = {
   familyId: string;
@@ -21,6 +22,7 @@ export default function EditFamilyButton({
   buttonClassName,
   onClose,
 }: Props) {
+  const t = useTranslations("familyActions");
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [name, setName] = useState(initialName);
@@ -82,7 +84,7 @@ export default function EditFamilyButton({
           buttonClassName ?? "text-sm text-green-700 hover:underline"
         }
       >
-        Bearbeiten
+        {t("edit")}
       </button>
 
       {open &&

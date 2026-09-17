@@ -4,6 +4,7 @@ import { useState } from "react";
 import AddPersonDialog from "./AddPersonDialog";
 import { createRelationship } from "@/app/family/[id]/actions";
 import { useTreeRefresh } from "@/components/family/useTreeRefresh";
+import { useTranslations } from "@/lib/i18n/client";
 
 type Props = {
   open: boolean;
@@ -28,6 +29,7 @@ export default function AddPartnerDialog({
   canCreateNew,
   persons,
 }: Props) {
+  const t = useTranslations("person");
   const refreshTree = useTreeRefresh();
   const [mode, setMode] =
     useState<"new" | "existing">(
@@ -51,14 +53,13 @@ export default function AddPartnerDialog({
         <div className="w-full max-w-lg rounded-2xl bg-white p-8 shadow-xl">
 
           <h2 className="text-2xl font-bold text-green-700">
-            Partner hinzufügen
+            {t("addPartnerTitle")}
           </h2>
 
           <div className="mt-8">
             {!canCreateNew && (
               <p className="mb-4 rounded-lg bg-amber-50 p-3 text-sm text-amber-900">
-                Das Personenlimit ist erreicht. Du kannst weiterhin eine
-                vorhandene Person auswählen.
+                {t("limitReached")}
               </p>
             )}
 
@@ -71,7 +72,7 @@ export default function AddPartnerDialog({
                 onChange={() => setMode("new")}
               />
 
-              Neue Person anlegen
+              {t("createNew")}
 
             </label>
 
@@ -83,7 +84,7 @@ export default function AddPartnerDialog({
                 onChange={() => setMode("existing")}
               />
 
-              Vorhandene Person auswählen
+              {t("selectExisting")}
 
             </label>
 
@@ -94,7 +95,7 @@ export default function AddPartnerDialog({
             <div className="mt-6">
 
               <label className="mb-2 block font-medium">
-                Person auswählen
+                {t("selectPerson")}
               </label>
 
               <select
@@ -106,7 +107,7 @@ export default function AddPartnerDialog({
               >
 
                 <option value="">
-                  Bitte auswählen
+                  {t("selectPlease")}
                 </option>
 
                 {persons
@@ -136,7 +137,7 @@ export default function AddPartnerDialog({
               onClick={onClose}
               className="rounded-lg border px-5 py-3"
             >
-              Abbrechen
+              {t("cancel")}
             </button>
 
             <button
@@ -164,7 +165,7 @@ export default function AddPartnerDialog({
               }}
               className="rounded-lg bg-green-700 px-5 py-3 text-white"
             >
-              Weiter
+              {t("continue")}
             </button>
 
           </div>

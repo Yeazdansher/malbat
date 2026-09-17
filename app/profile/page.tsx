@@ -80,26 +80,25 @@ export default async function ProfilePage({ searchParams }: PageProps) {
 
         {updated === "1" && (
           <p className="mt-6 rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-green-800">
-            Deine Änderungen wurden gespeichert.
+            {t("saved")}
           </p>
         )}
 
         {passwordUpdated === "1" && (
           <p className="mt-6 rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-green-800">
-            Dein Passwort wurde geändert.
+            {t("passwordChanged")}
           </p>
         )}
 
         {planActivated === "1" && (
           <p className="mt-6 rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-green-800">
-            Premium wurde kostenlos aktiviert.
+            {t("planActivated")}
           </p>
         )}
 
         {planDowngraded === "1" && (
           <p className="mt-6 rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-green-800">
-            Du nutzt jetzt wieder Free. Zusätzliche eigene Stammbäume wurden
-            gesperrt.
+            {t("planDowngraded")}
           </p>
         )}
 
@@ -119,7 +118,7 @@ export default async function ProfilePage({ searchParams }: PageProps) {
         <form action={updateProfile} className="mt-10 space-y-6">
           <div>
             <label htmlFor="first_name" className="mb-2 block font-medium">
-              Vorname
+              {t("firstName")}
             </label>
             <input
               id="first_name"
@@ -134,7 +133,7 @@ export default async function ProfilePage({ searchParams }: PageProps) {
 
           <div>
             <label htmlFor="last_name" className="mb-2 block font-medium">
-              Nachname
+              {t("lastName")}
             </label>
             <input
               id="last_name"
@@ -149,7 +148,7 @@ export default async function ProfilePage({ searchParams }: PageProps) {
 
           <div>
             <label htmlFor="username" className="mb-2 block font-medium">
-              Benutzername
+              {t("username")}
             </label>
             <input
               id="username"
@@ -159,13 +158,13 @@ export default async function ProfilePage({ searchParams }: PageProps) {
               disabled
             />
             <p className="mt-1 text-sm text-gray-500">
-              Der Benutzername kann nicht geändert werden.
+              {t("usernameLocked")}
             </p>
           </div>
 
           <div>
             <label htmlFor="email" className="mb-2 block font-medium">
-              E-Mail
+              {t("email")}
             </label>
             <input
               id="email"
@@ -175,7 +174,7 @@ export default async function ProfilePage({ searchParams }: PageProps) {
               disabled
             />
             <p className="mt-1 text-sm text-gray-500">
-              Die E-Mail-Adresse kann nicht geändert werden.
+              {t("emailLocked")}
             </p>
           </div>
 
@@ -183,7 +182,7 @@ export default async function ProfilePage({ searchParams }: PageProps) {
             type="submit"
             className="rounded-lg bg-green-700 px-6 py-3 text-white hover:bg-green-800"
           >
-            Änderungen speichern
+            {t("saveChanges")}
           </button>
         </form>
 

@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { logout } from "@/app/logout/actions";
 import Avatar from "@/components/Avatar";
+import LocaleSwitcher from "@/components/LocaleSwitcher";
 import { useTranslations } from "@/lib/i18n/client";
 
 type Profile = {
@@ -21,6 +22,7 @@ type UserMenuProps = {
 export default function UserMenu({ profile }: UserMenuProps) {
   const [open, setOpen] = useState(false);
   const t = useTranslations("header");
+  const tLocale = useTranslations("locale");
 
   const initials = profile
     ? `${profile.first_name.charAt(0)}${profile.last_name.charAt(0)}`.toUpperCase()
@@ -42,7 +44,7 @@ export default function UserMenu({ profile }: UserMenuProps) {
       </button>
 
       {open && (
-        <div className="absolute end-0 z-50 mt-2 w-56 rounded-xl border bg-white shadow-lg">
+        <div className="absolute end-0 z-50 mt-2 w-64 rounded-xl border bg-white shadow-lg">
           <Link
             href="/profile"
             className="block px-4 py-3 hover:bg-gray-100"
@@ -58,6 +60,13 @@ export default function UserMenu({ profile }: UserMenuProps) {
           >
             ⚙️ {t("settings")}
           </Link>
+
+          <div className="border-t px-4 py-3">
+            <p className="mb-2 text-xs font-medium uppercase tracking-wide text-gray-500">
+              {tLocale("label")}
+            </p>
+            <LocaleSwitcher className="w-full justify-between" />
+          </div>
 
           <hr />
 

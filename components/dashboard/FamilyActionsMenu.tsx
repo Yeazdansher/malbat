@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 
 import DeleteFamilyDialog from "@/components/dialogs/DeleteFamilyDialog";
+import { useTranslations } from "@/lib/i18n/client";
 import EditFamilyButton from "./EditFamilyButton";
 import FamilyMembersDialog from "./FamilyMembersDialog";
 import InviteFamilyDialog from "./InviteFamilyDialog";
@@ -29,6 +30,7 @@ export default function FamilyActionsMenu({
   familyDescription,
   role,
 }: Props) {
+  const t = useTranslations("familyActions");
   const rootRef = useRef<HTMLDivElement>(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const [exportOpen, setExportOpen] = useState(false);
@@ -69,7 +71,7 @@ export default function FamilyActionsMenu({
             setExportOpen(false);
           }}
           className="flex h-10 w-10 items-center justify-center rounded-full text-2xl font-bold text-gray-600 hover:bg-gray-100"
-          aria-label="Stammbaum-Aktionen"
+          aria-label={t("menuLabel")}
           aria-expanded={menuOpen}
         >
           ⋯
@@ -101,7 +103,7 @@ export default function FamilyActionsMenu({
               }}
               className={menuItemClass}
             >
-              Einladen
+              {t("invite")}
             </button>
           )}
 
@@ -114,7 +116,7 @@ export default function FamilyActionsMenu({
               }}
               className={menuItemClass}
             >
-              Mitglieder ansehen
+              {t("members")}
             </button>
           )}
 
@@ -125,7 +127,7 @@ export default function FamilyActionsMenu({
               className={`${menuItemClass} flex items-center justify-between`}
               aria-expanded={exportOpen}
             >
-              <span>Exportieren</span>
+              <span>{t("export")}</span>
               <span className="text-gray-400">{exportOpen ? "▾" : "▸"}</span>
             </button>
 
@@ -156,7 +158,7 @@ export default function FamilyActionsMenu({
                 }}
                 className={`${menuItemClass} text-red-600 hover:bg-red-50`}
               >
-                Stammbaum löschen
+                {t("delete")}
               </button>
             </>
           )}

@@ -1,7 +1,6 @@
 import Link from "next/link";
 
 import AuthShell from "@/components/landing/AuthShell";
-import LocaleSwitcher from "@/components/LocaleSwitcher";
 import { getTranslator } from "@/lib/i18n/server";
 import { requestPasswordReset } from "./actions";
 
@@ -20,10 +19,6 @@ export default async function ForgotPasswordPage({
 
   return (
     <AuthShell title={t("title")} subtitle={t("subtitle")}>
-      <div className="mt-4 flex justify-end">
-        <LocaleSwitcher compact />
-      </div>
-
       {sent === "1" && (
         <p className="mt-6 rounded-lg border border-green-200 bg-green-50 p-3 text-sm text-green-800">
           {t("sent")}

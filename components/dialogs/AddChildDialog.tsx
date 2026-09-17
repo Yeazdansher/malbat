@@ -4,6 +4,7 @@ import { useState } from "react";
 import AddPersonDialog from "./AddPersonDialog";
 import { addChildToParents } from "@/app/family/[id]/actions";
 import { useTreeRefresh } from "@/components/family/useTreeRefresh";
+import { useTranslations } from "@/lib/i18n/client";
 
 type Props = {
   open: boolean;
@@ -28,6 +29,7 @@ export default function AddChildDialog({
   canCreateNew,
   persons,
 }: Props) {
+  const t = useTranslations("person");
   const refreshTree = useTreeRefresh();
   const [mode, setMode] = useState<"new" | "existing">(
     canCreateNew ? "new" : "existing"
@@ -48,14 +50,13 @@ export default function AddChildDialog({
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
         <div className="w-full max-w-lg rounded-2xl bg-white p-8 shadow-xl">
           <h2 className="text-2xl font-bold text-green-700">
-            Kind hinzufügen
+            {t("addChildTitle")}
           </h2>
 
           <div className="mt-8">
             {!canCreateNew && (
               <p className="mb-4 rounded-lg bg-amber-50 p-3 text-sm text-amber-900">
-                Das Personenlimit ist erreicht. Du kannst weiterhin eine
-                vorhandene Person auswählen.
+                {t("limitReached")}
               </p>
             )}
             <label className="mb-3 flex items-center gap-3">
@@ -65,7 +66,7 @@ export default function AddChildDialog({
                 disabled={!canCreateNew}
                 onChange={() => setMode("new")}
               />
-              Neue Person anlegen
+              {t("createNew")}
             </label>
 
             <label className="flex items-center gap-3">
@@ -74,14 +75,14 @@ export default function AddChildDialog({
                 checked={mode === "existing"}
                 onChange={() => setMode("existing")}
               />
-              Vorhandene Person auswählen
+              {t("selectExisting")}
             </label>
           </div>
 
           {mode === "existing" && (
             <div className="mt-6">
               <label className="mb-2 block font-medium">
-                Person auswählen
+                {t("selectPerson")}
               </label>
 
               <select
@@ -91,7 +92,7 @@ export default function AddChildDialog({
                   setSelectedPersonId(event.target.value)
                 }
               >
-                <option value="">Bitte auswählen</option>
+                <option value="">{t("selectPlease")}</option>
 
                 {persons
                   .filter((person) => !parentIdSet.has(person.id))
@@ -110,7 +111,7 @@ export default function AddChildDialog({
               onClick={onClose}
               className="rounded-lg border px-5 py-3"
             >
-              Abbrechen
+              {t("cancel")}
             </button>
 
             <button
@@ -136,7 +137,7 @@ export default function AddChildDialog({
               }}
               className="rounded-lg bg-green-700 px-5 py-3 text-white"
             >
-              Weiter
+              {t("continue")}
             </button>
           </div>
         </div>

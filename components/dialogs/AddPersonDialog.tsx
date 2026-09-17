@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 
 import { createPerson } from "@/app/family/[id]/actions";
 import { useTreeRefresh } from "@/components/family/useTreeRefresh";
+import { useTranslations } from "@/lib/i18n/client";
 
 type AddPersonDialogProps = {
   familyId: string;
@@ -23,6 +24,7 @@ export default function AddPersonDialog({
   secondRelatedPersonId,
   relationshipType,
 }: AddPersonDialogProps) {
+  const t = useTranslations("person");
   const refreshTree = useTreeRefresh();
   const [isDeceased, setIsDeceased] = useState(false);
   const [pending, startTransition] = useTransition();
@@ -33,7 +35,7 @@ export default function AddPersonDialog({
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
       <div className="max-h-[90vh] w-full max-w-xl overflow-y-auto rounded-2xl bg-white p-8 shadow-xl">
         <h2 className="text-2xl font-bold text-green-700">
-          Person hinzufügen
+          {t("addTitle")}
         </h2>
 
         <form
@@ -65,7 +67,9 @@ export default function AddPersonDialog({
           />
 
           <div>
-            <label className="mb-2 block font-medium">Vorname *</label>
+            <label className="mb-2 block font-medium">
+              {t("firstName")} {t("requiredMark")}
+            </label>
             <input
               name="first_name"
               className="w-full rounded-lg border p-3"
@@ -74,7 +78,9 @@ export default function AddPersonDialog({
           </div>
 
           <div>
-            <label className="mb-2 block font-medium">Nachname *</label>
+            <label className="mb-2 block font-medium">
+              {t("lastName")} {t("requiredMark")}
+            </label>
             <input
               name="last_name"
               className="w-full rounded-lg border p-3"
@@ -83,7 +89,9 @@ export default function AddPersonDialog({
           </div>
 
           <div>
-            <label className="mb-2 block font-medium">Geschlecht *</label>
+            <label className="mb-2 block font-medium">
+              {t("gender")} {t("requiredMark")}
+            </label>
             <select
               name="gender"
               className="w-full rounded-lg border p-3"
@@ -91,16 +99,16 @@ export default function AddPersonDialog({
               required
             >
               <option value="" disabled>
-                Bitte auswählen
+                {t("selectPlease")}
               </option>
-              <option value="male">Männlich</option>
-              <option value="female">Weiblich</option>
-              <option value="unknown">Unbekannt</option>
+              <option value="male">{t("genderMale")}</option>
+              <option value="female">{t("genderFemale")}</option>
+              <option value="unknown">{t("genderUnknown")}</option>
             </select>
           </div>
 
           <div>
-            <label className="mb-2 block font-medium">Geburtsdatum</label>
+            <label className="mb-2 block font-medium">{t("birthDate")}</label>
             <input
               type="date"
               name="birth_date"
@@ -109,7 +117,7 @@ export default function AddPersonDialog({
           </div>
 
           <div>
-            <label className="mb-2 block font-medium">Geburtsort</label>
+            <label className="mb-2 block font-medium">{t("birthPlace")}</label>
             <input
               name="birth_place"
               className="w-full rounded-lg border p-3"
@@ -123,13 +131,13 @@ export default function AddPersonDialog({
               checked={isDeceased}
               onChange={(e) => setIsDeceased(e.target.checked)}
             />
-            Verstorben
+            {t("deceased")}
           </label>
 
           {isDeceased && (
             <>
               <div>
-                <label className="mb-2 block font-medium">Sterbedatum</label>
+                <label className="mb-2 block font-medium">{t("deathDate")}</label>
                 <input
                   type="date"
                   name="death_date"
@@ -138,7 +146,7 @@ export default function AddPersonDialog({
               </div>
 
               <div>
-                <label className="mb-2 block font-medium">Sterbeort</label>
+                <label className="mb-2 block font-medium">{t("deathPlace")}</label>
                 <input
                   name="death_place"
                   className="w-full rounded-lg border p-3"
@@ -148,7 +156,7 @@ export default function AddPersonDialog({
           )}
 
           <div>
-            <label className="mb-2 block font-medium">Notizen</label>
+            <label className="mb-2 block font-medium">{t("notes")}</label>
             <textarea
               name="notes"
               rows={4}
@@ -163,7 +171,7 @@ export default function AddPersonDialog({
               className="rounded-lg border px-5 py-3"
               disabled={pending}
             >
-              Abbrechen
+              {t("cancel")}
             </button>
 
             <button
@@ -171,7 +179,7 @@ export default function AddPersonDialog({
               disabled={pending}
               className="rounded-lg bg-green-700 px-5 py-3 text-white hover:bg-green-800 disabled:opacity-60"
             >
-              {pending ? "Speichern…" : "Speichern"}
+              {pending ? t("saving") : t("save")}
             </button>
           </div>
         </form>

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { createParentsForChild } from "@/app/family/[id]/actions";
 import { useTreeRefresh } from "@/components/family/useTreeRefresh";
+import { useTranslations } from "@/lib/i18n/client";
 
 type PersonOption = {
   id: string;
@@ -42,6 +43,7 @@ export default function AddParentDialog({
   persons,
   canCreateNew,
 }: Props) {
+  const t = useTranslations("person");
   const refreshTree = useTreeRefresh();
   const initialParent = {
     ...emptyParent,
@@ -78,7 +80,7 @@ export default function AddParentDialog({
             disabled={!canCreateNew}
             onChange={() => onChange({ ...value, mode: "new" })}
           />
-          Neue Person anlegen
+          {t("createNew")}
         </label>
 
         <label className="mb-4 flex items-center gap-3">
@@ -87,7 +89,7 @@ export default function AddParentDialog({
             checked={value.mode === "existing"}
             onChange={() => onChange({ ...value, mode: "existing" })}
           />
-          Vorhandene Person auswählen
+          {t("selectExisting")}
         </label>
 
         {value.mode === "existing" ? (
@@ -98,7 +100,7 @@ export default function AddParentDialog({
               onChange({ ...value, personId: event.target.value })
             }
           >
-            <option value="">Bitte auswählen</option>
+            <option value="">{t("selectPlease")}</option>
             {selectablePersons.map((person) => (
               <option key={person.id} value={person.id}>
                 {person.first_name} {person.last_name}
@@ -109,7 +111,7 @@ export default function AddParentDialog({
           <div className="space-y-3">
             <input
               className="w-full rounded-lg border p-3"
-              placeholder="Vorname *"
+              placeholder={`${t("firstName")} ${t("requiredMark")}`}
               value={value.firstName}
               onChange={(event) =>
                 onChange({ ...value, firstName: event.target.value })
@@ -117,7 +119,7 @@ export default function AddParentDialog({
             />
             <input
               className="w-full rounded-lg border p-3"
-              placeholder="Nachname *"
+              placeholder={`${t("lastName")} ${t("requiredMark")}`}
               value={value.lastName}
               onChange={(event) =>
                 onChange({ ...value, lastName: event.target.value })
@@ -133,24 +135,22 @@ export default function AddParentDialog({
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
       <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl bg-white p-8 shadow-xl">
         <h2 className="text-2xl font-bold text-green-700">
-          Eltern hinzufügen
+          {t("addParentsTitle")}
         </h2>
 
         <p className="mt-2 text-gray-600">
-          Ein Kind hat immer einen Vater und eine Mutter. Beide Personen
-          werden gemeinsam angelegt.
+          {t("addParentsHint")}
         </p>
 
         {!canCreateNew && (
           <p className="mt-4 rounded-lg bg-amber-50 p-3 text-sm text-amber-900">
-            Das Personenlimit ist erreicht. Du kannst weiterhin vorhandene
-            Personen als Eltern auswählen.
+            {t("limitReachedParents")}
           </p>
         )}
 
         <div className="mt-8 grid gap-4 md:grid-cols-2">
-          {renderParentFields("Vater", father, setFather)}
-          {renderParentFields("Mutter", mother, setMother)}
+          {renderParentFields(t("father"), father, setFather)}
+          {renderParentFields(t("mother"), mother, setMother)}
         </div>
 
         {error && (
@@ -163,7 +163,7 @@ export default function AddParentDialog({
             onClick={onClose}
             className="rounded-lg border px-5 py-3"
           >
-            Abbrechen
+            {t("cancel")}
           </button>
 
           <button
@@ -193,7 +193,7 @@ export default function AddParentDialog({
               }
             }}
           >
-            Speichern
+            {saving ? t("saving") : t("save")}
           </button>
         </div>
       </div>

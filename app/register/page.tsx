@@ -1,7 +1,6 @@
 import Link from "next/link";
 import RegisterForm from "@/components/RegisterForm";
 import AuthShell from "@/components/landing/AuthShell";
-import LocaleSwitcher from "@/components/LocaleSwitcher";
 import { getTranslator } from "@/lib/i18n/server";
 
 type PageProps = {
@@ -22,10 +21,6 @@ export default async function RegisterPage({ searchParams }: PageProps) {
 
   return (
     <AuthShell title={t("title")} subtitle={t("subtitle")}>
-      <div className="mt-4 flex justify-end">
-        <LocaleSwitcher compact />
-      </div>
-
       {error && (
         <p className="mt-6 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
           {error}

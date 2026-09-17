@@ -1,7 +1,6 @@
 import { redirect } from "next/navigation";
 
 import Header from "@/components/Header";
-import LocaleSwitcher from "@/components/LocaleSwitcher";
 import { getTranslator } from "@/lib/i18n/server";
 import { getCurrentProfile } from "@/lib/profile";
 import { createClient } from "@/lib/supabase/server";
@@ -34,11 +33,6 @@ export default async function SettingsPage() {
         <h1 className="text-3xl font-bold text-green-700">{t("title")}</h1>
 
         <div className="mt-8 space-y-6">
-          <div className="flex items-center justify-between gap-4 border-b pb-4">
-            <span className="font-medium">{t("language")}</span>
-            <LocaleSwitcher />
-          </div>
-
           <div className="flex items-center justify-between border-b pb-4">
             <label className="font-medium">{t("design")}</label>
             <select

@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { PasswordInput } from "@/components/PasswordInput";
 import AuthShell from "@/components/landing/AuthShell";
-import LocaleSwitcher from "@/components/LocaleSwitcher";
 import { getTranslator } from "@/lib/i18n/server";
 import { login } from "./actions";
 
@@ -30,10 +29,6 @@ export default async function LoginPage({
 
   return (
     <AuthShell title={t("title")} subtitle={t("subtitle")}>
-      <div className="mt-4 flex justify-end">
-        <LocaleSwitcher compact />
-      </div>
-
       {error && (
         <div className="mt-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
           {error}
