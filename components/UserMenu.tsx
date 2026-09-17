@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { logout } from "@/app/logout/actions";
 import Avatar from "@/components/Avatar";
+import { useTranslations } from "@/lib/i18n/client";
 
 type Profile = {
   id: string;
@@ -19,6 +20,7 @@ type UserMenuProps = {
 
 export default function UserMenu({ profile }: UserMenuProps) {
   const [open, setOpen] = useState(false);
+  const t = useTranslations("header");
 
   const initials = profile
     ? `${profile.first_name.charAt(0)}${profile.last_name.charAt(0)}`.toUpperCase()
@@ -29,7 +31,7 @@ export default function UserMenu({ profile }: UserMenuProps) {
       <button
         onClick={() => setOpen(!open)}
         className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full bg-green-700 ring-2 ring-white/25 font-semibold text-white"
-        aria-label="Benutzermenü"
+        aria-label={t("userMenu")}
       >
         <Avatar
           url={profile?.avatar_url}
@@ -40,13 +42,13 @@ export default function UserMenu({ profile }: UserMenuProps) {
       </button>
 
       {open && (
-        <div className="absolute right-0 z-50 mt-2 w-56 rounded-xl border bg-white shadow-lg">
+        <div className="absolute end-0 z-50 mt-2 w-56 rounded-xl border bg-white shadow-lg">
           <Link
             href="/profile"
             className="block px-4 py-3 hover:bg-gray-100"
             onClick={() => setOpen(false)}
           >
-            👤 Mein Profil
+            👤 {t("myProfile")}
           </Link>
 
           <Link
@@ -54,7 +56,7 @@ export default function UserMenu({ profile }: UserMenuProps) {
             className="block px-4 py-3 hover:bg-gray-100"
             onClick={() => setOpen(false)}
           >
-            ⚙️ Einstellungen
+            ⚙️ {t("settings")}
           </Link>
 
           <hr />
@@ -62,9 +64,9 @@ export default function UserMenu({ profile }: UserMenuProps) {
           <form action={logout}>
             <button
               type="submit"
-              className="block w-full px-4 py-3 text-left text-red-600 hover:bg-red-50"
+              className="block w-full px-4 py-3 text-start text-red-600 hover:bg-red-50"
             >
-              🚪 Abmelden
+              🚪 {t("logout")}
             </button>
           </form>
         </div>

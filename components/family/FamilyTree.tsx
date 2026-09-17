@@ -15,6 +15,7 @@ import AddChildDialog from "@/components/dialogs/AddChildDialog";
 import AddParentDialog from "@/components/dialogs/AddParentDialog";
 import AddSiblingDialog from "@/components/dialogs/AddSiblingDialog";
 import DeletePersonDialog from "@/components/dialogs/DeletePersonDialog";
+import { useTranslations } from "@/lib/i18n/client";
 
 type Person = {
   id: string;
@@ -93,6 +94,7 @@ const [deleteOpen, setDeleteOpen] =
   const [searchOpen, setSearchOpen] = useState(false);
   const [focusedPersonId, setFocusedPersonId] = useState<string>();
   const [focusRequest, setFocusRequest] = useState(0);
+  const tSearch = useTranslations("tree");
 
   // Nach Soft-Refresh Personendaten in offenem Dialog aktualisieren.
   useEffect(() => {
@@ -174,7 +176,7 @@ const [deleteOpen, setDeleteOpen] =
 
         <div className="relative w-full max-w-sm sm:w-80">
           <label htmlFor="person-search" className="sr-only">
-            Person suchen
+            {tSearch("searchLabel")}
           </label>
           <input
             id="person-search"
@@ -196,7 +198,7 @@ const [deleteOpen, setDeleteOpen] =
                 setSearchOpen(false);
               }
             }}
-            placeholder="Person suchen..."
+            placeholder={tSearch("searchPlaceholder")}
             className="w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-green-700 focus:outline-none"
           />
 
@@ -215,7 +217,7 @@ const [deleteOpen, setDeleteOpen] =
                 ))
               ) : (
                 <p className="px-4 py-3 text-sm text-gray-500">
-                  Keine Person gefunden.
+                  {tSearch("searchNoResults")}
                 </p>
               )}
             </div>
@@ -223,7 +225,7 @@ const [deleteOpen, setDeleteOpen] =
         </div>
       </div>
 
-      <div className="min-h-0 flex-1">
+      <div className="min-h-0 flex-1" dir="ltr">
         <TreeView
           persons={persons}
           relationships={relationships}

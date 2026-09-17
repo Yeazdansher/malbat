@@ -1,0 +1,128 @@
+{
+  "common": {
+    "appName": "MALBAT",
+    "dashboard": "Dashboard",
+    "backHome": "← Startseite",
+    "save": "Speichern",
+    "cancel": "Abbrechen",
+    "loading": "Laden…",
+    "version": "Version v{version}"
+  },
+  "locale": {
+    "label": "Sprache",
+    "de": "Deutsch",
+    "en": "English",
+    "ar": "العربية"
+  },
+  "header": {
+    "userMenu": "Benutzermenü",
+    "myProfile": "Mein Profil",
+    "settings": "Einstellungen",
+    "logout": "Abmelden"
+  },
+  "landing": {
+    "headline": "Der moderne Familienstammbaum",
+    "tagline": "Familien verbinden · Geschichten bewahren",
+    "login": "Anmelden",
+    "register": "Registrieren"
+  },
+  "login": {
+    "title": "Willkommen zurück",
+    "subtitle": "Melde dich bei deinem Familienkonto an.",
+    "email": "E-Mail",
+    "password": "Passwort",
+    "remember": "Angemeldet bleiben",
+    "forgotPassword": "Passwort vergessen?",
+    "submit": "Anmelden",
+    "register": "Registrieren",
+    "accountDeleted": "Dein Konto wurde vollständig gelöscht.",
+    "passwordReset": "Dein Passwort wurde geändert. Du kannst dich jetzt anmelden."
+  },
+  "register": {
+    "title": "Konto erstellen",
+    "subtitle": "Starte deinen Familienstammbaum.",
+    "firstName": "Vorname",
+    "lastName": "Nachname",
+    "username": "Benutzername",
+    "email": "E-Mail",
+    "password": "Passwort",
+    "confirmPassword": "Passwort wiederholen",
+    "passwordMismatch": "Die Passwörter stimmen nicht überein.",
+    "submit": "Registrieren",
+    "hasAccount": "Bereits ein Konto?",
+    "login": "Anmelden"
+  },
+  "forgotPassword": {
+    "title": "Passwort zurücksetzen",
+    "subtitle": "Wir senden dir einen Link per E-Mail.",
+    "email": "E-Mail",
+    "submit": "Link senden",
+    "sent": "Falls ein Konto mit dieser E-Mail-Adresse existiert, wurde ein Link zum Zurücksetzen des Passworts versendet.",
+    "backToLogin": "← Zurück zur Anmeldung"
+  },
+  "dashboard": {
+    "title": "Meine Stammbäume",
+    "newTree": "+ Neuer Stammbaum",
+    "premiumForMore": "Premium für weiteren Stammbaum",
+    "empty": "Du hast noch keinen Stammbaum erstellt.",
+    "role": "Rolle",
+    "persons": "{count} Personen",
+    "birthdays": "{count} Geburtstage diesen Monat",
+    "open": "Öffnen",
+    "openTree": "Stammbaum öffnen",
+    "locked": "Gesperrt",
+    "lockedHint": "Gesperrt durch Free-Tarif. Premium aktivieren, um diesen Stammbaum wieder zu öffnen.",
+    "managePlan": "Tarif verwalten",
+    "deleted": "Der Stammbaum wurde vollständig gelöscht.",
+    "roles": {
+      "owner": "Besitzer",
+      "editor": "Bearbeiter",
+      "viewer": "Betrachter"
+    }
+  },
+  "settings": {
+    "title": "Einstellungen",
+    "language": "Sprache",
+    "design": "Design",
+    "designLight": "Hell",
+    "notifications": "Benachrichtigungen",
+    "notificationsOn": "Aktiv",
+    "privacy": "Datenschutz",
+    "comingSoon": "Demnächst"
+  },
+  "profile": {
+    "title": "Mein Profil",
+    "back": "Dashboard"
+  },
+  "tree": {
+    "searchPlaceholder": "Person suchen…",
+    "searchNoResults": "Keine Person gefunden.",
+    "searchLabel": "Person suchen",
+    "entranceEyebrow": "Stammbaum",
+    "emptyTitle": "Noch keine Personen",
+    "emptyBody": "Lege die erste Person an, um den Stammbaum zu starten.",
+    "addFirstPerson": "Erste Person hinzufügen",
+    "furtherDetails": "Weitere Details",
+    "addParents": "Eltern hinzufügen",
+    "addSiblings": "Geschwister hinzufügen",
+    "addPartner": "Partner hinzufügen",
+    "years": "{count} Jahre",
+    "layoutFailedTitle": "Stammbaum-Layout fehlgeschlagen",
+    "layoutFailedBody": "{count} Personen geladen, aber die Darstellung ist abgestürzt: {error}",
+    "personLimitOwner": "Personenlimit erreicht. Weitere Personen sind mit Premium möglich.",
+    "personLimitMember": "Das Personenlimit des Besitzers ist erreicht.",
+    "loadError": "Stammbaum-Daten konnten nicht geladen werden",
+    "notFound": "Familie nicht gefunden",
+    "lockedTitle": "Stammbaum gesperrt",
+    "lockedBody": "Dieser Stammbaum ist durch den Free-Tarif gesperrt. Der Besitzer muss Premium aktivieren, damit der Baum wieder geöffnet werden kann.",
+    "toDashboard": "Zum Dashboard",
+    "managePlan": "Tarif verwalten"
+  },
+  "familyNew": {
+    "title": "Neuer Stammbaum",
+    "name": "Name",
+    "description": "Beschreibung",
+    "submit": "Erstellen",
+    "back": "Dashboard"
+  }
+}

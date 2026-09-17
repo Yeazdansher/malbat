@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 
 import { PasswordInput } from "@/components/PasswordInput";
 import { PasswordRulesChecklist } from "@/components/PasswordRulesChecklist";
+import { useTranslations } from "@/lib/i18n/client";
 import { isValidPassword } from "@/lib/password";
 import { registerUser } from "@/app/register/actions";
 
@@ -14,6 +15,7 @@ type Props = {
 export default function RegisterForm({ invite }: Props) {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const t = useTranslations("register");
 
   const passwordOk = useMemo(() => isValidPassword(password), [password]);
   const passwordsMatch =
@@ -35,7 +37,7 @@ export default function RegisterForm({ invite }: Props) {
       <input
         name="firstName"
         type="text"
-        placeholder="Vorname"
+        placeholder={t("firstName")}
         className="w-full rounded-lg border border-gray-300 p-3 focus:border-[#1f7a45] focus:outline-none"
         required
       />
@@ -43,7 +45,7 @@ export default function RegisterForm({ invite }: Props) {
       <input
         name="lastName"
         type="text"
-        placeholder="Nachname"
+        placeholder={t("lastName")}
         className="w-full rounded-lg border border-gray-300 p-3 focus:border-[#1f7a45] focus:outline-none"
         required
       />
@@ -51,7 +53,7 @@ export default function RegisterForm({ invite }: Props) {
       <input
         name="username"
         type="text"
-        placeholder="Benutzername"
+        placeholder={t("username")}
         className="w-full rounded-lg border border-gray-300 p-3 focus:border-[#1f7a45] focus:outline-none"
         required
       />
@@ -59,14 +61,14 @@ export default function RegisterForm({ invite }: Props) {
       <input
         name="email"
         type="email"
-        placeholder="E-Mail"
+        placeholder={t("email")}
         className="w-full rounded-lg border border-gray-300 p-3 focus:border-[#1f7a45] focus:outline-none"
         required
       />
 
       <PasswordInput
         name="password"
-        placeholder="Passwort"
+        placeholder={t("password")}
         autoComplete="new-password"
         minLength={8}
         value={password}
@@ -82,7 +84,7 @@ export default function RegisterForm({ invite }: Props) {
 
       <PasswordInput
         name="confirmPassword"
-        placeholder="Passwort wiederholen"
+        placeholder={t("confirmPassword")}
         autoComplete="new-password"
         minLength={8}
         value={confirmPassword}
@@ -92,9 +94,7 @@ export default function RegisterForm({ invite }: Props) {
       />
 
       {confirmPassword.length > 0 && !passwordsMatch && (
-        <p className="text-sm text-red-600">
-          Die Passwörter stimmen nicht überein.
-        </p>
+        <p className="text-sm text-red-600">{t("passwordMismatch")}</p>
       )}
 
       <button
@@ -102,7 +102,7 @@ export default function RegisterForm({ invite }: Props) {
         disabled={!canSubmit}
         className="w-full rounded-lg bg-[#1f7a45] py-3 font-semibold text-white transition hover:bg-[#19653a] disabled:cursor-not-allowed disabled:bg-gray-300 disabled:hover:bg-gray-300"
       >
-        Registrieren
+        {t("submit")}
       </button>
     </form>
   );

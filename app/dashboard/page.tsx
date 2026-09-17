@@ -5,7 +5,7 @@ import AppBackdrop from "@/components/AppBackdrop";
 import Header from "@/components/Header";
 import DashboardCardsReveal from "@/components/dashboard/DashboardCardsReveal";
 import FamilyActionsMenu from "@/components/dashboard/FamilyActionsMenu";
-import { roleLabel } from "@/lib/invitations";
+import { getTranslator } from "@/lib/i18n/server";
 import { getCurrentPlanUsage } from "@/lib/plans";
 import { getCurrentProfile } from "@/lib/profile";
 import { createClient } from "@/lib/supabase/server";
@@ -131,6 +131,8 @@ export default async function DashboardPage({
   const lockedCardClass =
     "from-[#fff4e8] via-white to-[#eef7f1] border-[#f0c9a0]/70";
 
+  const t = await getTranslator("dashboard");
+
   return (
     <AppBackdrop>
       <main className="min-h-screen">
@@ -139,7 +141,7 @@ export default async function DashboardPage({
         <div className="mx-auto max-w-5xl p-8">
           {familyDeleted === "1" && (
             <div className="mb-6 rounded-lg border border-green-200 bg-green-50/95 px-4 py-3 text-green-800 shadow-sm">
-              Der Stammbaum wurde vollständig gelöscht.
+              {t("deleted")}
             </div>
           )}
 
@@ -148,7 +150,7 @@ export default async function DashboardPage({
               className="text-3xl font-semibold text-white"
               style={{ fontFamily: "var(--font-malbat), serif" }}
             >
-              Meine Stammbäume
+              {t("title")}
             </h2>
 
             <Link
@@ -160,8 +162,8 @@ export default async function DashboardPage({
               className="rounded-lg bg-[#1f7a45] px-5 py-3 font-semibold text-white hover:bg-[#19653a]"
             >
               {ownedFamilyLimitReached
-                ? "Premium für weiteren Stammbaum"
-                : "+ Neuer Stammbaum"}
+                ? t("premiumForMore")
+                : t("newTree")}
             </Link>
           </div>
 
@@ -172,9 +174,7 @@ export default async function DashboardPage({
                   key="empty"
                   className="rounded-2xl border border-[#9fd4b3]/60 bg-gradient-to-br from-[#e8f6ee] via-white to-[#fff8ef] p-10 text-center shadow-lg backdrop-blur-sm"
                 >
-                  <p className="text-lg text-gray-700">
-                    Du hast noch keinen Stammbaum erstellt.
-                  </p>
+                  <p className="text-lg text-gray-700">{t("empty")}</p>
                 </div>,
               ]}
             </DashboardCardsReveal>
@@ -215,13 +215,13 @@ export default async function DashboardPage({
                         )}
 
                         <p className="mt-3 text-sm text-gray-600">
-                          Rolle:{" "}
+                          {t("role")}:{" "}
                           <strong
                             className={
                               locked ? "text-amber-800" : "text-[#1f7a45]"
                             }
                           >
-                            {roleLabel(item.role)}
+                            {t(`roles.${item.role}`)}
                           </strong>
                         </p>
 
@@ -233,18 +233,18 @@ export default async function DashboardPage({
                                 : "rounded-full bg-[#1f7a45]/12 px-3 py-1 text-sm font-medium text-[#14532d]"
                             }
                           >
-                            {stats.personCount} Personen
+                            {t("persons", { count: stats.personCount })}
                           </span>
                           <span className="rounded-full bg-amber-500/15 px-3 py-1 text-sm font-medium text-amber-900">
-                            {stats.birthdaysThisMonth} Geburtstage diesen
-                            Monat
+                            {t("birthdays", {
+                              count: stats.birthdaysThisMonth,
+                            })}
                           </span>
                         </div>
 
                         {locked && (
                           <p className="mt-3 text-sm font-medium text-amber-800">
-                            Gesperrt durch Free-Tarif. Premium aktivieren,
-                            um diesen Stammbaum wieder zu öffnen.
+                            {t("lockedHint")}
                           </p>
                         )}
                       </div>
@@ -263,14 +263,14 @@ export default async function DashboardPage({
                           href="/profile#plan"
                           className="inline-block rounded-lg border border-amber-300 bg-amber-50 px-5 py-3 text-amber-900 hover:bg-amber-100"
                         >
-                          Tarif verwalten
+                          {t("managePlan")}
                         </Link>
                       ) : (
                         <Link
                           href={`/family/${item.families.id}`}
                           className="inline-block rounded-lg bg-[#1f7a45] px-5 py-3 font-semibold text-white hover:bg-[#19653a]"
                         >
-                          Stammbaum öffnen
+                          {t("openTree")}
                         </Link>
                       )}
                     </div>

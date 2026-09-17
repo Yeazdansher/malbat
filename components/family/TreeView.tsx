@@ -21,6 +21,7 @@ import {
   type Relationship,
 } from "@/lib/tree-engine";
 import { collectSearchBranch } from "@/lib/search-branch";
+import { useTranslations } from "@/lib/i18n/client";
 
 type Person = {
   id: string;
@@ -71,6 +72,7 @@ export default function TreeView({
   onAddChild,
   onFocusPerson,
 }: Props) {
+  const t = useTranslations("tree");
   const [flowInstance, setFlowInstance] =
     useState<ReactFlowInstance | null>(null);
 
@@ -291,11 +293,13 @@ export default function TreeView({
       <div className="flex h-[650px] items-center justify-center rounded-2xl border-2 border-red-200 bg-red-50 p-8 text-center">
         <div>
           <h2 className="text-xl font-semibold text-red-800">
-            Stammbaum-Layout fehlgeschlagen
+            {t("layoutFailedTitle")}
           </h2>
           <p className="mt-2 text-sm text-red-700">
-            {persons.length} Personen geladen, aber die Darstellung ist
-            abgestürzt: {layoutResult.error}
+            {t("layoutFailedBody", {
+              count: persons.length,
+              error: layoutResult.error,
+            })}
           </p>
         </div>
       </div>

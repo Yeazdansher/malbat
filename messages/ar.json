@@ -1,0 +1,128 @@
+{
+  "common": {
+    "appName": "MALBAT",
+    "dashboard": "لوحة التحكم",
+    "backHome": "→ الصفحة الرئيسية",
+    "save": "حفظ",
+    "cancel": "إلغاء",
+    "loading": "جارٍ التحميل…",
+    "version": "الإصدار v{version}"
+  },
+  "locale": {
+    "label": "اللغة",
+    "de": "Deutsch",
+    "en": "English",
+    "ar": "العربية"
+  },
+  "header": {
+    "userMenu": "قائمة المستخدم",
+    "myProfile": "ملفي الشخصي",
+    "settings": "الإعدادات",
+    "logout": "تسجيل الخروج"
+  },
+  "landing": {
+    "headline": "شجرة العائلة الحديثة",
+    "tagline": "ربط العائلات · حفظ القصص",
+    "login": "تسجيل الدخول",
+    "register": "إنشاء حساب"
+  },
+  "login": {
+    "title": "مرحبًا بعودتك",
+    "subtitle": "سجّل الدخول إلى حساب عائلتك.",
+    "email": "البريد الإلكتروني",
+    "password": "كلمة المرور",
+    "remember": "البقاء مسجّل الدخول",
+    "forgotPassword": "نسيت كلمة المرور؟",
+    "submit": "تسجيل الدخول",
+    "register": "إنشاء حساب",
+    "accountDeleted": "تم حذف حسابك بالكامل.",
+    "passwordReset": "تم تغيير كلمة المرور. يمكنك تسجيل الدخول الآن."
+  },
+  "register": {
+    "title": "إنشاء حساب",
+    "subtitle": "ابدأ شجرة عائلتك.",
+    "firstName": "الاسم الأول",
+    "lastName": "اسم العائلة",
+    "username": "اسم المستخدم",
+    "email": "البريد الإلكتروني",
+    "password": "كلمة المرور",
+    "confirmPassword": "تأكيد كلمة المرور",
+    "passwordMismatch": "كلمتا المرور غير متطابقتين.",
+    "submit": "إنشاء حساب",
+    "hasAccount": "لديك حساب بالفعل؟",
+    "login": "تسجيل الدخول"
+  },
+  "forgotPassword": {
+    "title": "إعادة تعيين كلمة المرور",
+    "subtitle": "سنرسل لك رابطًا عبر البريد الإلكتروني.",
+    "email": "البريد الإلكتروني",
+    "submit": "إرسال الرابط",
+    "sent": "إذا كان هناك حساب بهذا البريد، فقد أُرسل رابط لإعادة تعيين كلمة المرور.",
+    "backToLogin": "→ العودة لتسجيل الدخول"
+  },
+  "dashboard": {
+    "title": "أشجار عائلتي",
+    "newTree": "+ شجرة عائلة جديدة",
+    "premiumForMore": "Premium لشجرة إضافية",
+    "empty": "لم تُنشئ شجرة عائلة بعد.",
+    "role": "الدور",
+    "persons": "{count} أشخاص",
+    "birthdays": "{count} أعياد ميلاد هذا الشهر",
+    "open": "فتح",
+    "openTree": "فتح شجرة العائلة",
+    "locked": "مقفلة",
+    "lockedHint": "مقفلة بسبب خطة Free. فعّل Premium لفتح هذه الشجرة مجددًا.",
+    "managePlan": "إدارة الخطة",
+    "deleted": "تم حذف شجرة العائلة بالكامل.",
+    "roles": {
+      "owner": "المالك",
+      "editor": "محرر",
+      "viewer": "مشاهد"
+    }
+  },
+  "settings": {
+    "title": "الإعدادات",
+    "language": "اللغة",
+    "design": "المظهر",
+    "designLight": "فاتح",
+    "notifications": "الإشعارات",
+    "notificationsOn": "مفعّلة",
+    "privacy": "الخصوصية",
+    "comingSoon": "قريبًا"
+  },
+  "profile": {
+    "title": "ملفي الشخصي",
+    "back": "لوحة التحكم"
+  },
+  "tree": {
+    "searchPlaceholder": "البحث عن شخص…",
+    "searchNoResults": "لم يتم العثور على شخص.",
+    "searchLabel": "البحث عن شخص",
+    "entranceEyebrow": "شجرة العائلة",
+    "emptyTitle": "لا يوجد أشخاص بعد",
+    "emptyBody": "أضف أول شخص لبدء شجرة العائلة.",
+    "addFirstPerson": "إضافة أول شخص",
+    "furtherDetails": "المزيد من التفاصيل",
+    "addParents": "إضافة الوالدين",
+    "addSiblings": "إضافة أشقاء",
+    "addPartner": "إضافة شريك",
+    "years": "{count} سنة",
+    "layoutFailedTitle": "فشل تخطيط شجرة العائلة",
+    "layoutFailedBody": "تم تحميل {count} أشخاص، لكن العرض تعطل: {error}",
+    "personLimitOwner": "تم الوصول إلى حد الأشخاص. المزيد يتطلب Premium.",
+    "personLimitMember": "تم الوصول إلى حد الأشخاص لدى المالك.",
+    "loadError": "تعذر تحميل بيانات شجرة العائلة",
+    "notFound": "العائلة غير موجودة",
+    "lockedTitle": "شجرة العائلة مقفلة",
+    "lockedBody": "هذه الشجرة مقفلة بسبب خطة Free. يجب على المالك تفعيل Premium لفتحها مجددًا.",
+    "toDashboard": "إلى لوحة التحكم",
+    "managePlan": "إدارة الخطة"
+  },
+  "familyNew": {
+    "title": "شجرة عائلة جديدة",
+    "name": "الاسم",
+    "description": "الوصف",
+    "submit": "إنشاء",
+    "back": "لوحة التحكم"
+  }
+}

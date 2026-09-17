@@ -1,0 +1,128 @@
+{
+  "common": {
+    "appName": "MALBAT",
+    "dashboard": "Dashboard",
+    "backHome": "← Home",
+    "save": "Save",
+    "cancel": "Cancel",
+    "loading": "Loading…",
+    "version": "Version v{version}"
+  },
+  "locale": {
+    "label": "Language",
+    "de": "Deutsch",
+    "en": "English",
+    "ar": "العربية"
+  },
+  "header": {
+    "userMenu": "User menu",
+    "myProfile": "My profile",
+    "settings": "Settings",
+    "logout": "Log out"
+  },
+  "landing": {
+    "headline": "The modern family tree",
+    "tagline": "Connect families · Preserve stories",
+    "login": "Log in",
+    "register": "Sign up"
+  },
+  "login": {
+    "title": "Welcome back",
+    "subtitle": "Sign in to your family account.",
+    "email": "Email",
+    "password": "Password",
+    "remember": "Keep me signed in",
+    "forgotPassword": "Forgot password?",
+    "submit": "Log in",
+    "register": "Sign up",
+    "accountDeleted": "Your account has been permanently deleted.",
+    "passwordReset": "Your password was changed. You can sign in now."
+  },
+  "register": {
+    "title": "Create an account",
+    "subtitle": "Start your family tree.",
+    "firstName": "First name",
+    "lastName": "Last name",
+    "username": "Username",
+    "email": "Email",
+    "password": "Password",
+    "confirmPassword": "Confirm password",
+    "passwordMismatch": "Passwords do not match.",
+    "submit": "Sign up",
+    "hasAccount": "Already have an account?",
+    "login": "Log in"
+  },
+  "forgotPassword": {
+    "title": "Reset password",
+    "subtitle": "We will email you a reset link.",
+    "email": "Email",
+    "submit": "Send link",
+    "sent": "If an account exists for this email address, a password reset link has been sent.",
+    "backToLogin": "← Back to login"
+  },
+  "dashboard": {
+    "title": "My family trees",
+    "newTree": "+ New family tree",
+    "premiumForMore": "Premium for another tree",
+    "empty": "You have not created a family tree yet.",
+    "role": "Role",
+    "persons": "{count} people",
+    "birthdays": "{count} birthdays this month",
+    "open": "Open",
+    "openTree": "Open family tree",
+    "locked": "Locked",
+    "lockedHint": "Locked by the Free plan. Enable Premium to open this family tree again.",
+    "managePlan": "Manage plan",
+    "deleted": "The family tree was permanently deleted.",
+    "roles": {
+      "owner": "Owner",
+      "editor": "Editor",
+      "viewer": "Viewer"
+    }
+  },
+  "settings": {
+    "title": "Settings",
+    "language": "Language",
+    "design": "Theme",
+    "designLight": "Light",
+    "notifications": "Notifications",
+    "notificationsOn": "On",
+    "privacy": "Privacy",
+    "comingSoon": "Coming soon"
+  },
+  "profile": {
+    "title": "My profile",
+    "back": "Dashboard"
+  },
+  "tree": {
+    "searchPlaceholder": "Search person…",
+    "searchNoResults": "No person found.",
+    "searchLabel": "Search person",
+    "entranceEyebrow": "Family tree",
+    "emptyTitle": "No people yet",
+    "emptyBody": "Add the first person to start the family tree.",
+    "addFirstPerson": "Add first person",
+    "furtherDetails": "More details",
+    "addParents": "Add parents",
+    "addSiblings": "Add siblings",
+    "addPartner": "Add partner",
+    "years": "{count} years",
+    "layoutFailedTitle": "Family tree layout failed",
+    "layoutFailedBody": "{count} people loaded, but rendering crashed: {error}",
+    "personLimitOwner": "Person limit reached. More people require Premium.",
+    "personLimitMember": "The owner's person limit has been reached.",
+    "loadError": "Could not load family tree data",
+    "notFound": "Family not found",
+    "lockedTitle": "Family tree locked",
+    "lockedBody": "This family tree is locked by the Free plan. The owner must enable Premium to open it again.",
+    "toDashboard": "Go to dashboard",
+    "managePlan": "Manage plan"
+  },
+  "familyNew": {
+    "title": "New family tree",
+    "name": "Name",
+    "description": "Description",
+    "submit": "Create",
+    "back": "Dashboard"
+  }
+}

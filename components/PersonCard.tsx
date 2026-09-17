@@ -1,5 +1,7 @@
 "use client";
 
+import { useTranslations } from "@/lib/i18n/client";
+
 type PersonCardProps = {
   firstName: string;
   lastName: string;
@@ -30,18 +32,18 @@ export default function PersonCard({
   hasParents = false,
   canEdit = true,
 }: PersonCardProps) {
+  const t = useTranslations("tree");
   const initials =
     `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
 
   return (
     <div className="relative w-[270px] rounded-md border border-gray-300 bg-white p-4 shadow-sm">
-
       {canEdit && !hasParents && (
         <button
           type="button"
           className="nodrag nopan nowheel absolute z-20 left-1/2 top-0 flex h-8 w-8 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border bg-white text-base leading-none hover:bg-green-100"
-          title="Eltern hinzufügen"
-          aria-label="Eltern hinzufügen"
+          title={t("addParents")}
+          aria-label={t("addParents")}
           onPointerDown={(event) => event.stopPropagation()}
           onClick={(event) => {
             event.preventDefault();
@@ -58,8 +60,8 @@ export default function PersonCard({
           <button
             type="button"
             className="nodrag nopan nowheel absolute z-20 left-0 top-1/2 flex h-8 w-8 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border bg-white text-base leading-none hover:bg-green-100"
-            title="Geschwister hinzufügen"
-            aria-label="Geschwister hinzufügen"
+            title={t("addSiblings")}
+            aria-label={t("addSiblings")}
             onPointerDown={(event) => event.stopPropagation()}
             onClick={(event) => {
               event.preventDefault();
@@ -74,8 +76,8 @@ export default function PersonCard({
             <button
               type="button"
               className="nodrag nopan nowheel absolute z-20 right-0 top-1/2 flex h-8 w-8 translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border bg-white text-base leading-none hover:bg-green-100"
-              title="Partner hinzufügen"
-              aria-label="Partner hinzufügen"
+              title={t("addPartner")}
+              aria-label={t("addPartner")}
               onPointerDown={(event) => event.stopPropagation()}
               onClick={(event) => {
                 event.preventDefault();
@@ -127,10 +129,8 @@ export default function PersonCard({
           </div>
 
           <div className="mt-3 flex items-center gap-2 text-gray-600">
-            <span className="text-lg">
-              {isDeceased ? "✝" : "🎂"}
-            </span>
-            <span>{age} Jahre</span>
+            <span className="text-lg">{isDeceased ? "✝" : "🎂"}</span>
+            <span>{t("years", { count: age })}</span>
           </div>
         </div>
       </div>
@@ -140,7 +140,7 @@ export default function PersonCard({
           onClick={onOpenDetails}
           className="w-full rounded border border-gray-300 py-2 text-sm transition hover:bg-gray-100"
         >
-          Weitere Details
+          {t("furtherDetails")}
         </button>
       </div>
     </div>

@@ -9,6 +9,7 @@ import { canEditFamily } from "@/lib/family-permissions";
 import type { FamilyRole } from "@/lib/invitations";
 import { getFamilyPlanUsage } from "@/lib/plans";
 import { getCurrentProfile } from "@/lib/profile";
+import { getTranslator } from "@/lib/i18n/server";
 import { findMissingSiblingParentLinks } from "@/lib/sibling-parent-sync";
 import { createClient } from "@/lib/supabase/server";
 
@@ -39,6 +40,8 @@ export default async function FamilyPage({
   }
 
   const profile = await getCurrentProfile();
+  const tCommon = await getTranslator("common");
+  const tTree = await getTranslator("tree");
 
   const { data: family, error } = await supabase
     .from("families")
@@ -91,13 +94,13 @@ export default async function FamilyPage({
         <main className="min-h-screen">
           <Header
             backHref="/dashboard"
-            backLabel="Dashboard"
+            backLabel={tCommon("dashboard")}
             profile={profile}
           />
 
           <div className="mx-auto mt-10 max-w-5xl rounded-2xl border bg-white p-10 shadow-lg">
             <h1 className="text-2xl font-bold text-red-600">
-              Familie nicht gefunden
+              {tTree("notFound")}
             </h1>
           </div>
         </main>
@@ -117,7 +120,7 @@ export default async function FamilyPage({
         <main className="min-h-screen">
           <Header
             backHref="/dashboard"
-            backLabel="Dashboard"
+            backLabel={tCommon("dashboard")}
             profile={profile}
           />
 
@@ -125,24 +128,20 @@ export default async function FamilyPage({
             <h1 className="text-3xl font-bold text-green-700">
               {family.name}
             </h1>
-            <p className="mt-4 text-gray-700">
-              Dieser Stammbaum ist durch den Free-Tarif gesperrt. Der
-              Besitzer muss Premium aktivieren, damit der Baum wieder
-              geöffnet werden kann.
-            </p>
+            <p className="mt-4 text-gray-700">{tTree("lockedBody")}</p>
             <div className="mt-8 flex flex-wrap gap-3">
               <Link
                 href="/dashboard"
                 className="rounded-lg border px-5 py-3 hover:bg-gray-100"
               >
-                Zum Dashboard
+                {tTree("toDashboard")}
               </Link>
               {isOwner && (
                 <Link
                   href="/profile#plan"
                   className="rounded-lg bg-[#1f7a45] px-5 py-3 font-semibold text-white hover:bg-[#19653a]"
                 >
-                  Tarif verwalten
+                  {tTree("managePlan")}
                 </Link>
               )}
             </div>
@@ -161,7 +160,7 @@ export default async function FamilyPage({
       <div className="flex h-dvh flex-col overflow-hidden bg-white">
         <Header
           backHref="/dashboard"
-          backLabel="Dashboard"
+          backLabel={tCommon("dashboard")}
           profile={profile}
         />
 
@@ -172,13 +171,13 @@ export default async function FamilyPage({
             {actionError === "person-limit" && (
               <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-amber-900">
                 {isOwner
-                  ? "Personenlimit erreicht. Weitere Personen sind mit Premium möglich."
-                  : "Das Personenlimit des Besitzers ist erreicht."}
+                  ? tTree("personLimitOwner")
+                  : tTree("personLimitMember")}
               </div>
             )}
             {(personsError || relationshipsError) && (
               <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-900">
-                Stammbaum-Daten konnten nicht geladen werden
+                {tTree("loadError")}
                 {personsError ? `: ${personsError.message}` : ""}
                 {relationshipsError
                   ? `: ${relationshipsError.message}`

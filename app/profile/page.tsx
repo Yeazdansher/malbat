@@ -6,6 +6,7 @@ import AvatarUpload from "@/components/profile/AvatarUpload";
 import ChangePasswordButton from "@/components/profile/ChangePasswordButton";
 import DeleteAccountButton from "@/components/profile/DeleteAccountButton";
 import PlanManagement from "@/components/profile/PlanManagement";
+import { getTranslator } from "@/lib/i18n/server";
 import { getCurrentPlanUsage } from "@/lib/plans";
 import { getCurrentProfile } from "@/lib/profile";
 import { createClient } from "@/lib/supabase/server";
@@ -61,17 +62,20 @@ export default async function ProfilePage({ searchParams }: PageProps) {
     email.charAt(0).toUpperCase() ||
     "--";
 
+  const t = await getTranslator("profile");
+  const tCommon = await getTranslator("common");
+
   return (
     <main className="min-h-screen bg-gray-100">
       <Header
         backHref="/dashboard"
-        backLabel="Dashboard"
+        backLabel={tCommon("dashboard")}
         profile={profile}
       />
 
       <div className="mx-auto mt-10 max-w-2xl rounded-2xl bg-white p-8 shadow-sm">
         <h1 className="text-3xl font-bold text-green-700">
-          Mein Profil
+          {t("title")}
         </h1>
 
         {updated === "1" && (

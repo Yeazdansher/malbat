@@ -3,11 +3,15 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
+import LocaleSwitcher from "@/components/LocaleSwitcher";
+import { useTranslations } from "@/lib/i18n/client";
 import { APP_VERSION } from "@/lib/version";
 import LandingBackdrop, { LandingBrand } from "./LandingBackdrop";
 
 export default function LandingHero() {
   const [ready, setReady] = useState(false);
+  const t = useTranslations("landing");
+  const tCommon = useTranslations("common");
 
   useEffect(() => {
     const frame = window.requestAnimationFrame(() => setReady(true));
@@ -17,6 +21,9 @@ export default function LandingHero() {
   return (
     <LandingBackdrop>
       <main className="flex min-h-screen flex-col px-6 py-8 sm:px-10 lg:px-16">
+        <div className="flex justify-end">
+          <LocaleSwitcher compact className="text-white" />
+        </div>
         <div className="flex flex-1 flex-col justify-center">
           <div
             className={`transition-all duration-700 ${
@@ -36,7 +43,7 @@ export default function LandingHero() {
             }`}
             style={{ fontFamily: "var(--font-malbat), serif" }}
           >
-            Der moderne Familienstammbaum
+            {t("headline")}
           </h1>
 
           <p
@@ -46,7 +53,7 @@ export default function LandingHero() {
                 : "translate-y-4 opacity-0"
             }`}
           >
-            Familien verbinden · Geschichten bewahren
+            {t("tagline")}
           </p>
 
           <div
@@ -60,19 +67,19 @@ export default function LandingHero() {
               href="/login"
               className="rounded-xl bg-[#1f7a45] px-7 py-3.5 text-center text-base font-semibold text-white transition hover:bg-[#19653a]"
             >
-              Anmelden
+              {t("login")}
             </Link>
             <Link
               href="/register"
               className="rounded-xl border border-white/70 bg-white/10 px-7 py-3.5 text-center text-base font-semibold text-white backdrop-blur-sm transition hover:bg-white/20"
             >
-              Registrieren
+              {t("register")}
             </Link>
           </div>
         </div>
 
         <div className="flex justify-end pt-8 text-sm text-white/55">
-          Version v{APP_VERSION}
+          {tCommon("version", { version: APP_VERSION })}
         </div>
       </main>
     </LandingBackdrop>
