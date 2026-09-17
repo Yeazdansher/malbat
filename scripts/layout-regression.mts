@@ -332,6 +332,7 @@ scenarioUncleGeneration();
 scenarioCousins();
 scenarioSameBranchCousins();
 scenarioSiblingBranches();
+scenarioWifeSiblingOverlap();
 console.log("ALL LAYOUT REGRESSIONS PASSED");
 
 /** Fall D: Mehrere Brüder mit eigenen Kinderscharen — Äste müssen Platz machen. */
@@ -427,4 +428,48 @@ function scenarioSiblingBranches(): void {
   assert(bRight + 40 <= cLeft + 0.5, `B/C branches not separated: ${bRight} vs ${cLeft}`);
 
   console.log("OK scenarioSiblingBranches");
+}
+
+/** Fall E: Ehefrau neben Mann darf nicht mit nächster Schwester überlappen. */
+function scenarioWifeSiblingOverlap(): void {
+  const persons = [
+    person("root", "Root", "male"),
+    person("bedran", "Bedran", "male", "1950"),
+    person("wife", "Wife", "female", "1952"),
+    person("xezal", "Xezal", "female", "1954"),
+    person("silte", "Silte", "male", "1956"),
+  ];
+
+  const relationships: Relationship[] = [
+    { person1_id: "root", person2_id: "bedran", relationship_type: "father" },
+    { person1_id: "root", person2_id: "xezal", relationship_type: "father" },
+    { person1_id: "root", person2_id: "silte", relationship_type: "father" },
+    {
+      person1_id: "bedran",
+      person2_id: "wife",
+      relationship_type: "partner",
+    },
+  ];
+
+  const layout = buildTreeLayout(buildTreeGraph(persons, relationships));
+  wifeBesideHusband(layout, "bedran", "wife");
+  noOverlaps(layout);
+
+  const rowY = Math.round(pos(layout, "bedran").y);
+  const row = layout.nodes
+    .filter(
+      (n) => n.type === "person" && Math.round(n.position.y) === rowY
+    )
+    .map((n) => ({ id: n.id, x: n.position.x }))
+    .sort((a, b) => a.x - b.x);
+
+  const wife = row.find((e) => e.id === "wife");
+  const xezal = row.find((e) => e.id === "xezal");
+  assert(Boolean(wife && xezal), "wife/xezal missing on row");
+  assert(
+    wife!.x + CARD <= xezal!.x - GAP + 0.5,
+    `wife overlaps xezal: wife=${wife!.x} xezal=${xezal!.x}`
+  );
+
+  console.log("OK scenarioWifeSiblingOverlap");
 }

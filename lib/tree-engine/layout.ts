@@ -1711,6 +1711,8 @@ export function buildTreeLayout(graph: TreeGraph): TreeLayout {
   resolveAllPersonOverlaps();
   packGenerationFamilyBlocks();
   reconcileRelocatedWives();
+  // Letzter Partner-Fix kann Ehefrau über die nächste Geschwisterkarte legen.
+  resolveAllPersonOverlaps();
 
   return { nodes, edges };
 }
