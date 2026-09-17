@@ -230,6 +230,9 @@ const [deleteOpen, setDeleteOpen] =
           canEdit={canEdit}
           focusPersonId={focusedPersonId}
           focusRequest={focusRequest}
+          onFocusPerson={(personId) => {
+            setFocusedPersonId(personId);
+          }}
           onOpenDetails={(person) => {
             setSelectedPerson(person);
             setDetailsOpen(true);

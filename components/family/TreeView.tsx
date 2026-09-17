@@ -55,6 +55,7 @@ type Props = {
   onOpenParents: (person: Person) => void;
   onOpenSiblings: (person: Person) => void;
   onAddChild: (parentIds: string[]) => void;
+  onFocusPerson: (personId: string | undefined) => void;
 };
 
 export default function TreeView({
@@ -68,6 +69,7 @@ export default function TreeView({
   onOpenParents,
   onOpenSiblings,
   onAddChild,
+  onFocusPerson,
 }: Props) {
   const [flowInstance, setFlowInstance] =
     useState<ReactFlowInstance | null>(null);
@@ -323,6 +325,11 @@ export default function TreeView({
           });
         }}
         onNodeClick={(_event, node) => {
+          if (node.type === "person") {
+            onFocusPerson(node.id);
+            return;
+          }
+
           if (!canEdit || node.type !== "family") {
             return;
           }
@@ -338,6 +345,9 @@ export default function TreeView({
 
           const parentIds = data.parentIds ?? [];
           onAddChild(parentIds);
+        }}
+        onPaneClick={() => {
+          onFocusPerson(undefined);
         }}
       >
         <Background />
