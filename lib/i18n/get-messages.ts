@@ -6,6 +6,7 @@ const catalogs: Record<Locale, () => Promise<Messages>> = {
   de: () => import("../../messages/de.json").then((m) => m.default),
   en: () => import("../../messages/en.json").then((m) => m.default),
   ar: () => import("../../messages/ar.json").then((m) => m.default),
+  ku: () => import("../../messages/ku.json").then((m) => m.default),
 };
 
 export async function getMessages(locale: Locale): Promise<Messages> {
