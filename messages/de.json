@@ -24,7 +24,8 @@
     "headline": "Der moderne Familienstammbaum",
     "tagline": "Familien verbinden · Geschichten bewahren",
     "login": "Anmelden",
-    "register": "Registrieren"
+    "register": "Registrieren",
+    "imageAlt": "Mehrgenerationenfamilie unter einem Baum im Abendlicht"
   },
   "login": {
     "title": "Willkommen zurück",
@@ -36,7 +37,8 @@
     "submit": "Anmelden",
     "register": "Registrieren",
     "accountDeleted": "Dein Konto wurde vollständig gelöscht.",
-    "passwordReset": "Dein Passwort wurde geändert. Du kannst dich jetzt anmelden."
+    "passwordReset": "Dein Passwort wurde geändert. Du kannst dich jetzt anmelden.",
+    "emailConfirmFailed": "Die E-Mail-Bestätigung ist fehlgeschlagen. Bitte melde dich an."
   },
   "register": {
     "title": "Konto erstellen",
@@ -58,7 +60,8 @@
     "email": "E-Mail",
     "submit": "Link senden",
     "sent": "Falls ein Konto mit dieser E-Mail-Adresse existiert, wurde ein Link zum Zurücksetzen des Passworts versendet.",
-    "backToLogin": "← Zurück zur Anmeldung"
+    "backToLogin": "← Zurück zur Anmeldung",
+    "linkInvalid": "Der Link ist ungültig oder abgelaufen. Bitte fordere einen neuen an."
   },
   "dashboard": {
     "title": "Meine Stammbäume",
@@ -174,6 +177,7 @@
     "years": "{count} Jahre",
     "layoutFailedTitle": "Stammbaum-Layout fehlgeschlagen",
     "layoutFailedBody": "{count} Personen geladen, aber die Darstellung ist abgestürzt: {error}",
+    "layoutUnknownError": "Unbekannter Layout-Fehler",
     "personLimitOwner": "Personenlimit erreicht. Weitere Personen sind mit Premium möglich.",
     "personLimitMember": "Das Personenlimit des Besitzers ist erreicht.",
     "loadError": "Stammbaum-Daten konnten nicht geladen werden",
@@ -189,5 +193,173 @@
     "description": "Beschreibung",
     "submit": "Erstellen",
     "back": "Dashboard"
+  },
+  "familyEdit": {
+    "title": "Stammbaum bearbeiten",
+    "name": "Name",
+    "description": "Beschreibung",
+    "closeWindow": "Fenster schließen",
+    "cancel": "Abbrechen",
+    "save": "Speichern",
+    "saving": "Speichern …",
+    "saveFailed": "Der Stammbaum konnte nicht gespeichert werden. Bitte versuche es erneut."
+  },
+  "familyInvite": {
+    "title": "Zum Stammbaum einladen",
+    "closeWindow": "Fenster schließen",
+    "role": "Rolle",
+    "roleViewer": "Betrachter – nur ansehen",
+    "roleEditor": "Bearbeiter – Personen bearbeiten",
+    "createLink": "Einladungslink erstellen",
+    "creatingLink": "Link wird erstellt …",
+    "inviteLink": "Einladungslink",
+    "copy": "Kopieren",
+    "copied": "Kopiert",
+    "validUntil": "Einmalig verwendbar, gültig bis {date}",
+    "close": "Schließen",
+    "createFailed": "Der Einladungslink konnte nicht erstellt werden. Bitte versuche es erneut.",
+    "copyFailed": "Der Link konnte nicht kopiert werden."
+  },
+  "familyMembers": {
+    "title": "Mitglieder",
+    "closeWindow": "Fenster schließen",
+    "loading": "Mitglieder werden geladen …",
+    "remove": "Entfernen",
+    "close": "Schließen",
+    "confirmRemove": "{name} wirklich aus diesem Stammbaum entfernen?",
+    "roleChangeFailed": "Die Rolle konnte nicht geändert werden.",
+    "removeFailed": "Das Mitglied konnte nicht entfernt werden.",
+    "owner": "Besitzer",
+    "editor": "Bearbeiter",
+    "viewer": "Betrachter"
+  },
+  "deleteFamily": {
+    "title": "Stammbaum löschen",
+    "warning1": "Du bist dabei, den gesamten Stammbaum dauerhaft zu löschen.",
+    "warning2": "Dabei werden alle Personen, Beziehungen, Bilder, Dokumente, Einladungen und sämtliche Daten dieses Stammbaums unwiderruflich entfernt.",
+    "warning3": "Diese Aktion kann nicht rückgängig gemacht werden.",
+    "cancel": "Abbrechen",
+    "continue": "Weiter",
+    "confirmTitle": "Identität bestätigen",
+    "confirmHint": "Bitte gib dein Kontopasswort ein, um den Stammbaum endgültig zu löschen.",
+    "password": "Passwort",
+    "confirmDelete": "Stammbaum endgültig löschen",
+    "genericError": "Es ist ein Fehler aufgetreten. Bitte versuche es erneut."
+  },
+  "deletePerson": {
+    "blockedTitle": "Person kann nicht gelöscht werden",
+    "blockedBody": "Diese Person kann nicht gelöscht werden, da sie noch Kinder besitzt. Bitte lösche zuerst alle Kinder dieser Person.",
+    "ok": "OK",
+    "title": "Person löschen",
+    "confirm": "Möchtest du diese Person wirklich löschen?\nDiese Aktion kann nicht rückgängig gemacht werden.",
+    "cancel": "Abbrechen",
+    "delete": "Person löschen",
+    "failed": "Die Person konnte nicht gelöscht werden."
+  },
+  "plan": {
+    "title": "Tarif verwalten",
+    "loadFailed": "Die Tarifdaten konnten nicht geladen werden. Bitte wende dich an den Administrator.",
+    "currentPlan": "Aktueller Tarif",
+    "premium": "Premium",
+    "free": "Free",
+    "ownedTrees": "Eigene Stammbäume",
+    "unlimited": "Unbegrenzt",
+    "countOf": "{current} von {max}",
+    "personLimit": "Personenlimit je eigenem Stammbaum",
+    "premiumActive": "Premium ist aktiv.",
+    "switchToFree": "Auf Free wechseln",
+    "upgradeToPremium": "Auf Premium upgraden",
+    "closeWindow": "Fenster schließen",
+    "freeNow": "Aktuell kostenlos verfügbar.",
+    "benefitTrees": "Beliebig viele eigene Stammbäume",
+    "benefitPersons": "Beliebig viele Personen pro Stammbaum",
+    "invitesNote": "Einladungen und die Mitarbeit in fremden Stammbäumen sind für Free- und Premium-Konten unbegrenzt.",
+    "cancel": "Abbrechen",
+    "activateFree": "Premium kostenlos aktivieren",
+    "downgradeHint1": "Free erlaubt einen eigenen Stammbaum mit maximal 50 Personen.",
+    "downgradeHint2": "Hast du mehrere eigene Stammbäume, bleibt nur der älteste Baum mit höchstens 50 Personen freigeschaltet. Alle weiteren eigenen Stammbäume werden gesperrt.",
+    "downgradeHint3": "Gesperrte Stammbäume und ihre Daten bleiben erhalten. Mit Premium kannst du sie jederzeit wieder freischalten."
+  },
+  "avatar": {
+    "saving": "Wird gespeichert…",
+    "change": "Profilbild ändern",
+    "upload": "Profilbild hochladen",
+    "remove": "Profilbild entfernen",
+    "hint": "JPEG, PNG oder WebP · max. {mb} MB",
+    "errorEmpty": "Bitte wähle ein Bild aus.",
+    "errorType": "Nur JPEG, PNG oder WebP sind erlaubt.",
+    "errorSize": "Das Bild darf höchstens 2 MB groß sein."
+  },
+  "changePassword": {
+    "title": "Passwort ändern",
+    "closeWindow": "Fenster schließen",
+    "current": "Aktuelles Passwort",
+    "next": "Neues Passwort",
+    "confirm": "Neues Passwort bestätigen",
+    "mismatch": "Die Passwörter stimmen nicht überein.",
+    "cancel": "Abbrechen",
+    "save": "Passwort speichern"
+  },
+  "deleteAccount": {
+    "title": "Konto löschen",
+    "closeWindow": "Fenster schließen",
+    "warning1": "Dein Konto und alle Stammbäume, deren Besitzer du bist, werden dauerhaft gelöscht.",
+    "warning2": "Dazu gehören sämtliche Personen, Beziehungen und weitere Daten dieser Stammbäume. Mitgliedschaften in anderen Stammbäumen werden ebenfalls entfernt.",
+    "warning3": "Diese Aktion kann nicht rückgängig gemacht werden.",
+    "cancel": "Abbrechen",
+    "continue": "Weiter",
+    "confirmHint": "Bitte gib zur Bestätigung dein aktuelles Passwort ein.",
+    "currentPassword": "Aktuelles Passwort",
+    "confirmDelete": "Konto endgültig löschen"
+  },
+  "password": {
+    "show": "Passwort anzeigen",
+    "hide": "Passwort verbergen",
+    "ruleLength": "Mindestens 8 Zeichen",
+    "ruleUpper": "Mindestens ein Großbuchstabe",
+    "ruleLower": "Mindestens ein Kleinbuchstabe",
+    "ruleNumber": "Mindestens eine Zahl",
+    "ruleSpecial": "Mindestens ein Sonderzeichen"
+  },
+  "resetPassword": {
+    "title": "Neues Passwort festlegen",
+    "newPassword": "Neues Passwort",
+    "confirmPassword": "Neues Passwort bestätigen",
+    "mismatch": "Die Passwörter stimmen nicht überein.",
+    "save": "Passwort speichern",
+    "toLogin": "Zur Anmeldung"
+  },
+  "checkEmail": {
+    "title": "E-Mail bestätigen",
+    "body": "Wir haben dir eine Bestätigungs-E-Mail geschickt. Bitte bestätige deine E-Mail-Adresse, bevor du dich anmeldest.",
+    "toLogin": "Zur Anmeldung"
+  },
+  "invitePage": {
+    "title": "Einladung zum Stammbaum",
+    "checkFailed": "Die Einladung konnte nicht geprüft werden. Bitte versuche es später erneut.",
+    "invalid": "Dieser Einladungslink ist ungültig.",
+    "expired": "Dieser Einladungslink ist abgelaufen.",
+    "used": "Dieser Einladungslink wurde bereits verwendet.",
+    "invitedTo": "Du wurdest zum Stammbaum {name} eingeladen.",
+    "yourRole": "Deine Rolle: {role}",
+    "validUntil": "Gültig bis {date}",
+    "accept": "Einladung annehmen",
+    "login": "Anmelden",
+    "register": "Konto erstellen",
+    "back": "Zurück",
+    "roleOwner": "Besitzer",
+    "roleEditor": "Bearbeiter",
+    "roleViewer": "Betrachter"
+  },
+  "treeExtras": {
+    "addChild": "Kind hinzufügen",
+    "siblings": "Geschwister",
+    "personsCount": "{count} Personen",
+    "personsLimit": "{current}/{max} Personen",
+    "layoutUnknownError": "Unbekannter Layout-Fehler",
+    "parentsSaveFailed": "Eltern konnten nicht gespeichert werden."
+  },
+  "meta": {
+    "description": "Familienstammbäume gemeinsam erstellen und verwalten."
   }
 }

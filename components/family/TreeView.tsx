@@ -107,10 +107,10 @@ export default function TreeView({
       return { layout: buildTreeLayout(graph), error: null as string | null };
     } catch (error) {
       const message =
-        error instanceof Error ? error.message : "Unbekannter Layout-Fehler";
+        error instanceof Error ? error.message : t("layoutUnknownError");
       return { layout: null, error: message };
     }
-  }, [graph]);
+  }, [graph, t]);
 
   /**
    * 3. React-Flow-Struktur erzeugen

@@ -23,6 +23,7 @@ export default function EditFamilyButton({
   onClose,
 }: Props) {
   const t = useTranslations("familyActions");
+  const tEdit = useTranslations("familyEdit");
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [name, setName] = useState(initialName);
@@ -67,9 +68,7 @@ export default function EditFamilyButton({
       onClose?.();
       router.refresh();
     } catch {
-      setError(
-        "Der Stammbaum konnte nicht gespeichert werden. Bitte versuche es erneut."
-      );
+      setError(tEdit("saveFailed"));
     } finally {
       setSaving(false);
     }
@@ -101,13 +100,13 @@ export default function EditFamilyButton({
                 id={`edit-family-${familyId}`}
                 className="text-2xl font-bold text-green-700"
               >
-                Stammbaum bearbeiten
+                {tEdit("title")}
               </h2>
               <button
                 type="button"
                 onClick={close}
                 className="text-2xl leading-none text-gray-500 hover:text-gray-800"
-                aria-label="Fenster schließen"
+                aria-label={tEdit("closeWindow")}
               >
                 ×
               </button>
@@ -119,7 +118,7 @@ export default function EditFamilyButton({
                   htmlFor={`family-name-${familyId}`}
                   className="mb-2 block font-medium"
                 >
-                  Name
+                  {tEdit("name")}
                 </label>
                 <input
                   id={`family-name-${familyId}`}
@@ -138,7 +137,7 @@ export default function EditFamilyButton({
                   htmlFor={`family-description-${familyId}`}
                   className="mb-2 block font-medium"
                 >
-                  Beschreibung
+                  {tEdit("description")}
                 </label>
                 <textarea
                   id={`family-description-${familyId}`}
@@ -166,7 +165,7 @@ export default function EditFamilyButton({
                 disabled={saving}
                 className="rounded-lg border px-5 py-3 hover:bg-gray-100 disabled:opacity-60"
               >
-                Abbrechen
+                {tEdit("cancel")}
               </button>
               <button
                 type="button"
@@ -174,7 +173,7 @@ export default function EditFamilyButton({
                 disabled={saving || !name.trim()}
                 className="rounded-lg bg-green-700 px-5 py-3 text-white hover:bg-green-800 disabled:opacity-60"
               >
-                {saving ? "Speichern …" : "Speichern"}
+                {saving ? tEdit("saving") : tEdit("save")}
               </button>
             </div>
           </div>

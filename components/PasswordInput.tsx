@@ -2,6 +2,8 @@
 
 import { useState, type InputHTMLAttributes } from "react";
 
+import { useTranslations } from "@/lib/i18n/client";
+
 type PasswordInputProps = Omit<
   InputHTMLAttributes<HTMLInputElement>,
   "type"
@@ -51,7 +53,9 @@ export function PasswordInput({
   className = "w-full rounded-lg border p-3",
   ...props
 }: PasswordInputProps) {
+  const t = useTranslations("password");
   const [visible, setVisible] = useState(false);
+  const label = visible ? t("hide") : t("show");
 
   return (
     <div className="relative">
@@ -64,8 +68,8 @@ export function PasswordInput({
         type="button"
         onClick={() => setVisible((current) => !current)}
         className="absolute top-1/2 right-3 -translate-y-1/2 rounded p-1 text-gray-500 hover:text-gray-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-green-700"
-        aria-label={visible ? "Passwort verbergen" : "Passwort anzeigen"}
-        title={visible ? "Passwort verbergen" : "Passwort anzeigen"}
+        aria-label={label}
+        title={label}
       >
         <EyeIcon open={visible} />
       </button>

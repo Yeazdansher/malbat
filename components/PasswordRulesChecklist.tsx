@@ -1,12 +1,22 @@
 "use client";
 
+import { useTranslations } from "@/lib/i18n/client";
 import { getPasswordRuleResults } from "@/lib/password";
 
 type Props = {
   password: string;
 };
 
+const RULE_KEYS: Record<string, string> = {
+  length: "ruleLength",
+  upper: "ruleUpper",
+  lower: "ruleLower",
+  number: "ruleNumber",
+  special: "ruleSpecial",
+};
+
 export function PasswordRulesChecklist({ password }: Props) {
+  const t = useTranslations("password");
   const rules = getPasswordRuleResults(password);
   const started = password.length > 0;
 
@@ -19,6 +29,7 @@ export function PasswordRulesChecklist({ password }: Props) {
           : met
             ? "text-green-700"
             : "text-gray-500";
+        const labelKey = RULE_KEYS[rule.id] ?? rule.id;
 
         return (
           <li key={rule.id} className={`flex items-start gap-2 ${color}`}>
@@ -40,7 +51,7 @@ export function PasswordRulesChecklist({ password }: Props) {
                 <span className="h-1.5 w-1.5 rounded-full bg-current opacity-50" />
               )}
             </span>
-            <span>{rule.label}</span>
+            <span>{t(labelKey)}</span>
           </li>
         );
       })}

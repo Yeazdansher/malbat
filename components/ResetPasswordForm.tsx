@@ -5,9 +5,11 @@ import { useMemo, useState } from "react";
 import { resetPassword } from "@/app/reset-password/actions";
 import { PasswordInput } from "@/components/PasswordInput";
 import { PasswordRulesChecklist } from "@/components/PasswordRulesChecklist";
+import { useTranslations } from "@/lib/i18n/client";
 import { isValidPassword } from "@/lib/password";
 
 export default function ResetPasswordForm() {
+  const t = useTranslations("resetPassword");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
 
@@ -28,7 +30,7 @@ export default function ResetPasswordForm() {
     >
       <div>
         <label htmlFor="password" className="mb-2 block font-medium">
-          Neues Passwort
+          {t("newPassword")}
         </label>
         <PasswordInput
           id="password"
@@ -53,7 +55,7 @@ export default function ResetPasswordForm() {
           htmlFor="password_confirmation"
           className="mb-2 block font-medium"
         >
-          Neues Passwort bestätigen
+          {t("confirmPassword")}
         </label>
         <PasswordInput
           id="password_confirmation"
@@ -69,7 +71,7 @@ export default function ResetPasswordForm() {
 
       {confirmPassword.length > 0 && !passwordsMatch && (
         <p className="text-sm text-red-600">
-          Die Passwörter stimmen nicht überein.
+          {t("mismatch")}
         </p>
       )}
 
@@ -78,7 +80,7 @@ export default function ResetPasswordForm() {
         disabled={!canSubmit}
         className="w-full rounded-lg bg-[#1f7a45] py-3 font-semibold text-white transition hover:bg-[#19653a] disabled:cursor-not-allowed disabled:bg-gray-300 disabled:hover:bg-gray-300"
       >
-        Passwort speichern
+        {t("save")}
       </button>
     </form>
   );

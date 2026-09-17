@@ -8,6 +8,7 @@ import {
   removeFamilyMember,
   type FamilyMember,
 } from "@/app/dashboard/actions";
+import { useTranslations } from "@/lib/i18n/client";
 import type { InvitationRole } from "@/lib/invitations";
 
 type Props = {
@@ -21,6 +22,7 @@ export default function FamilyMembersDialog({
   familyId,
   familyName,
 }: Props) {
+  const t = useTranslations("familyMembers");
   const [members, setMembers] = useState<FamilyMember[]>([]);
   const [loading, setLoading] = useState(true);
   const [busyUserId, setBusyUserId] = useState("");
@@ -75,7 +77,7 @@ export default function FamilyMembersDialog({
         )
       );
     } catch {
-      setError("Die Rolle konnte nicht geändert werden.");
+      setError(t("roleChangeFailed"));
     } finally {
       setBusyUserId("");
     }
@@ -83,7 +85,9 @@ export default function FamilyMembersDialog({
 
   async function remove(member: FamilyMember) {
     const confirmed = window.confirm(
-      `${member.first_name} ${member.last_name} wirklich aus diesem Stammbaum entfernen?`
+      t("confirmRemove", {
+        name: `${member.first_name} ${member.last_name}`,
+      })
     );
 
     if (!confirmed) {
@@ -108,7 +112,7 @@ export default function FamilyMembersDialog({
         current.filter((item) => item.user_id !== member.user_id)
       );
     } catch {
-      setError("Das Mitglied konnte nicht entfernt werden.");
+      setError(t("removeFailed"));
     } finally {
       setBusyUserId("");
     }
@@ -128,7 +132,7 @@ export default function FamilyMembersDialog({
               id="family-members-title"
               className="text-2xl font-bold text-green-700"
             >
-              Mitglieder
+              {t("title")}
             </h2>
             <p className="mt-1 text-gray-600">{familyName}</p>
           </div>
@@ -136,14 +140,14 @@ export default function FamilyMembersDialog({
             type="button"
             onClick={onClose}
             className="text-2xl leading-none text-gray-500 hover:text-gray-800"
-            aria-label="Fenster schließen"
+            aria-label={t("closeWindow")}
           >
             ×
           </button>
         </div>
 
         {loading ? (
-          <p className="mt-8 text-gray-600">Mitglieder werden geladen …</p>
+          <p className="mt-8 text-gray-600">{t("loading")}</p>
         ) : (
           <div className="mt-6 max-h-[60vh] space-y-3 overflow-y-auto">
             {members.map((member) => {
@@ -166,7 +170,7 @@ export default function FamilyMembersDialog({
 
                   {isOwner ? (
                     <span className="text-sm font-medium text-green-700">
-                      Besitzer
+                      {t("owner")}
                     </span>
                   ) : (
                     <div className="flex items-center gap-3">
@@ -181,8 +185,8 @@ export default function FamilyMembersDialog({
                         disabled={busy}
                         className="rounded-lg border px-3 py-2"
                       >
-                        <option value="editor">Bearbeiter</option>
-                        <option value="viewer">Betrachter</option>
+                        <option value="editor">{t("editor")}</option>
+                        <option value="viewer">{t("viewer")}</option>
                       </select>
                       <button
                         type="button"
@@ -190,7 +194,7 @@ export default function FamilyMembersDialog({
                         disabled={busy}
                         className="text-sm text-red-600 hover:underline disabled:opacity-60"
                       >
-                        Entfernen
+                        {t("remove")}
                       </button>
                     </div>
                   )}
@@ -212,7 +216,7 @@ export default function FamilyMembersDialog({
             onClick={onClose}
             className="rounded-lg border px-5 py-3 hover:bg-gray-100"
           >
-            Schließen
+            {t("close")}
           </button>
         </div>
       </div>

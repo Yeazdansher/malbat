@@ -24,7 +24,8 @@
     "headline": "The modern family tree",
     "tagline": "Connect families · Preserve stories",
     "login": "Log in",
-    "register": "Sign up"
+    "register": "Sign up",
+    "imageAlt": "Multi-generation family under a tree in evening light"
   },
   "login": {
     "title": "Welcome back",
@@ -36,7 +37,8 @@
     "submit": "Log in",
     "register": "Sign up",
     "accountDeleted": "Your account has been permanently deleted.",
-    "passwordReset": "Your password was changed. You can sign in now."
+    "passwordReset": "Your password was changed. You can sign in now.",
+    "emailConfirmFailed": "Email confirmation failed. Please sign in."
   },
   "register": {
     "title": "Create an account",
@@ -58,7 +60,8 @@
     "email": "Email",
     "submit": "Send link",
     "sent": "If an account exists for this email address, a password reset link has been sent.",
-    "backToLogin": "← Back to login"
+    "backToLogin": "← Back to login",
+    "linkInvalid": "The link is invalid or has expired. Please request a new one."
   },
   "dashboard": {
     "title": "My family trees",
@@ -174,6 +177,7 @@
     "years": "{count} years",
     "layoutFailedTitle": "Family tree layout failed",
     "layoutFailedBody": "{count} people loaded, but rendering crashed: {error}",
+    "layoutUnknownError": "Unknown layout error",
     "personLimitOwner": "Person limit reached. More people require Premium.",
     "personLimitMember": "The owner's person limit has been reached.",
     "loadError": "Could not load family tree data",
@@ -189,5 +193,173 @@
     "description": "Description",
     "submit": "Create",
     "back": "Dashboard"
+  },
+  "familyEdit": {
+    "title": "Edit family tree",
+    "name": "Name",
+    "description": "Description",
+    "closeWindow": "Close window",
+    "cancel": "Cancel",
+    "save": "Save",
+    "saving": "Saving…",
+    "saveFailed": "Could not save the family tree. Please try again."
+  },
+  "familyInvite": {
+    "title": "Invite to family tree",
+    "closeWindow": "Close window",
+    "role": "Role",
+    "roleViewer": "Viewer – view only",
+    "roleEditor": "Editor – edit people",
+    "createLink": "Create invite link",
+    "creatingLink": "Creating link…",
+    "inviteLink": "Invite link",
+    "copy": "Copy",
+    "copied": "Copied",
+    "validUntil": "One-time use, valid until {date}",
+    "close": "Close",
+    "createFailed": "Could not create the invite link. Please try again.",
+    "copyFailed": "Could not copy the link."
+  },
+  "familyMembers": {
+    "title": "Members",
+    "closeWindow": "Close window",
+    "loading": "Loading members…",
+    "remove": "Remove",
+    "close": "Close",
+    "confirmRemove": "Really remove {name} from this family tree?",
+    "roleChangeFailed": "Could not change the role.",
+    "removeFailed": "Could not remove the member.",
+    "owner": "Owner",
+    "editor": "Editor",
+    "viewer": "Viewer"
+  },
+  "deleteFamily": {
+    "title": "Delete family tree",
+    "warning1": "You are about to permanently delete the entire family tree.",
+    "warning2": "All people, relationships, images, documents, invitations, and all other data in this tree will be irreversibly removed.",
+    "warning3": "This action cannot be undone.",
+    "cancel": "Cancel",
+    "continue": "Continue",
+    "confirmTitle": "Confirm identity",
+    "confirmHint": "Enter your account password to permanently delete the family tree.",
+    "password": "Password",
+    "confirmDelete": "Permanently delete family tree",
+    "genericError": "Something went wrong. Please try again."
+  },
+  "deletePerson": {
+    "blockedTitle": "Person cannot be deleted",
+    "blockedBody": "This person cannot be deleted because they still have children. Please delete all of their children first.",
+    "ok": "OK",
+    "title": "Delete person",
+    "confirm": "Do you really want to delete this person?\nThis action cannot be undone.",
+    "cancel": "Cancel",
+    "delete": "Delete person",
+    "failed": "Could not delete the person."
+  },
+  "plan": {
+    "title": "Manage plan",
+    "loadFailed": "Could not load plan data. Please contact the administrator.",
+    "currentPlan": "Current plan",
+    "premium": "Premium",
+    "free": "Free",
+    "ownedTrees": "Own family trees",
+    "unlimited": "Unlimited",
+    "countOf": "{current} of {max}",
+    "personLimit": "Person limit per own family tree",
+    "premiumActive": "Premium is active.",
+    "switchToFree": "Switch to Free",
+    "upgradeToPremium": "Upgrade to Premium",
+    "closeWindow": "Close window",
+    "freeNow": "Currently available free of charge.",
+    "benefitTrees": "Unlimited own family trees",
+    "benefitPersons": "Unlimited people per family tree",
+    "invitesNote": "Invitations and collaborating on other people's trees are unlimited for Free and Premium accounts.",
+    "cancel": "Cancel",
+    "activateFree": "Activate Premium for free",
+    "downgradeHint1": "Free allows one own family tree with a maximum of 50 people.",
+    "downgradeHint2": "If you have multiple own trees, only the oldest tree with at most 50 people stays unlocked. All other own trees will be locked.",
+    "downgradeHint3": "Locked trees and their data remain intact. With Premium you can unlock them again at any time."
+  },
+  "avatar": {
+    "saving": "Saving…",
+    "change": "Change profile photo",
+    "upload": "Upload profile photo",
+    "remove": "Remove profile photo",
+    "hint": "JPEG, PNG or WebP · max. {mb} MB",
+    "errorEmpty": "Please select an image.",
+    "errorType": "Only JPEG, PNG or WebP are allowed.",
+    "errorSize": "The image must be at most 2 MB."
+  },
+  "changePassword": {
+    "title": "Change password",
+    "closeWindow": "Close window",
+    "current": "Current password",
+    "next": "New password",
+    "confirm": "Confirm new password",
+    "mismatch": "The passwords do not match.",
+    "cancel": "Cancel",
+    "save": "Save password"
+  },
+  "deleteAccount": {
+    "title": "Delete account",
+    "closeWindow": "Close window",
+    "warning1": "Your account and all family trees you own will be permanently deleted.",
+    "warning2": "This includes all people, relationships, and other data in those trees. Memberships in other trees will also be removed.",
+    "warning3": "This action cannot be undone.",
+    "cancel": "Cancel",
+    "continue": "Continue",
+    "confirmHint": "Enter your current password to confirm.",
+    "currentPassword": "Current password",
+    "confirmDelete": "Permanently delete account"
+  },
+  "password": {
+    "show": "Show password",
+    "hide": "Hide password",
+    "ruleLength": "At least 8 characters",
+    "ruleUpper": "At least one uppercase letter",
+    "ruleLower": "At least one lowercase letter",
+    "ruleNumber": "At least one number",
+    "ruleSpecial": "At least one special character"
+  },
+  "resetPassword": {
+    "title": "Set a new password",
+    "newPassword": "New password",
+    "confirmPassword": "Confirm new password",
+    "mismatch": "The passwords do not match.",
+    "save": "Save password",
+    "toLogin": "Back to sign in"
+  },
+  "checkEmail": {
+    "title": "Confirm your email",
+    "body": "We sent you a confirmation email. Please confirm your email address before signing in.",
+    "toLogin": "Back to sign in"
+  },
+  "invitePage": {
+    "title": "Family tree invitation",
+    "checkFailed": "Could not verify the invitation. Please try again later.",
+    "invalid": "This invite link is invalid.",
+    "expired": "This invite link has expired.",
+    "used": "This invite link has already been used.",
+    "invitedTo": "You have been invited to the family tree {name}.",
+    "yourRole": "Your role: {role}",
+    "validUntil": "Valid until {date}",
+    "accept": "Accept invitation",
+    "login": "Sign in",
+    "register": "Create account",
+    "back": "Back",
+    "roleOwner": "Owner",
+    "roleEditor": "Editor",
+    "roleViewer": "Viewer"
+  },
+  "treeExtras": {
+    "addChild": "Add child",
+    "siblings": "Siblings",
+    "personsCount": "{count} people",
+    "personsLimit": "{current}/{max} people",
+    "layoutUnknownError": "Unknown layout error",
+    "parentsSaveFailed": "Could not save parents."
+  },
+  "meta": {
+    "description": "Create and manage family trees together."
   }
 }

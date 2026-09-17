@@ -2,7 +2,9 @@ import Link from "next/link";
 
 import BrandMark from "@/components/BrandMark";
 import { acceptInvitation } from "./actions";
-import { hashInvitationToken, roleLabel } from "@/lib/invitations";
+import { hashInvitationToken } from "@/lib/invitations";
+import { getLocale } from "@/lib/i18n/get-locale";
+import { getTranslator } from "@/lib/i18n/server";
 import { createClient } from "@/lib/supabase/server";
 
 type PageProps = {
@@ -30,6 +32,8 @@ export default async function InvitationPage({
 }: PageProps) {
   const { token } = await params;
   const { error: actionError } = await searchParams;
+  const t = await getTranslator("invitePage");
+  const locale = await getLocale();
   const supabase = await createClient();
   const {
     data: { user },
@@ -54,6 +58,11 @@ export default async function InvitationPage({
   const isValid =
     invitation?.invitation_status === "valid" && !loadError;
 
+  const roleText =
+    invitation?.invitation_role === "editor"
+      ? t("roleEditor")
+      : t("roleViewer");
+
   return (
     <main className="flex min-h-screen items-center justify-center bg-gray-100 px-6">
       <div className="w-full max-w-lg rounded-2xl bg-white p-8 shadow-sm">
@@ -61,40 +70,34 @@ export default async function InvitationPage({
           <BrandMark className="text-3xl text-green-700" />
         </Link>
 
-        <h1 className="mt-8 text-2xl font-bold">
-          Einladung zum Stammbaum
-        </h1>
+        <h1 className="mt-8 text-2xl font-bold">{t("title")}</h1>
 
         {loadError ? (
           <p className="mt-5 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-700">
-            Die Einladung konnte nicht geprüft werden. Bitte versuche es
-            später erneut.
+            {t("checkFailed")}
           </p>
         ) : !invitation ? (
           <p className="mt-5 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-700">
-            Dieser Einladungslink ist ungültig.
+            {t("invalid")}
           </p>
         ) : invitation.invitation_status === "expired" ? (
           <p className="mt-5 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-700">
-            Dieser Einladungslink ist abgelaufen.
+            {t("expired")}
           </p>
         ) : invitation.invitation_status === "accepted" ? (
           <p className="mt-5 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-700">
-            Dieser Einladungslink wurde bereits verwendet.
+            {t("used")}
           </p>
         ) : (
           <div className="mt-5 space-y-3 text-gray-700">
             <p>
-              Du wurdest zum Stammbaum{" "}
-              <strong>{invitation.family_name}</strong> eingeladen.
+              {t("invitedTo", { name: invitation.family_name })}
             </p>
-            <p>
-              Deine Rolle:{" "}
-              <strong>{roleLabel(invitation.invitation_role)}</strong>
-            </p>
+            <p>{t("yourRole", { role: roleText })}</p>
             <p className="text-sm text-gray-500">
-              Gültig bis{" "}
-              {new Date(invitation.expires_at).toLocaleString("de-DE")}
+              {t("validUntil", {
+                date: new Date(invitation.expires_at).toLocaleString(locale),
+              })}
             </p>
           </div>
         )}
@@ -113,7 +116,7 @@ export default async function InvitationPage({
                 type="submit"
                 className="w-full rounded-lg bg-green-700 px-5 py-3 text-white hover:bg-green-800"
               >
-                Einladung annehmen
+                {t("accept")}
               </button>
             </form>
           ) : (
@@ -122,13 +125,13 @@ export default async function InvitationPage({
                 href={`/login?invite=${encodeURIComponent(token)}`}
                 className="rounded-lg bg-green-700 px-5 py-3 text-center text-white hover:bg-green-800"
               >
-                Anmelden
+                {t("login")}
               </Link>
               <Link
                 href={`/register?invite=${encodeURIComponent(token)}`}
                 className="rounded-lg border border-green-700 px-5 py-3 text-center text-green-700 hover:bg-green-50"
               >
-                Konto erstellen
+                {t("register")}
               </Link>
             </div>
           ))}
@@ -138,7 +141,7 @@ export default async function InvitationPage({
             href={user ? "/dashboard" : "/"}
             className="mt-8 inline-block text-green-700 hover:underline"
           >
-            Zurück
+            {t("back")}
           </Link>
         )}
       </div>

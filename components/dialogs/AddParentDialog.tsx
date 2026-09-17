@@ -44,6 +44,7 @@ export default function AddParentDialog({
   canCreateNew,
 }: Props) {
   const t = useTranslations("person");
+  const tExtras = useTranslations("treeExtras");
   const refreshTree = useTreeRefresh();
   const initialParent = {
     ...emptyParent,
@@ -188,7 +189,7 @@ export default function AddParentDialog({
                 setError(
                   caught instanceof Error
                     ? caught.message
-                    : "Eltern konnten nicht gespeichert werden."
+                    : tExtras("parentsSaveFailed")
                 );
               }
             }}

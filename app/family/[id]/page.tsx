@@ -42,6 +42,7 @@ export default async function FamilyPage({
   const profile = await getCurrentProfile();
   const tCommon = await getTranslator("common");
   const tTree = await getTranslator("tree");
+  const tExtras = await getTranslator("treeExtras");
 
   const { data: family, error } = await supabase
     .from("families")
@@ -194,7 +195,10 @@ export default async function FamilyPage({
             personLimitLabel={
               planUsage?.ownerPlanCode === "free" &&
               planUsage.maxPersons !== null
-                ? `${planUsage.personCount}/${planUsage.maxPersons} Personen`
+                ? tExtras("personsLimit", {
+                    current: planUsage.personCount,
+                    max: planUsage.maxPersons,
+                  })
                 : null
             }
             persons={persons ?? []}

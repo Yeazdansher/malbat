@@ -4,6 +4,7 @@ import { useRef, useState, useTransition } from "react";
 
 import Avatar from "@/components/Avatar";
 import { removeAvatar, uploadAvatar } from "@/app/profile/actions";
+import { useTranslations } from "@/lib/i18n/client";
 import { MAX_IMAGE_BYTES, validateImageFile } from "@/lib/storage/images";
 
 type AvatarUploadProps = {
@@ -15,9 +16,12 @@ export default function AvatarUpload({
   avatarUrl,
   initials,
 }: AvatarUploadProps) {
+  const t = useTranslations("avatar");
   const inputRef = useRef<HTMLInputElement>(null);
   const [pending, startTransition] = useTransition();
   const [localError, setLocalError] = useState("");
+  const maxMb = Math.round(MAX_IMAGE_BYTES / (1024 * 1024));
+  const hint = t("hint", { mb: maxMb });
 
   return (
     <div className="flex flex-col items-center">
@@ -40,7 +44,13 @@ export default function AvatarUpload({
 
           const validated = validateImageFile(file);
           if (!validated.ok) {
-            setLocalError(validated.error);
+            const key =
+              validated.code === "empty"
+                ? "errorEmpty"
+                : validated.code === "type"
+                  ? "errorType"
+                  : "errorSize";
+            setLocalError(t(key));
             return;
           }
 
@@ -59,18 +69,17 @@ export default function AvatarUpload({
             type="button"
             disabled={pending}
             onClick={() => inputRef.current?.click()}
-            title={`JPEG, PNG oder WebP · max. ${Math.round(MAX_IMAGE_BYTES / (1024 * 1024))} MB`}
+            title={hint}
             className="text-green-700 hover:underline disabled:opacity-60"
           >
             {pending
-              ? "Wird gespeichert…"
+              ? t("saving")
               : avatarUrl
-                ? "Profilbild ändern"
-                : "Profilbild hochladen"}
+                ? t("change")
+                : t("upload")}
           </button>
           <p className="pointer-events-none absolute top-full mt-1 hidden whitespace-nowrap text-center text-xs text-gray-500 group-hover:block">
-            JPEG, PNG oder WebP · max.{" "}
-            {Math.round(MAX_IMAGE_BYTES / (1024 * 1024))} MB
+            {hint}
           </p>
         </div>
 
@@ -86,7 +95,7 @@ export default function AvatarUpload({
             }}
             className="text-sm text-red-600 hover:underline disabled:opacity-60"
           >
-            Profilbild entfernen
+            {t("remove")}
           </button>
         )}
       </div>

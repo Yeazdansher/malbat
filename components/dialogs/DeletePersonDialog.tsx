@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { deletePerson } from "@/app/family/[id]/actions";
 import { useTreeRefresh } from "@/components/family/useTreeRefresh";
+import { useTranslations } from "@/lib/i18n/client";
 
 type Props = {
   open: boolean;
@@ -19,6 +20,7 @@ export default function DeletePersonDialog({
   familyId,
   personId,
 }: Props) {
+  const t = useTranslations("deletePerson");
   const refreshTree = useTreeRefresh();
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -33,13 +35,10 @@ export default function DeletePersonDialog({
       <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50">
         <div className="w-full max-w-lg rounded-2xl bg-white p-8 shadow-xl">
           <h2 className="text-2xl font-bold text-green-700">
-            Person kann nicht gelöscht werden
+            {t("blockedTitle")}
           </h2>
 
-          <p className="mt-4 text-gray-700">
-            Diese Person kann nicht gelöscht werden, da sie noch Kinder
-            besitzt. Bitte lösche zuerst alle Kinder dieser Person.
-          </p>
+          <p className="mt-4 text-gray-700">{t("blockedBody")}</p>
 
           <div className="mt-8 flex justify-end">
             <button
@@ -47,7 +46,7 @@ export default function DeletePersonDialog({
               onClick={onClose}
               className="rounded-lg bg-green-700 px-5 py-3 text-white hover:bg-green-800"
             >
-              OK
+              {t("ok")}
             </button>
           </div>
         </div>
@@ -59,12 +58,11 @@ export default function DeletePersonDialog({
     <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50">
       <div className="w-full max-w-lg rounded-2xl bg-white p-8 shadow-xl">
         <h2 className="text-2xl font-bold text-green-700">
-          Person löschen
+          {t("title")}
         </h2>
 
         <p className="mt-4 whitespace-pre-line text-gray-700">
-          {`Möchtest du diese Person wirklich löschen?
-Diese Aktion kann nicht rückgängig gemacht werden.`}
+          {t("confirm")}
         </p>
 
         {error && (
@@ -77,7 +75,7 @@ Diese Aktion kann nicht rückgängig gemacht werden.`}
             onClick={onClose}
             className="rounded-lg border px-5 py-3 hover:bg-gray-100"
           >
-            Abbrechen
+            {t("cancel")}
           </button>
 
           <button
@@ -104,12 +102,12 @@ Diese Aktion kann nicht rückgängig gemacht werden.`}
                 setError(
                   caught instanceof Error
                     ? caught.message
-                    : "Die Person konnte nicht gelöscht werden."
+                    : t("failed")
                 );
               }
             }}
           >
-            Person löschen
+            {t("delete")}
           </button>
         </div>
       </div>

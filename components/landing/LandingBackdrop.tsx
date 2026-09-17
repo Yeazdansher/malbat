@@ -5,6 +5,7 @@ import { Source_Sans_3 } from "next/font/google";
 import { useEffect, useState, type ReactNode } from "react";
 
 import BrandMark from "@/components/BrandMark";
+import { useTranslations } from "@/lib/i18n/client";
 
 const landingBody = Source_Sans_3({
   subsets: ["latin"],
@@ -21,6 +22,7 @@ export default function LandingBackdrop({
   children,
   animateImage = true,
 }: LandingBackdropProps) {
+  const t = useTranslations("landing");
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
@@ -44,7 +46,7 @@ export default function LandingBackdrop({
       >
         <Image
           src="/landing/hero.jpg"
-          alt="Mehrgenerationenfamilie unter einem Baum im Abendlicht"
+          alt={t("imageAlt")}
           fill
           priority
           sizes="100vw"

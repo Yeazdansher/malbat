@@ -5,6 +5,7 @@ import { useMemo, useState } from "react";
 import { updatePassword } from "@/app/profile/actions";
 import { PasswordInput } from "@/components/PasswordInput";
 import { PasswordRulesChecklist } from "@/components/PasswordRulesChecklist";
+import { useTranslations } from "@/lib/i18n/client";
 import { isValidPassword } from "@/lib/password";
 
 type Props = {
@@ -12,6 +13,7 @@ type Props = {
 };
 
 export default function ChangePasswordButton({ error }: Props) {
+  const t = useTranslations("changePassword");
   const [open, setOpen] = useState(Boolean(error));
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -34,7 +36,7 @@ export default function ChangePasswordButton({ error }: Props) {
         onClick={() => setOpen(true)}
         className="text-green-700 hover:underline"
       >
-        Passwort ändern
+        {t("title")}
       </button>
 
       {open && (
@@ -50,14 +52,14 @@ export default function ChangePasswordButton({ error }: Props) {
                 id="change-password-title"
                 className="text-2xl font-bold text-green-700"
               >
-                Passwort ändern
+                {t("title")}
               </h2>
 
               <button
                 type="button"
                 onClick={close}
                 className="text-2xl leading-none text-gray-500 hover:text-gray-800"
-                aria-label="Fenster schließen"
+                aria-label={t("closeWindow")}
               >
                 ×
               </button>
@@ -83,7 +85,7 @@ export default function ChangePasswordButton({ error }: Props) {
                   htmlFor="current_password"
                   className="mb-2 block font-medium"
                 >
-                  Aktuelles Passwort
+                  {t("current")}
                 </label>
                 <PasswordInput
                   id="current_password"
@@ -100,7 +102,7 @@ export default function ChangePasswordButton({ error }: Props) {
                   htmlFor="new_password"
                   className="mb-2 block font-medium"
                 >
-                  Neues Passwort
+                  {t("next")}
                 </label>
                 <PasswordInput
                   id="new_password"
@@ -124,7 +126,7 @@ export default function ChangePasswordButton({ error }: Props) {
                   htmlFor="confirm_password"
                   className="mb-2 block font-medium"
                 >
-                  Neues Passwort bestätigen
+                  {t("confirm")}
                 </label>
                 <PasswordInput
                   id="confirm_password"
@@ -140,7 +142,7 @@ export default function ChangePasswordButton({ error }: Props) {
 
               {confirmPassword.length > 0 && !passwordsMatch && (
                 <p className="text-sm text-red-600">
-                  Die Passwörter stimmen nicht überein.
+                  {t("mismatch")}
                 </p>
               )}
 
@@ -150,14 +152,14 @@ export default function ChangePasswordButton({ error }: Props) {
                   onClick={close}
                   className="rounded-lg border px-5 py-3 hover:bg-gray-100"
                 >
-                  Abbrechen
+                  {t("cancel")}
                 </button>
                 <button
                   type="submit"
                   disabled={!canSubmit}
                   className="rounded-lg bg-green-700 px-5 py-3 text-white hover:bg-green-800 disabled:cursor-not-allowed disabled:bg-gray-300 disabled:hover:bg-gray-300"
                 >
-                  Passwort speichern
+                  {t("save")}
                 </button>
               </div>
             </form>

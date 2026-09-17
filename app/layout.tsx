@@ -8,6 +8,7 @@ import { I18nProvider } from "@/lib/i18n/client";
 import { dirForLocale } from "@/lib/i18n/config";
 import { getLocale } from "@/lib/i18n/get-locale";
 import { getMessages } from "@/lib/i18n/get-messages";
+import { getTranslator } from "@/lib/i18n/server";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -32,15 +33,18 @@ const notoArabic = Noto_Sans_Arabic({
   variable: "--font-arabic",
 });
 
-export const metadata: Metadata = {
-  title: "MALBAT",
-  description: "Familienstammbäume gemeinsam erstellen und verwalten.",
-  icons: {
-    icon: [{ url: "/icon.png", type: "image/png" }],
-    shortcut: "/favicon.ico",
-    apple: "/apple-icon.png",
-  },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslator("meta");
+  return {
+    title: "MALBAT",
+    description: t("description"),
+    icons: {
+      icon: [{ url: "/icon.png", type: "image/png" }],
+      shortcut: "/favicon.ico",
+      apple: "/apple-icon.png",
+    },
+  };
+}
 
 export default async function RootLayout({ children }: LayoutProps<"/">) {
   const cookieStore = await cookies();

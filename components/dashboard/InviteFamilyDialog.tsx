@@ -3,6 +3,7 @@
 import { useState } from "react";
 
 import { createFamilyInvitation } from "@/app/dashboard/actions";
+import { useI18n, useTranslations } from "@/lib/i18n/client";
 import type { InvitationRole } from "@/lib/invitations";
 
 type Props = {
@@ -18,6 +19,8 @@ export default function InviteFamilyDialog({
   familyId,
   familyName,
 }: Props) {
+  const t = useTranslations("familyInvite");
+  const { locale } = useI18n();
   const [role, setRole] = useState<InvitationRole>("viewer");
   const [link, setLink] = useState("");
   const [expiresAt, setExpiresAt] = useState("");
@@ -54,9 +57,7 @@ export default function InviteFamilyDialog({
       setLink(`${window.location.origin}${result.path}`);
       setExpiresAt(result.expiresAt);
     } catch {
-      setError(
-        "Der Einladungslink konnte nicht erstellt werden. Bitte versuche es erneut."
-      );
+      setError(t("createFailed"));
     } finally {
       setCreating(false);
     }
@@ -67,7 +68,7 @@ export default function InviteFamilyDialog({
       await navigator.clipboard.writeText(link);
       setCopied(true);
     } catch {
-      setError("Der Link konnte nicht kopiert werden.");
+      setError(t("copyFailed"));
     }
   }
 
@@ -85,7 +86,7 @@ export default function InviteFamilyDialog({
               id="invite-family-title"
               className="text-2xl font-bold text-green-700"
             >
-              Zum Stammbaum einladen
+              {t("title")}
             </h2>
             <p className="mt-1 text-gray-600">{familyName}</p>
           </div>
@@ -93,7 +94,7 @@ export default function InviteFamilyDialog({
             type="button"
             onClick={close}
             className="text-2xl leading-none text-gray-500 hover:text-gray-800"
-            aria-label="Fenster schließen"
+            aria-label={t("closeWindow")}
           >
             ×
           </button>
@@ -101,7 +102,7 @@ export default function InviteFamilyDialog({
 
         <div className="mt-6">
           <label htmlFor="invitation-role" className="mb-2 block font-medium">
-            Rolle
+            {t("role")}
           </label>
           <select
             id="invitation-role"
@@ -115,8 +116,8 @@ export default function InviteFamilyDialog({
             disabled={creating}
             className="w-full rounded-lg border p-3"
           >
-            <option value="viewer">Betrachter – nur ansehen</option>
-            <option value="editor">Bearbeiter – Personen bearbeiten</option>
+            <option value="viewer">{t("roleViewer")}</option>
+            <option value="editor">{t("roleEditor")}</option>
           </select>
         </div>
 
@@ -127,12 +128,12 @@ export default function InviteFamilyDialog({
             disabled={creating}
             className="mt-6 w-full rounded-lg bg-green-700 px-5 py-3 text-white hover:bg-green-800 disabled:opacity-60"
           >
-            {creating ? "Link wird erstellt …" : "Einladungslink erstellen"}
+            {creating ? t("creatingLink") : t("createLink")}
           </button>
         ) : (
           <div className="mt-6 space-y-3">
             <label htmlFor="invitation-link" className="block font-medium">
-              Einladungslink
+              {t("inviteLink")}
             </label>
             <div className="flex gap-2">
               <input
@@ -147,12 +148,13 @@ export default function InviteFamilyDialog({
                 onClick={copyLink}
                 className="rounded-lg bg-green-700 px-4 py-3 text-white hover:bg-green-800"
               >
-                {copied ? "Kopiert" : "Kopieren"}
+                {copied ? t("copied") : t("copy")}
               </button>
             </div>
             <p className="text-sm text-gray-600">
-              Einmalig verwendbar, gültig bis{" "}
-              {new Date(expiresAt).toLocaleString("de-DE")}.
+              {t("validUntil", {
+                date: new Date(expiresAt).toLocaleString(locale),
+              })}
             </p>
           </div>
         )}
@@ -169,7 +171,7 @@ export default function InviteFamilyDialog({
             onClick={close}
             className="rounded-lg border px-5 py-3 hover:bg-gray-100"
           >
-            Schließen
+            {t("close")}
           </button>
         </div>
       </div>

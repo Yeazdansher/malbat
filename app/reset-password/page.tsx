@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 
 import AuthShell from "@/components/landing/AuthShell";
 import ResetPasswordForm from "@/components/ResetPasswordForm";
+import { getTranslator } from "@/lib/i18n/server";
 import { createClient } from "@/lib/supabase/server";
 
 type PageProps = {
@@ -15,6 +16,8 @@ export default async function ResetPasswordPage({
   searchParams,
 }: PageProps) {
   const { error } = await searchParams;
+  const t = await getTranslator("resetPassword");
+  const tForgot = await getTranslator("forgotPassword");
   const supabase = await createClient();
   const {
     data: { user },
@@ -22,14 +25,12 @@ export default async function ResetPasswordPage({
 
   if (!user) {
     redirect(
-      `/forgot-password?error=${encodeURIComponent(
-        "Der Link ist ungültig oder abgelaufen. Bitte fordere einen neuen an."
-      )}`
+      `/forgot-password?error=${encodeURIComponent(tForgot("linkInvalid"))}`
     );
   }
 
   return (
-    <AuthShell title="Neues Passwort festlegen">
+    <AuthShell title={t("title")}>
       {error && (
         <p className="mt-6 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
           {error}
@@ -42,7 +43,7 @@ export default async function ResetPasswordPage({
         href="/login"
         className="mt-6 block text-center text-sm text-[#1f7a45] hover:underline"
       >
-        Zur Anmeldung
+        {t("toLogin")}
       </Link>
     </AuthShell>
   );

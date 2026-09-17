@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { deleteFamilyTree } from "@/app/family/[id]/actions";
 import { PasswordInput } from "@/components/PasswordInput";
+import { useTranslations } from "@/lib/i18n/client";
 
 type Props = {
   open: boolean;
@@ -16,6 +17,7 @@ export default function DeleteFamilyDialog({
   onClose,
   familyId,
 }: Props) {
+  const t = useTranslations("deleteFamily");
   const router = useRouter();
   const [step, setStep] = useState<1 | 2>(1);
   const [password, setPassword] = useState("");
@@ -39,17 +41,13 @@ export default function DeleteFamilyDialog({
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
         <div className="w-full max-w-lg rounded-2xl bg-white p-8 shadow-xl">
           <h2 className="text-2xl font-bold text-green-700">
-            Stammbaum löschen
+            {t("title")}
           </h2>
 
           <div className="mt-4 space-y-3 text-gray-700">
-            <p>Du bist dabei, den gesamten Stammbaum dauerhaft zu löschen.</p>
-            <p>
-              Dabei werden alle Personen, Beziehungen, Bilder, Dokumente,
-              Einladungen und sämtliche Daten dieses Stammbaums unwiderruflich
-              entfernt.
-            </p>
-            <p>Diese Aktion kann nicht rückgängig gemacht werden.</p>
+            <p>{t("warning1")}</p>
+            <p>{t("warning2")}</p>
+            <p>{t("warning3")}</p>
           </div>
 
           <div className="mt-8 flex justify-end gap-3">
@@ -58,7 +56,7 @@ export default function DeleteFamilyDialog({
               onClick={close}
               className="rounded-lg border px-5 py-3 hover:bg-gray-100"
             >
-              Abbrechen
+              {t("cancel")}
             </button>
             <button
               type="button"
@@ -68,7 +66,7 @@ export default function DeleteFamilyDialog({
               }}
               className="rounded-lg bg-red-600 px-5 py-3 text-white hover:bg-red-700"
             >
-              Weiter
+              {t("continue")}
             </button>
           </div>
         </div>
@@ -80,15 +78,12 @@ export default function DeleteFamilyDialog({
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
       <div className="w-full max-w-lg rounded-2xl bg-white p-8 shadow-xl">
         <h2 className="text-2xl font-bold text-green-700">
-          Identität bestätigen
+          {t("confirmTitle")}
         </h2>
 
-        <p className="mt-4 text-gray-700">
-          Bitte gib dein Kontopasswort ein, um den Stammbaum endgültig zu
-          löschen.
-        </p>
+        <p className="mt-4 text-gray-700">{t("confirmHint")}</p>
 
-        <label className="mt-6 mb-2 block font-medium">Passwort</label>
+        <label className="mt-6 mb-2 block font-medium">{t("password")}</label>
         <PasswordInput
           autoComplete="current-password"
           className="w-full rounded-lg border p-3"
@@ -106,7 +101,7 @@ export default function DeleteFamilyDialog({
             onClick={close}
             className="rounded-lg border px-5 py-3 hover:bg-gray-100"
           >
-            Abbrechen
+            {t("cancel")}
           </button>
           <button
             type="button"
@@ -128,13 +123,11 @@ export default function DeleteFamilyDialog({
                 router.push("/dashboard?familyDeleted=1");
               } catch {
                 setSaving(false);
-                setError(
-                  "Es ist ein Fehler aufgetreten. Bitte versuche es erneut."
-                );
+                setError(t("genericError"));
               }
             }}
           >
-            Stammbaum endgültig löschen
+            {t("confirmDelete")}
           </button>
         </div>
       </div>

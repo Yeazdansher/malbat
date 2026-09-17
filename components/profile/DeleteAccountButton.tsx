@@ -4,12 +4,14 @@ import { useState } from "react";
 
 import { deleteAccount } from "@/app/profile/actions";
 import { PasswordInput } from "@/components/PasswordInput";
+import { useTranslations } from "@/lib/i18n/client";
 
 type Props = {
   error?: string;
 };
 
 export default function DeleteAccountButton({ error }: Props) {
+  const t = useTranslations("deleteAccount");
   const [open, setOpen] = useState(Boolean(error));
   const [step, setStep] = useState<1 | 2>(error ? 2 : 1);
 
@@ -25,7 +27,7 @@ export default function DeleteAccountButton({ error }: Props) {
         onClick={() => setOpen(true)}
         className="text-red-600 hover:underline"
       >
-        Konto löschen
+        {t("title")}
       </button>
 
       {open && (
@@ -41,14 +43,14 @@ export default function DeleteAccountButton({ error }: Props) {
                 id="delete-account-title"
                 className="text-2xl font-bold text-red-700"
               >
-                Konto löschen
+                {t("title")}
               </h2>
 
               <button
                 type="button"
                 onClick={close}
                 className="text-2xl leading-none text-gray-500 hover:text-gray-800"
-                aria-label="Fenster schließen"
+                aria-label={t("closeWindow")}
               >
                 ×
               </button>
@@ -57,17 +59,10 @@ export default function DeleteAccountButton({ error }: Props) {
             {step === 1 ? (
               <>
                 <div className="mt-5 space-y-3 text-gray-700">
-                  <p>
-                    Dein Konto und alle Stammbäume, deren Besitzer du bist,
-                    werden dauerhaft gelöscht.
-                  </p>
-                  <p>
-                    Dazu gehören sämtliche Personen, Beziehungen und weitere
-                    Daten dieser Stammbäume. Mitgliedschaften in anderen
-                    Stammbäumen werden ebenfalls entfernt.
-                  </p>
+                  <p>{t("warning1")}</p>
+                  <p>{t("warning2")}</p>
                   <p className="font-semibold text-red-700">
-                    Diese Aktion kann nicht rückgängig gemacht werden.
+                    {t("warning3")}
                   </p>
                 </div>
 
@@ -77,22 +72,20 @@ export default function DeleteAccountButton({ error }: Props) {
                     onClick={close}
                     className="rounded-lg border px-5 py-3 hover:bg-gray-100"
                   >
-                    Abbrechen
+                    {t("cancel")}
                   </button>
                   <button
                     type="button"
                     onClick={() => setStep(2)}
                     className="rounded-lg bg-red-600 px-5 py-3 text-white hover:bg-red-700"
                   >
-                    Weiter
+                    {t("continue")}
                   </button>
                 </div>
               </>
             ) : (
               <form action={deleteAccount} className="mt-5 space-y-5">
-                <p className="text-gray-700">
-                  Bitte gib zur Bestätigung dein aktuelles Passwort ein.
-                </p>
+                <p className="text-gray-700">{t("confirmHint")}</p>
 
                 {error && (
                   <p className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-700">
@@ -105,7 +98,7 @@ export default function DeleteAccountButton({ error }: Props) {
                     htmlFor="delete_account_password"
                     className="mb-2 block font-medium"
                   >
-                    Aktuelles Passwort
+                    {t("currentPassword")}
                   </label>
                   <PasswordInput
                     id="delete_account_password"
@@ -123,13 +116,13 @@ export default function DeleteAccountButton({ error }: Props) {
                     onClick={close}
                     className="rounded-lg border px-5 py-3 hover:bg-gray-100"
                   >
-                    Abbrechen
+                    {t("cancel")}
                   </button>
                   <button
                     type="submit"
                     className="rounded-lg bg-red-600 px-5 py-3 text-white hover:bg-red-700"
                   >
-                    Konto endgültig löschen
+                    {t("confirmDelete")}
                   </button>
                 </div>
               </form>

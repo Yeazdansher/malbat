@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 
+import { getTranslator } from "@/lib/i18n/server";
 import { createClient } from "@/lib/supabase/server";
 
 const TOKEN_PATTERN = /^[A-Za-z0-9_-]{43}$/;
@@ -30,12 +31,14 @@ export async function GET(request: NextRequest) {
     next === "/reset-password" ? "/forgot-password" : "/login",
     request.url
   );
-  errorUrl.searchParams.set(
-    "error",
-    next === "/reset-password"
-      ? "Der Link ist ungültig oder abgelaufen. Bitte fordere einen neuen an."
-      : "Die E-Mail-Bestätigung ist fehlgeschlagen. Bitte melde dich an."
-  );
+
+  if (next === "/reset-password") {
+    const tForgot = await getTranslator("forgotPassword");
+    errorUrl.searchParams.set("error", tForgot("linkInvalid"));
+  } else {
+    const tLogin = await getTranslator("login");
+    errorUrl.searchParams.set("error", tLogin("emailConfirmFailed"));
+  }
 
   if (invite) {
     errorUrl.searchParams.set("invite", invite);
