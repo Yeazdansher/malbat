@@ -1,3 +1,23 @@
+## MALBAT v1.2.0
+
+Mehrsprachige Oberfläche und Kurmancî.
+
+### Neu
+- UI in **Deutsch**, **English**, **العربية** und **Kurmancî**
+- Sprachwahl auf der Startseite und im Profilmenü
+- Arabisch mit RTL-Layout (Stammbaum-Canvas bleibt LTR)
+
+### Verbessert
+- Dashboard-Dialoge (Bearbeiten, Einladen, Mitglieder, Löschen) übersetzt
+- Profil: Tarif, Passwort ändern, Konto löschen übersetzt
+- Auth-Seiten und Einladungsflow übersetzt
+- Kurmancî-Wortlaut nach Feedback angepasst
+
+### Hinweise
+- Live: https://malbat.vercel.app
+
+---
+
 ## MALBAT v1.0.0
 
 Erste öffentliche Version des modernen Familienstammbaums.
