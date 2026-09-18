@@ -190,7 +190,15 @@
     "toDashboard": "Go to dashboard",
     "managePlan": "Manage plan",
     "arrangeHint": "Drag cards to rearrange",
+    "arrangeModeOn": "Enable rearrange",
+    "arrangeModeOff": "Exit rearrange",
+    "arrangeSaveTitle": "Save changes?",
+    "arrangeSaveBody": "Do you want to save the new arrangement?",
+    "arrangeSaveYes": "Yes",
+    "arrangeSaveNo": "No",
+    "arrangeSaving": "Saving…",
     "autoLayout": "Auto layout",
+    "autoLayoutConfirmBody": "Apply auto layout and discard the manual arrangement?",
     "autoLayoutResetting": "Resetting…"
   },
   "familyNew": {

@@ -55,9 +55,12 @@ type Props = {
   relationships: Relationship[];
   layoutOverrides: LayoutOverrideMap;
   canEdit: boolean;
+  arrangeMode: boolean;
+  discardGeneration: number;
   focusPersonId?: string;
   focusRequest: number;
-  onPositionsPersist: (positions: LayoutNodePosition[]) => void;
+  onArrangePositionsChange: (positions: LayoutNodePosition[]) => void;
+  onArrangeDirtyChange: (dirty: boolean) => void;
   onOpenDetails: (person: Person) => void;
   onOpenRelationship: (person: Person) => void;
   onOpenParents: (person: Person) => void;
@@ -66,14 +69,25 @@ type Props = {
   onFocusPerson: (personId: string | undefined) => void;
 };
 
+function nodesToPositions(nodes: Node[]): LayoutNodePosition[] {
+  return nodes.map((node) => ({
+    nodeId: node.id,
+    x: node.position.x,
+    y: node.position.y,
+  }));
+}
+
 export default function TreeView({
   persons,
   relationships,
   layoutOverrides,
   canEdit,
+  arrangeMode,
+  discardGeneration,
   focusPersonId,
   focusRequest,
-  onPositionsPersist,
+  onArrangePositionsChange,
+  onArrangeDirtyChange,
   onOpenDetails,
   onOpenRelationship,
   onOpenParents,
@@ -88,8 +102,15 @@ export default function TreeView({
   const [flowEdges, setFlowEdges] = useState<Edge[]>([]);
 
   const draggingRef = useRef(false);
-  const onPositionsPersistRef = useRef(onPositionsPersist);
-  onPositionsPersistRef.current = onPositionsPersist;
+  const wasArrangeModeRef = useRef(false);
+  const baselinePositionsRef = useRef<
+    Record<string, { x: number; y: number }>
+  >({});
+
+  const onArrangePositionsChangeRef = useRef(onArrangePositionsChange);
+  onArrangePositionsChangeRef.current = onArrangePositionsChange;
+  const onArrangeDirtyChangeRef = useRef(onArrangeDirtyChange);
+  onArrangeDirtyChangeRef.current = onArrangeDirtyChange;
 
   const dragRef = useRef<{
     nodeId: string;
@@ -153,6 +174,9 @@ export default function TreeView({
     return applyLayoutOverrides(layoutResult.layout, layoutOverrides);
   }, [layoutResult.layout, layoutOverrides]);
 
+  const dragEnabled = canEdit && arrangeMode;
+  const cardsEditable = canEdit && !arrangeMode;
+
   const { nodes: baseNodes, edges: baseEdges } = useMemo(() => {
     if (!layoutWithOverrides) {
       return { nodes: [] as Node[], edges: [] as Edge[] };
@@ -165,9 +189,9 @@ export default function TreeView({
       (person) => handlersRef.current.onOpenRelationship(person),
       (person) => handlersRef.current.onOpenParents(person),
       (person) => handlersRef.current.onOpenSiblings(person),
-      canEdit
+      cardsEditable
     );
-  }, [graph, layoutWithOverrides, canEdit]);
+  }, [graph, layoutWithOverrides, cardsEditable]);
 
   const {
     ancestors: ancestorPersonIds,
@@ -193,11 +217,11 @@ export default function TreeView({
         if (node.type === "person") {
           return {
             ...node,
-            draggable: canEdit,
+            draggable: dragEnabled,
             selectable: true,
             data: {
               ...node.data,
-              canEdit,
+              canEdit: cardsEditable,
               searchHighlighted: node.id === focusPersonId,
               branchHighlighted:
                 node.id !== focusPersonId &&
@@ -218,6 +242,10 @@ export default function TreeView({
             ...node,
             draggable: false,
             selectable: true,
+            data: {
+              ...node.data,
+              canEdit: cardsEditable,
+            },
             style: {
               ...node.style,
               outline: onDescendantBranch
@@ -245,16 +273,17 @@ export default function TreeView({
     [
       ancestorFamilyIds,
       ancestorPersonIds,
-      canEdit,
+      cardsEditable,
       descendantFamilyIds,
       descendantPersonIds,
+      dragEnabled,
       focusPersonId,
     ]
   );
 
   // Soft-Refresh / Graph-/Override-Änderung: Positionen neu seedern.
   useEffect(() => {
-    if (draggingRef.current) {
+    if (draggingRef.current || arrangeMode) {
       return;
     }
 
@@ -263,7 +292,7 @@ export default function TreeView({
     setFlowEdges(recomputePartnerHandles(seeded, baseEdges));
     // decorateNodes bewusst ausgelassen: Highlight-Updates laufen separat.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [baseNodes, baseEdges]);
+  }, [baseNodes, baseEdges, arrangeMode]);
 
   // Suche / canEdit: Daten aktualisieren, Positionen behalten.
   useEffect(() => {
@@ -278,6 +307,45 @@ export default function TreeView({
       return decorateNodes(current);
     });
   }, [decorateNodes]);
+
+  // Anordnen starten: Baseline der aktuellen Positionen merken.
+  useEffect(() => {
+    if (arrangeMode && !wasArrangeModeRef.current) {
+      const snapshot: Record<string, { x: number; y: number }> = {};
+      for (const node of flowNodesRef.current) {
+        snapshot[node.id] = { ...node.position };
+      }
+      baselinePositionsRef.current = snapshot;
+      onArrangeDirtyChangeRef.current(false);
+      onArrangePositionsChangeRef.current(
+        nodesToPositions(flowNodesRef.current)
+      );
+    }
+    wasArrangeModeRef.current = arrangeMode;
+  }, [arrangeMode]);
+
+  // Verwerfen: Positionen vor dem Anordnen wiederherstellen.
+  useEffect(() => {
+    if (discardGeneration === 0) {
+      return;
+    }
+
+    const baseline = baselinePositionsRef.current;
+    setFlowNodes((current) => {
+      const next = current.map((node) => {
+        const position = baseline[node.id];
+        if (!position) {
+          return node;
+        }
+        return {
+          ...node,
+          position: { ...position },
+        };
+      });
+      setFlowEdges((edges) => recomputePartnerHandles(next, edges));
+      return next;
+    });
+  }, [discardGeneration]);
 
   const displayedEdges = useMemo(
     () =>
@@ -349,7 +417,7 @@ export default function TreeView({
 
   const handleNodesChange = useCallback(
     (changes: NodeChange[]) => {
-      if (!canEdit) {
+      if (!dragEnabled) {
         const safeChanges = changes.filter(
           (change) => change.type !== "position"
         );
@@ -363,7 +431,7 @@ export default function TreeView({
       // Controlled mode: Position-Changes müssen angewandt werden.
       setFlowNodes((current) => applyNodeChanges(changes, current));
     },
-    [canEdit]
+    [dragEnabled]
   );
 
   const handleNodeDragStart: OnNodeDrag = useCallback((_event, node) => {
@@ -432,26 +500,13 @@ export default function TreeView({
   }, []);
 
   const handleNodeDragStop: OnNodeDrag = useCallback(() => {
-    const drag = dragRef.current;
     draggingRef.current = false;
     dragRef.current = null;
 
     const nodes = flowNodesRef.current;
     setFlowEdges((edges) => recomputePartnerHandles(nodes, edges));
-
-    if (!drag) {
-      return;
-    }
-
-    const positions = nodes
-      .filter((node) => drag.group.has(node.id))
-      .map((node) => ({
-        nodeId: node.id,
-        x: node.position.x,
-        y: node.position.y,
-      }));
-
-    onPositionsPersistRef.current(positions);
+    onArrangeDirtyChangeRef.current(true);
+    onArrangePositionsChangeRef.current(nodesToPositions(nodes));
   }, []);
 
   if (layoutResult.error) {
@@ -480,7 +535,7 @@ export default function TreeView({
         nodeTypes={nodeTypes}
         edgeTypes={edgeTypes}
         nodesConnectable={false}
-        nodesDraggable={canEdit}
+        nodesDraggable={dragEnabled}
         nodeDragThreshold={5}
         elementsSelectable={true}
         selectNodesOnDrag={false}
@@ -501,16 +556,16 @@ export default function TreeView({
           });
         }}
         onNodesChange={handleNodesChange}
-        onNodeDragStart={canEdit ? handleNodeDragStart : undefined}
-        onNodeDrag={canEdit ? handleNodeDrag : undefined}
-        onNodeDragStop={canEdit ? handleNodeDragStop : undefined}
+        onNodeDragStart={dragEnabled ? handleNodeDragStart : undefined}
+        onNodeDrag={dragEnabled ? handleNodeDrag : undefined}
+        onNodeDragStop={dragEnabled ? handleNodeDragStop : undefined}
         onNodeClick={(_event, node) => {
           if (node.type === "person") {
             onFocusPerson(node.id);
             return;
           }
 
-          if (!canEdit || node.type !== "family") {
+          if (!cardsEditable || node.type !== "family") {
             return;
           }
 

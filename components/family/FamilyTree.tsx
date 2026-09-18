@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState, useTransition } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   resetFamilyLayoutOverrides,
@@ -73,7 +73,6 @@ export default function FamilyTree({
   canAddPerson,
 }: Props) {
   const router = useRouter();
-  const [layoutPending, startLayoutTransition] = useTransition();
   const [layoutMessage, setLayoutMessage] = useState("");
   const [selectedPerson, setSelectedPerson] =
     useState<Person | null>(null);
@@ -106,29 +105,129 @@ const [deleteOpen, setDeleteOpen] =
   const [searchOpen, setSearchOpen] = useState(false);
   const [focusedPersonId, setFocusedPersonId] = useState<string>();
   const [focusRequest, setFocusRequest] = useState(0);
+  const [arrangeMode, setArrangeMode] = useState(false);
+  const [arrangeDirty, setArrangeDirty] = useState(false);
+  const [confirmIntent, setConfirmIntent] = useState<
+    "exit" | "autoLayout" | null
+  >(null);
+  const [confirmPending, setConfirmPending] = useState(false);
+  const [discardGeneration, setDiscardGeneration] = useState(0);
+  const [optimisticOverrides, setOptimisticOverrides] =
+    useState<LayoutOverrideMap | null>(null);
+  const pendingArrangePositionsRef = useRef<LayoutNodePosition[]>([]);
   const tSearch = useTranslations("tree");
 
-  const handlePositionsPersist = useCallback(
+  const effectiveLayoutOverrides = optimisticOverrides ?? layoutOverrides;
+
+  useEffect(() => {
+    setOptimisticOverrides(null);
+  }, [layoutOverrides]);
+
+  const handleArrangePositionsChange = useCallback(
     (positions: LayoutNodePosition[]) => {
-      void saveFamilyLayoutOverrides(familyId, positions).then((result) => {
-        if (!result.ok) {
-          setLayoutMessage(result.error);
-        }
-      });
+      pendingArrangePositionsRef.current = positions;
     },
-    [familyId]
+    []
   );
 
-  function handleResetLayout() {
+  function enterArrangeMode() {
     setLayoutMessage("");
-    startLayoutTransition(async () => {
-      const result = await resetFamilyLayoutOverrides(familyId);
-      if (!result.ok) {
-        setLayoutMessage(result.error);
-        return;
-      }
-      router.refresh();
-    });
+    setArrangeDirty(false);
+    setArrangeMode(true);
+  }
+
+  function requestExitArrangeMode() {
+    if (!arrangeDirty) {
+      setArrangeMode(false);
+      return;
+    }
+    setConfirmIntent("exit");
+  }
+
+  function handlePencilClick() {
+    if (arrangeMode) {
+      requestExitArrangeMode();
+      return;
+    }
+    enterArrangeMode();
+  }
+
+  function requestAutoLayout() {
+    setLayoutMessage("");
+    setConfirmIntent("autoLayout");
+  }
+
+  async function applyAutoLayout() {
+    setConfirmPending(true);
+    setLayoutMessage("");
+
+    const result = await resetFamilyLayoutOverrides(familyId);
+
+    setConfirmPending(false);
+
+    if (!result.ok) {
+      setLayoutMessage(result.error);
+      return;
+    }
+
+    setOptimisticOverrides({});
+    setConfirmIntent(null);
+    setArrangeDirty(false);
+    setArrangeMode(false);
+    router.refresh();
+  }
+
+  async function handleSaveArrange() {
+    setConfirmPending(true);
+    setLayoutMessage("");
+
+    const positions = pendingArrangePositionsRef.current;
+    const result = await saveFamilyLayoutOverrides(familyId, positions);
+
+    setConfirmPending(false);
+
+    if (!result.ok) {
+      setLayoutMessage(result.error);
+      return;
+    }
+
+    setOptimisticOverrides(
+      Object.fromEntries(
+        positions.map((entry) => [
+          entry.nodeId,
+          { x: entry.x, y: entry.y },
+        ])
+      )
+    );
+    setConfirmIntent(null);
+    setArrangeDirty(false);
+    setArrangeMode(false);
+    router.refresh();
+  }
+
+  function handleDiscardArrange() {
+    setDiscardGeneration((generation) => generation + 1);
+    setConfirmIntent(null);
+    setArrangeDirty(false);
+    setArrangeMode(false);
+    setLayoutMessage("");
+  }
+
+  function handleConfirmYes() {
+    if (confirmIntent === "autoLayout") {
+      void applyAutoLayout();
+      return;
+    }
+    void handleSaveArrange();
+  }
+
+  function handleConfirmNo() {
+    if (confirmIntent === "autoLayout") {
+      setConfirmIntent(null);
+      setLayoutMessage("");
+      return;
+    }
+    handleDiscardArrange();
   }
 
   // Nach Soft-Refresh Personendaten in offenem Dialog aktualisieren.
@@ -260,17 +359,40 @@ const [deleteOpen, setDeleteOpen] =
         </div>
 
         {canEdit && (
+          <button
+            type="button"
+            onClick={handlePencilClick}
+            aria-pressed={arrangeMode}
+            title={
+              arrangeMode
+                ? tSearch("arrangeModeOff")
+                : tSearch("arrangeModeOn")
+            }
+            aria-label={
+              arrangeMode
+                ? tSearch("arrangeModeOff")
+                : tSearch("arrangeModeOn")
+            }
+            className={
+              arrangeMode
+                ? "inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-amber-600 text-white hover:bg-amber-700"
+                : "inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-100"
+            }
+          >
+            <PencilIcon className="h-5 w-5" />
+          </button>
+        )}
+
+        {canEdit && arrangeMode && (
           <div className="flex flex-wrap items-center gap-3">
             <p className="text-sm text-gray-600">{tSearch("arrangeHint")}</p>
             <button
               type="button"
-              disabled={layoutPending}
-              onClick={handleResetLayout}
+              disabled={confirmPending}
+              onClick={requestAutoLayout}
               className="rounded-lg border border-gray-300 px-3 py-2 text-sm hover:bg-gray-100 disabled:opacity-60"
             >
-              {layoutPending
-                ? tSearch("autoLayoutResetting")
-                : tSearch("autoLayout")}
+              {tSearch("autoLayout")}
             </button>
             {layoutMessage && (
               <p className="w-full text-sm text-red-700 sm:w-auto">
@@ -285,11 +407,14 @@ const [deleteOpen, setDeleteOpen] =
         <TreeView
           persons={persons}
           relationships={relationships}
-          layoutOverrides={layoutOverrides}
+          layoutOverrides={effectiveLayoutOverrides}
           canEdit={canEdit}
+          arrangeMode={arrangeMode}
+          discardGeneration={discardGeneration}
           focusPersonId={focusedPersonId}
           focusRequest={focusRequest}
-          onPositionsPersist={handlePositionsPersist}
+          onArrangePositionsChange={handleArrangePositionsChange}
+          onArrangeDirtyChange={setArrangeDirty}
           onFocusPerson={(personId) => {
             setFocusedPersonId(personId);
           }}
@@ -318,6 +443,46 @@ const [deleteOpen, setDeleteOpen] =
           }}
         />
       </div>
+
+      {confirmIntent && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50">
+          <div className="w-full max-w-lg rounded-2xl bg-white p-8 shadow-xl">
+            <h2 className="text-2xl font-bold text-green-700">
+              {tSearch("arrangeSaveTitle")}
+            </h2>
+            <p className="mt-4 text-gray-700">
+              {confirmIntent === "autoLayout"
+                ? tSearch("autoLayoutConfirmBody")
+                : tSearch("arrangeSaveBody")}
+            </p>
+            {layoutMessage && (
+              <p className="mt-4 text-red-600">{layoutMessage}</p>
+            )}
+            <div className="mt-8 flex flex-wrap justify-end gap-3">
+              <button
+                type="button"
+                disabled={confirmPending}
+                onClick={handleConfirmNo}
+                className="rounded-lg border px-5 py-3 hover:bg-gray-100 disabled:opacity-60"
+              >
+                {tSearch("arrangeSaveNo")}
+              </button>
+              <button
+                type="button"
+                disabled={confirmPending}
+                onClick={handleConfirmYes}
+                className="rounded-lg bg-green-700 px-5 py-3 text-white hover:bg-green-800 disabled:opacity-60"
+              >
+                {confirmPending
+                  ? confirmIntent === "autoLayout"
+                    ? tSearch("autoLayoutResetting")
+                    : tSearch("arrangeSaving")
+                  : tSearch("arrangeSaveYes")}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {selectedPerson && (
         <>
@@ -436,4 +601,22 @@ function normalizeSearchText(value: string): string {
     .replace(/\p{M}/gu, "")
     .toLocaleLowerCase("de")
     .trim();
+}
+
+function PencilIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M12 20h9" />
+      <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" />
+    </svg>
+  );
 }

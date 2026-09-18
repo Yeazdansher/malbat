@@ -190,7 +190,15 @@
     "toDashboard": "Here panelê",
     "managePlan": "Planê birêve bibe",
     "arrangeHint": "Kartan bikşîne bo rêzkirinê",
+    "arrangeModeOn": "Rêzkirinê vekê",
+    "arrangeModeOff": "Rêzkirinê bigire",
+    "arrangeSaveTitle": "Guhertinan tomar bike?",
+    "arrangeSaveBody": "Ma tu dixwazî rêzkirina nû tomar bikî?",
+    "arrangeSaveYes": "Erê",
+    "arrangeSaveNo": "Na",
+    "arrangeSaving": "Tê tomarkirin…",
     "autoLayout": "Rêzkirina otomatîk",
+    "autoLayoutConfirmBody": "Rêzkirina otomatîk bikar bîne û rêzkirina destan betal bike?",
     "autoLayoutResetting": "Tê vegerandin…"
   },
   "familyNew": {

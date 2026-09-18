@@ -190,7 +190,15 @@
     "toDashboard": "Zum Dashboard",
     "managePlan": "Tarif verwalten",
     "arrangeHint": "Karten ziehen zum Anordnen",
+    "arrangeModeOn": "Anordnen einschalten",
+    "arrangeModeOff": "Anordnen beenden",
+    "arrangeSaveTitle": "Änderungen speichern?",
+    "arrangeSaveBody": "Soll die neue Anordnung gespeichert werden?",
+    "arrangeSaveYes": "Ja",
+    "arrangeSaveNo": "Nein",
+    "arrangeSaving": "Speichern…",
     "autoLayout": "Auto-Layout",
+    "autoLayoutConfirmBody": "Auto-Layout anwenden und die manuelle Anordnung verwerfen?",
     "autoLayoutResetting": "Zurücksetzen…"
   },
   "familyNew": {

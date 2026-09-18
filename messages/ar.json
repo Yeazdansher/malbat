@@ -190,7 +190,15 @@
     "toDashboard": "إلى لوحة التحكم",
     "managePlan": "إدارة الخطة",
     "arrangeHint": "اسحب البطاقات للترتيب",
+    "arrangeModeOn": "تفعيل الترتيب",
+    "arrangeModeOff": "إنهاء الترتيب",
+    "arrangeSaveTitle": "حفظ التغييرات؟",
+    "arrangeSaveBody": "هل تريد حفظ الترتيب الجديد؟",
+    "arrangeSaveYes": "نعم",
+    "arrangeSaveNo": "لا",
+    "arrangeSaving": "جارٍ الحفظ…",
     "autoLayout": "تخطيط تلقائي",
+    "autoLayoutConfirmBody": "تطبيق التخطيط التلقائي وتجاهل الترتيب اليدوي؟",
     "autoLayoutResetting": "جارٍ الإعادة…"
   },
   "familyNew": {
