@@ -1183,34 +1183,6 @@ export function buildTreeLayout(graph: TreeGraph): TreeLayout {
     recenterSiblingBlock(subtreeNodeIds, familyCenterX, y);
   }
 
-  function preferredExtraDirection(personId: string): "left" | "right" {
-    const origin = personPositions.get(personId);
-    if (!origin) {
-      return "right";
-    }
-
-    for (const family of familiesByPartner.get(personId) ?? []) {
-      if (!placedFamilies.has(family.id)) {
-        continue;
-      }
-
-      for (const partnerId of otherPartnersOf(family, personId)) {
-        const partnerPos = personPositions.get(partnerId);
-        if (!partnerPos) {
-          continue;
-        }
-
-        if (partnerPos.x >= origin.x) {
-          return "left";
-        }
-
-        return "right";
-      }
-    }
-
-    return "right";
-  }
-
   function unionsForPerson(personId: string): Family[] {
     return (familiesByPartner.get(personId) ?? [])
       .filter((family) => !placedFamilies.has(family.id))
