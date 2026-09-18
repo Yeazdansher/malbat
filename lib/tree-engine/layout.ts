@@ -542,61 +542,86 @@ export function buildTreeLayout(graph: TreeGraph): TreeLayout {
     }
   }
 
-  /** Verschiebt alle Knoten ab minX nach rechts (hält Teilbäume zusammen). */
-  function shiftEverythingFromX(minX: number, dx: number): void {
-    if (dx === 0) {
-      return;
-    }
-
-    for (const node of nodes) {
-      if (node.position.x + 0.5 >= minX) {
-        node.position.x += dx;
-      }
-    }
-
-    for (const pos of personPositions.values()) {
-      if (pos.x + 0.5 >= minX) {
-        pos.x += dx;
-      }
-    }
-  }
-
-  /** Gleiche Generation: Kartenüberlappungen auflösen. */
+  /** Gleiche Generation: Überlappungen blockweise lösen (keine Halbgeschwister-Mischung). */
   function resolveAllPersonOverlaps(): void {
-    const rows = new Map<number, { id: string; x: number }[]>();
+    const rows = new Map<number, string[]>();
 
     for (const [id, pos] of personPositions) {
       const yKey = Math.round(pos.y);
       const row = rows.get(yKey);
       if (row) {
-        row.push({ id, x: pos.x });
+        row.push(id);
       } else {
-        rows.set(yKey, [{ id, x: pos.x }]);
+        rows.set(yKey, [id]);
       }
     }
 
-    for (const row of rows.values()) {
-      row.sort((a, b) => a.x - b.x);
+    for (const yKey of [...rows.keys()].sort((a, b) => a - b)) {
+      const personIds = rows.get(yKey);
+      if (!personIds || personIds.length < 2) {
+        continue;
+      }
 
-      for (let index = 1; index < row.length; index++) {
-        const left = row[index - 1];
-        const right = row[index];
-        const leftPos = personPositions.get(left.id);
-        const rightPos = personPositions.get(right.id);
-        if (!leftPos || !rightPos) {
+      const groups = new Map<string, string[]>();
+      for (const id of personIds) {
+        const key = generationBlockKey(id);
+        const list = groups.get(key);
+        if (list) {
+          list.push(id);
+        } else {
+          groups.set(key, [id]);
+        }
+      }
+
+      const packed: {
+        key: string;
+        members: string[];
+        leaders: string[];
+        idealCenter: number;
+      }[] = [];
+
+      for (const [blockKey, members] of groups) {
+        const leaders = groupLeaders(members);
+        if (leaders.length === 0) {
           continue;
         }
 
-        const needed = leftPos.x + CARD_WIDTH + SIBLING_GAP - rightPos.x;
-        if (needed <= 0) {
+        compactGroupLeaders(leaders, members, yKey);
+
+        const bounds = rowMembersBounds(members, yKey);
+        if (!bounds) {
           continue;
         }
 
-        const minX = rightPos.x;
-        shiftEverythingFromX(minX, needed);
+        const idealCenter = generationBlockIdealCenter(blockKey, members);
+        const currentCenter = (bounds.left + bounds.right) / 2;
+        shiftGroupByLeaders(leaders, idealCenter - currentCenter);
 
-        for (let j = index; j < row.length; j++) {
-          row[j].x += needed;
+        packed.push({
+          key: blockKey,
+          members,
+          leaders,
+          idealCenter,
+        });
+      }
+
+      packed.sort((a, b) => a.idealCenter - b.idealCenter);
+
+      for (let index = 1; index < packed.length; index++) {
+        const left = packed[index - 1];
+        const right = packed[index];
+        const gap =
+          left.key !== right.key &&
+          (left.key.startsWith("birth:") || right.key.startsWith("birth:"))
+            ? FAMILY_GAP
+            : SIBLING_GAP;
+        const needed = requiredOverlapShift(
+          groupSubtreeIds(left.leaders),
+          groupSubtreeIds(right.leaders),
+          gap
+        );
+        if (needed > 0.5) {
+          shiftGroupByLeaders(branchAnchors(right.key, right.leaders), needed);
         }
       }
     }
@@ -800,8 +825,9 @@ export function buildTreeLayout(graph: TreeGraph): TreeLayout {
   }
 
   /**
-   * Anker zum Verschieben eines Astes: Eltern (andere Zeile), sonst die Leader.
-   * So bleiben Kinder unter den Eltern, wenn Äste auseinanderrücken.
+   * Anker zum Verschieben eines Astes.
+   * Bei Halbgeschwistern (gemeinsamer Vater, mehrere Ehen) nur die Kinder
+   * verschieben — sonst zieht der geteilte Elternteil den anderen Block mit.
    */
   function branchAnchors(blockKey: string, leaders: string[]): string[] {
     const familyId = blockKey.startsWith("union:")
@@ -816,6 +842,11 @@ export function buildTreeLayout(graph: TreeGraph): TreeLayout {
         const parents = family.partners.filter(
           (id) => placedPersons.has(id) && !shouldRelocateBesideHusband(id)
         );
+
+        if (parents.some((parentId) => childBearingUnionCount(parentId) >= 2)) {
+          return leaders;
+        }
+
         if (parents.length > 0 && leaders.length > 0) {
           const leaderY = personPositions.get(leaders[0])?.y;
           const parentY = personPositions.get(parents[0])?.y;
@@ -831,6 +862,23 @@ export function buildTreeLayout(graph: TreeGraph): TreeLayout {
     }
 
     return leaders;
+  }
+
+  /** Wie viele Partner-Ehen dieser Person haben eigene (nicht zugezogene) Kinder. */
+  function childBearingUnionCount(personId: string): number {
+    let count = 0;
+    for (const family of familiesByPartner.get(personId) ?? []) {
+      if (family.kind === "sibling-group") {
+        continue;
+      }
+      const hasLocalChild = family.children.some(
+        (id) => !shouldRelocateBesideHusband(id)
+      );
+      if (hasLocalChild) {
+        count += 1;
+      }
+    }
+    return count;
   }
 
   function shiftGroupByLeaders(leaders: string[], dx: number): void {
@@ -1417,11 +1465,9 @@ export function buildTreeLayout(graph: TreeGraph): TreeLayout {
       addEdge(partnerId, union.familyNodeId);
     }
 
-    const childrenCenterX =
-      placedPartnerXs.reduce((sum, px) => sum + px + CARD_WIDTH / 2, 0) /
-      placedPartnerXs.length;
-
-    placeChildren(union, childrenCenterX, origin.y + GENERATION_GAP);
+    // Kinder unter dem Ehe-Mittelpunkt (nicht nur unter der Frau),
+    // damit die Absenkung nicht quer durch den anderen Ast läuft.
+    placeChildren(union, familyCenterX, origin.y + GENERATION_GAP);
 
     for (const partnerId of others) {
       placeExtraUnions(partnerId, direction);
