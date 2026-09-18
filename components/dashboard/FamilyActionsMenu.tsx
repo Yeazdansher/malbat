@@ -1,12 +1,13 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import DeleteFamilyDialog from "@/components/dialogs/DeleteFamilyDialog";
 import { useTranslations } from "@/lib/i18n/client";
 import EditFamilyButton from "./EditFamilyButton";
 import FamilyMembersDialog from "./FamilyMembersDialog";
 import InviteFamilyDialog from "./InviteFamilyDialog";
+import OffscreenTreePngExport from "./OffscreenTreePngExport";
 
 type Props = {
   familyId: string;
@@ -37,6 +38,8 @@ export default function FamilyActionsMenu({
   const [inviteOpen, setInviteOpen] = useState(false);
   const [membersOpen, setMembersOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const [pngExporting, setPngExporting] = useState(false);
+  const [pngError, setPngError] = useState("");
   const isOwner = role === "owner";
   const canInvite = role === "owner" || role === "editor";
 
@@ -56,14 +59,57 @@ export default function FamilyActionsMenu({
     return () => document.removeEventListener("mousedown", onPointerDown);
   }, [menuOpen]);
 
+  useEffect(() => {
+    const card = rootRef.current?.closest(
+      "[data-family-card]"
+    ) as HTMLElement | null;
+    const wrap = card?.parentElement ?? null;
+
+    if (menuOpen) {
+      if (card) card.style.zIndex = "40";
+      if (wrap) wrap.style.zIndex = "40";
+    } else {
+      if (card) card.style.zIndex = "";
+      if (wrap) wrap.style.zIndex = "";
+    }
+
+    return () => {
+      if (card) card.style.zIndex = "";
+      if (wrap) wrap.style.zIndex = "";
+    };
+  }, [menuOpen]);
+
   function closeMenu() {
     setMenuOpen(false);
     setExportOpen(false);
   }
 
+  const handlePngExportDone = useCallback(
+    (result: { ok: true } | { ok: false; error: string }) => {
+      setPngExporting(false);
+      if (!result.ok) {
+        setPngError(
+          result.error === "EMPTY_TREE"
+            ? t("exportPngEmpty")
+            : t("exportPngFailed")
+        );
+      }
+    },
+    [t]
+  );
+
+  function startPngExport() {
+    setPngError("");
+    closeMenu();
+    setPngExporting(true);
+  }
+
   return (
     <>
-      <div className="relative" ref={rootRef}>
+      <div
+        className={menuOpen ? "relative z-50" : "relative"}
+        ref={rootRef}
+      >
         <button
           type="button"
           onClick={() => {
@@ -80,7 +126,7 @@ export default function FamilyActionsMenu({
         <div
           className={
             menuOpen
-              ? "absolute right-0 z-20 mt-2 w-56 overflow-hidden rounded-xl border bg-white py-1 shadow-lg"
+              ? "absolute right-0 z-50 mt-2 w-56 overflow-hidden rounded-xl border bg-white py-1 shadow-lg"
               : "hidden"
           }
         >
@@ -126,8 +172,11 @@ export default function FamilyActionsMenu({
               onClick={() => setExportOpen((open) => !open)}
               className={`${menuItemClass} flex items-center justify-between`}
               aria-expanded={exportOpen}
+              disabled={pngExporting}
             >
-              <span>{t("export")}</span>
+              <span>
+                {pngExporting ? t("exportPngPending") : t("export")}
+              </span>
               <span className="text-gray-400">{exportOpen ? "▾" : "▸"}</span>
             </button>
 
@@ -143,6 +192,14 @@ export default function FamilyActionsMenu({
                     {item.label}
                   </a>
                 ))}
+                <button
+                  type="button"
+                  className={`${menuItemClass} pl-8 text-gray-700`}
+                  disabled={pngExporting}
+                  onClick={startPngExport}
+                >
+                  {pngExporting ? t("exportPngPending") : t("exportPng")}
+                </button>
               </div>
             )}
           </div>
@@ -164,6 +221,19 @@ export default function FamilyActionsMenu({
           )}
         </div>
       </div>
+
+      {pngError && (
+        <p className="mt-2 text-sm text-red-600" role="alert">
+          {pngError}
+        </p>
+      )}
+
+      {pngExporting && (
+        <OffscreenTreePngExport
+          familyId={familyId}
+          onDone={handlePngExportDone}
+        />
+      )}
 
       <InviteFamilyDialog
         open={inviteOpen}

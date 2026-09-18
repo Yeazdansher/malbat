@@ -1,6 +1,14 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  forwardRef,
+  useCallback,
+  useEffect,
+  useImperativeHandle,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import {
   Background,
   Controls,
@@ -29,9 +37,11 @@ import { collectSearchBranch } from "@/lib/search-branch";
 import { collectDragGroupNodeIds } from "@/lib/drag-subtree";
 import {
   applyLayoutOverrides,
+  reanchorNearbyAfterOverrides,
   type LayoutOverrideMap,
 } from "@/lib/layout-overrides";
 import { recomputePartnerHandles } from "@/lib/partner-handles";
+import { downloadTreePng } from "@/lib/export/tree-png";
 import type { LayoutNodePosition } from "@/app/family/[id]/actions";
 import { useTranslations } from "@/lib/i18n/client";
 
@@ -51,6 +61,7 @@ type Person = {
 };
 
 type Props = {
+  familyName: string;
   persons: Person[];
   relationships: Relationship[];
   layoutOverrides: LayoutOverrideMap;
@@ -69,6 +80,10 @@ type Props = {
   onFocusPerson: (personId: string | undefined) => void;
 };
 
+export type TreeViewHandle = {
+  exportPng: () => Promise<void>;
+};
+
 function nodesToPositions(nodes: Node[]): LayoutNodePosition[] {
   return nodes.map((node) => ({
     nodeId: node.id,
@@ -77,29 +92,34 @@ function nodesToPositions(nodes: Node[]): LayoutNodePosition[] {
   }));
 }
 
-export default function TreeView({
-  persons,
-  relationships,
-  layoutOverrides,
-  canEdit,
-  arrangeMode,
-  discardGeneration,
-  focusPersonId,
-  focusRequest,
-  onArrangePositionsChange,
-  onArrangeDirtyChange,
-  onOpenDetails,
-  onOpenRelationship,
-  onOpenParents,
-  onOpenSiblings,
-  onAddChild,
-  onFocusPerson,
-}: Props) {
+const TreeView = forwardRef<TreeViewHandle, Props>(function TreeView(
+  {
+    familyName,
+    persons,
+    relationships,
+    layoutOverrides,
+    canEdit,
+    arrangeMode,
+    discardGeneration,
+    focusPersonId,
+    focusRequest,
+    onArrangePositionsChange,
+    onArrangeDirtyChange,
+    onOpenDetails,
+    onOpenRelationship,
+    onOpenParents,
+    onOpenSiblings,
+    onAddChild,
+    onFocusPerson,
+  },
+  ref
+) {
   const t = useTranslations("tree");
   const [flowInstance, setFlowInstance] =
     useState<ReactFlowInstance | null>(null);
   const [flowNodes, setFlowNodes] = useState<Node[]>([]);
   const [flowEdges, setFlowEdges] = useState<Edge[]>([]);
+  const flowContainerRef = useRef<HTMLDivElement>(null);
 
   const draggingRef = useRef(false);
   const wasArrangeModeRef = useRef(false);
@@ -171,8 +191,18 @@ export default function TreeView({
       return null;
     }
 
-    return applyLayoutOverrides(layoutResult.layout, layoutOverrides);
-  }, [layoutResult.layout, layoutOverrides]);
+    const withOverrides = applyLayoutOverrides(
+      layoutResult.layout,
+      layoutOverrides
+    );
+
+    return reanchorNearbyAfterOverrides(
+      withOverrides,
+      layoutResult.layout,
+      layoutOverrides,
+      graph
+    );
+  }, [layoutResult.layout, layoutOverrides, graph]);
 
   const dragEnabled = canEdit && arrangeMode;
   const cardsEditable = canEdit && !arrangeMode;
@@ -509,6 +539,33 @@ export default function TreeView({
     onArrangePositionsChangeRef.current(nodesToPositions(nodes));
   }, []);
 
+  useImperativeHandle(
+    ref,
+    () => ({
+      exportPng: async () => {
+        const viewportElement =
+          flowContainerRef.current?.querySelector(
+            ".react-flow__viewport"
+          ) as HTMLElement | null;
+
+        if (!viewportElement) {
+          throw new Error("VIEWPORT_MISSING");
+        }
+
+        if (flowNodesRef.current.length === 0) {
+          throw new Error("EMPTY_TREE");
+        }
+
+        await downloadTreePng({
+          nodes: flowNodesRef.current,
+          viewportElement,
+          familyName,
+        });
+      },
+    }),
+    [familyName]
+  );
+
   if (layoutResult.error) {
     return (
       <div className="flex h-[650px] items-center justify-center rounded-2xl border-2 border-red-200 bg-red-50 p-8 text-center">
@@ -528,7 +585,7 @@ export default function TreeView({
   }
 
   return (
-    <div className="relative z-0 h-full w-full">
+    <div ref={flowContainerRef} className="relative z-0 h-full w-full">
       <ReactFlow
         nodes={flowNodes}
         edges={displayedEdges}
@@ -589,4 +646,6 @@ export default function TreeView({
       </ReactFlow>
     </div>
   );
-}
+});
+
+export default TreeView;

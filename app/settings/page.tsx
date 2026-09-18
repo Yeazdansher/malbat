@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 
 import Header from "@/components/Header";
+import NotificationsSetting from "@/components/settings/NotificationsSetting";
 import { getTranslator } from "@/lib/i18n/server";
 import { getCurrentProfile } from "@/lib/profile";
 import { createClient } from "@/lib/supabase/server";
@@ -20,6 +21,16 @@ export default async function SettingsPage() {
   const profile = await getCurrentProfile();
   const t = await getTranslator("settings");
   const tCommon = await getTranslator("common");
+
+  const notificationsEnabled =
+    profile &&
+    typeof profile === "object" &&
+    "notifications_enabled" in profile
+      ? Boolean(
+          (profile as { notifications_enabled?: boolean | null })
+            .notifications_enabled ?? true
+        )
+      : true;
 
   return (
     <main className="min-h-screen bg-gray-100">
@@ -43,26 +54,10 @@ export default async function SettingsPage() {
             </select>
           </div>
 
-          <div className="flex items-center justify-between border-b pb-4">
-            <label className="font-medium">{t("notifications")}</label>
-            <select
-              className="rounded-lg border border-gray-300 px-3 py-2 focus:border-green-700 focus:outline-none"
-              defaultValue="enabled"
-            >
-              <option value="enabled">{t("notificationsOn")}</option>
-            </select>
-          </div>
-
-          <button
-            type="button"
-            className="flex w-full items-center justify-between border-b pb-4 text-start transition hover:text-green-700"
-          >
-            <span className="font-medium">{t("privacy")}</span>
-            <span className="text-gray-400">&gt;</span>
-          </button>
+          <NotificationsSetting initialEnabled={notificationsEnabled} />
 
           <div className="flex items-center justify-between border-b pb-4">
-            <span className="font-medium">Version</span>
+            <span className="font-medium">{t("version")}</span>
             <span className="text-gray-500">v{APP_VERSION}</span>
           </div>
 

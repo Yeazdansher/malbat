@@ -10,7 +10,7 @@ export const localeLabels: Record<Locale, string> = {
   de: "Deutsch",
   en: "English",
   ar: "العربية",
-  ku: "Kurmancî",
+  ku: "Kurdî (Kurmancî)",
 };
 
 export function isLocale(value: string | undefined | null): value is Locale {

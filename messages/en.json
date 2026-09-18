@@ -13,7 +13,7 @@
     "de": "Deutsch",
     "en": "English",
     "ar": "العربية",
-    "ku": "Kurmancî"
+    "ku": "Kurdî (Kurmancî)"
   },
   "header": {
     "userMenu": "User menu",
@@ -91,7 +91,10 @@
     "designLight": "Light",
     "notifications": "Notifications",
     "notificationsOn": "On",
+    "notificationsOff": "Off",
+    "notificationsSaved": "Notification preference saved.",
     "privacy": "Privacy",
+    "version": "Version",
     "comingSoon": "Coming soon"
   },
   "profile": {
@@ -115,6 +118,10 @@
     "invite": "Invite",
     "members": "View members",
     "export": "Export",
+    "exportPng": "Image (.png)",
+    "exportPngPending": "Creating image…",
+    "exportPngFailed": "Image export failed.",
+    "exportPngEmpty": "No people to export.",
     "delete": "Delete family tree"
   },
   "person": {
@@ -197,6 +204,9 @@
     "arrangeSaveYes": "Yes",
     "arrangeSaveNo": "No",
     "arrangeSaving": "Saving…",
+    "exportPng": "Save as image",
+    "exportPngPending": "Exporting…",
+    "exportPngFailed": "Image export failed.",
     "autoLayout": "Auto layout",
     "autoLayoutConfirmBody": "Apply auto layout and discard the manual arrangement?",
     "autoLayoutResetting": "Resetting…"

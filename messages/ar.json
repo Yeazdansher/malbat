@@ -13,7 +13,7 @@
     "de": "Deutsch",
     "en": "English",
     "ar": "العربية",
-    "ku": "Kurmancî"
+    "ku": "Kurdî (Kurmancî)"
   },
   "header": {
     "userMenu": "قائمة المستخدم",
@@ -91,7 +91,10 @@
     "designLight": "فاتح",
     "notifications": "الإشعارات",
     "notificationsOn": "مفعّلة",
+    "notificationsOff": "معطّلة",
+    "notificationsSaved": "تم حفظ إعداد الإشعارات.",
     "privacy": "الخصوصية",
+    "version": "الإصدار",
     "comingSoon": "قريبًا"
   },
   "profile": {
@@ -115,6 +118,10 @@
     "invite": "دعوة",
     "members": "عرض الأعضاء",
     "export": "تصدير",
+    "exportPng": "صورة (.png)",
+    "exportPngPending": "جارٍ إنشاء الصورة…",
+    "exportPngFailed": "فشل تصدير الصورة.",
+    "exportPngEmpty": "لا يوجد أشخاص للتصدير.",
     "delete": "حذف شجرة العائلة"
   },
   "person": {
@@ -197,6 +204,9 @@
     "arrangeSaveYes": "نعم",
     "arrangeSaveNo": "لا",
     "arrangeSaving": "جارٍ الحفظ…",
+    "exportPng": "كصورة",
+    "exportPngPending": "جارٍ التصدير…",
+    "exportPngFailed": "فشل تصدير الصورة.",
     "autoLayout": "تخطيط تلقائي",
     "autoLayoutConfirmBody": "تطبيق التخطيط التلقائي وتجاهل الترتيب اليدوي؟",
     "autoLayoutResetting": "جارٍ الإعادة…"

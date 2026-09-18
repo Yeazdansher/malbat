@@ -191,7 +191,8 @@ export default async function DashboardPage({
                 return (
                   <div
                     key={item.families.id}
-                    className={`rounded-2xl border bg-gradient-to-br p-6 shadow-lg backdrop-blur-sm ${tint}`}
+                    data-family-card
+                    className={`relative rounded-2xl border bg-gradient-to-br p-6 shadow-lg backdrop-blur-sm ${tint}`}
                   >
                     <div className="flex items-start justify-between gap-4">
                       <div>

@@ -24,7 +24,7 @@ export default function DashboardCardsReveal({
       {children.map((child, index) => (
         <div
           key={index}
-          className={`transition-all duration-500 ease-out ${
+          className={`relative transition-all duration-500 ease-out ${
             ready
               ? "translate-y-0 opacity-100"
               : "translate-y-4 opacity-0"

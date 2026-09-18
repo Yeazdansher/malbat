@@ -13,7 +13,7 @@
     "de": "Deutsch",
     "en": "English",
     "ar": "العربية",
-    "ku": "Kurmancî"
+    "ku": "Kurdî (Kurmancî)"
   },
   "header": {
     "userMenu": "Benutzermenü",
@@ -91,7 +91,10 @@
     "designLight": "Hell",
     "notifications": "Benachrichtigungen",
     "notificationsOn": "Aktiv",
+    "notificationsOff": "Inaktiv",
+    "notificationsSaved": "Benachrichtigungseinstellung gespeichert.",
     "privacy": "Datenschutz",
+    "version": "Version",
     "comingSoon": "Demnächst"
   },
   "profile": {
@@ -115,6 +118,10 @@
     "invite": "Einladen",
     "members": "Mitglieder ansehen",
     "export": "Exportieren",
+    "exportPng": "Bild (.png)",
+    "exportPngPending": "Bild wird erstellt…",
+    "exportPngFailed": "Bild-Export fehlgeschlagen.",
+    "exportPngEmpty": "Keine Personen zum Exportieren.",
     "delete": "Stammbaum löschen"
   },
   "person": {
@@ -197,6 +204,9 @@
     "arrangeSaveYes": "Ja",
     "arrangeSaveNo": "Nein",
     "arrangeSaving": "Speichern…",
+    "exportPng": "Als Bild",
+    "exportPngPending": "Exportiere…",
+    "exportPngFailed": "Bild-Export fehlgeschlagen.",
     "autoLayout": "Auto-Layout",
     "autoLayoutConfirmBody": "Auto-Layout anwenden und die manuelle Anordnung verwerfen?",
     "autoLayoutResetting": "Zurücksetzen…"

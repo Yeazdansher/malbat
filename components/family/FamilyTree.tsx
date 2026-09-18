@@ -405,6 +405,7 @@ const [deleteOpen, setDeleteOpen] =
 
       <div className="min-h-0 flex-1" dir="ltr">
         <TreeView
+          familyName={familyName}
           persons={persons}
           relationships={relationships}
           layoutOverrides={effectiveLayoutOverrides}

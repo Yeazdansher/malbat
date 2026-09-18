@@ -13,7 +13,7 @@
     "de": "Deutsch",
     "en": "English",
     "ar": "العربية",
-    "ku": "Kurmancî"
+    "ku": "Kurdî (Kurmancî)"
   },
   "header": {
     "userMenu": "Menuya bikarhêner",
@@ -24,21 +24,21 @@
   "landing": {
     "headline": "Dara malbatê ya nûjen",
     "tagline": "Malbatan girê bide · Çîrokan biparêze",
-    "login": "Têkeve",
+    "login": "Derbasbe",
     "register": "Tomar bibe",
     "imageAlt": "Malbateke gelek nifşan di bin darekê de di ronahiya êvarê de"
   },
   "login": {
     "title": "Bi xêr hatî",
-    "subtitle": "Têkeve hesabê malbata xwe.",
-    "email": "E-name",
+    "subtitle": "Derbasbe hesabê malbata xwe.",
+    "email": "E-mail",
     "password": "Şîfre",
-    "remember": "Têketî bimîne",
+    "remember": "Di hesabê xwe de bimîne",
     "forgotPassword": "Şîfre ji bîr kir?",
-    "submit": "Têkeve",
+    "submit": "Derbasbe",
     "register": "Tomar bibe",
     "accountDeleted": "Hesabê te bi temamî hat jêbirin.",
-    "passwordReset": "Şîfreya te hat guhertin. Niha dikarî têkevî.",
+    "passwordReset": "Şîfreya te hat guhertin. Niha dikarî derbasbibe.",
     "emailConfirmFailed": "Pejirandina e-nameyê bi ser neket. Ji kerema xwe têkeve."
   },
   "register": {
@@ -53,7 +53,7 @@
     "passwordMismatch": "Şîfre hev nagirin.",
     "submit": "Tomar bibe",
     "hasAccount": "Jixwe hesabekî te heye?",
-    "login": "Têkeve"
+    "login": "Derbasbe"
   },
   "forgotPassword": {
     "title": "Şîfreyê nû bike",
@@ -66,7 +66,7 @@
   },
   "dashboard": {
     "title": "Darên malbata min",
-    "newTree": "+ Dara malbatê ya nû",
+    "newTree": "+ Darek malbatê nû",
     "premiumForMore": "Premium ji bo dareke din",
     "empty": "Te hîn dara malbatê çênekiriye.",
     "role": "Rol",
@@ -91,7 +91,10 @@
     "designLight": "Ronî",
     "notifications": "Agahdarî",
     "notificationsOn": "Vekirî",
+    "notificationsOff": "Girtî",
+    "notificationsSaved": "Mîhenga agahdariyê hat tomarkirin.",
     "privacy": "Nepenî",
+    "version": "Guherto",
     "comingSoon": "Zû tê"
   },
   "profile": {
@@ -115,6 +118,10 @@
     "invite": "Vexwîne",
     "members": "Endaman nîşan bide",
     "export": "Derxe",
+    "exportPng": "Wêne (.png)",
+    "exportPngPending": "Wêne tê çêkirin…",
+    "exportPngFailed": "Derxistina wêneyê bi ser neket.",
+    "exportPngEmpty": "Kes tune ku were derxistin.",
     "delete": "Dara malbatê jê bibe"
   },
   "person": {
@@ -197,6 +204,9 @@
     "arrangeSaveYes": "Erê",
     "arrangeSaveNo": "Na",
     "arrangeSaving": "Tê tomarkirin…",
+    "exportPng": "Wek wêne",
+    "exportPngPending": "Tê derxistin…",
+    "exportPngFailed": "Derxistina wêneyê bi ser neket.",
     "autoLayout": "Rêzkirina otomatîk",
     "autoLayoutConfirmBody": "Rêzkirina otomatîk bikar bîne û rêzkirina destan betal bike?",
     "autoLayoutResetting": "Tê vegerandin…"
@@ -332,7 +342,7 @@
     "ruleLength": "Kêmtirîn 8 tîp",
     "ruleUpper": "Kêmtirîn tîpek mezin",
     "ruleLower": "Kêmtirîn tîpek biçûk",
-    "ruleNumber": "Kêmtirîn jimareyek",
+    "ruleNumber": "Kêmtirîn jimarek",
     "ruleSpecial": "Kêmtirîn nîşanek taybet"
   },
   "resetPassword": {
@@ -358,7 +368,7 @@
     "yourRole": "Rola te: {role}",
     "validUntil": "Heta {date} derbasdar e",
     "accept": "Vexwendinê qebûl bike",
-    "login": "Têkeve",
+    "login": "Derbasbe",
     "register": "Hesabekî çêbike",
     "back": "Paşve",
     "roleOwner": "Xwedî",

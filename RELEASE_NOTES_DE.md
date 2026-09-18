@@ -1,3 +1,27 @@
+## MALBAT v1.3.0
+
+Manuelles Anordnen, PNG-Export und Layout-Feinschliff.
+
+### Neu
+- Personenkarten manuell anordnen (Stift-Modus): Ast mit Partnern und Nachkommen verschieben, speichern oder verwerfen
+- Auto-Layout mit Bestätigung zurücksetzen
+- Positionen persistent (`family_layout_overrides`)
+- Export als **Bild (.png)** über Dashboard → Exportieren (ohne den Stammbaum zu öffnen)
+- Benachrichtigungen in den Einstellungen aktiv/inaktiv speichern (für späteren Versand)
+- Sprachlabel **Kurdî (Kurmancî)**
+
+### Verbessert
+- Neue Partner/Kinder landen neben der echten (verschobenen) Personenposition
+- Dashboard-Aktionsmenü liegt nicht mehr hinter anderen Karten
+- Personenfotos in den Details vergrößern
+- Multi-Ehe- und Halbgeschwister-Layout robuster
+
+### Hinweise
+- Live: https://malbat.vercel.app
+- Migrationen `database/017_family_layout_overrides.sql` und `database/018_profile_notifications.sql` in Supabase ausführen
+
+---
+
 ## MALBAT v1.2.0
 
 Mehrsprachige Oberfläche und Kurmancî.
