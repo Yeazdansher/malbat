@@ -150,6 +150,8 @@
     "uploadPhoto": "Upload photo",
     "changePhoto": "Change photo",
     "removePhoto": "Remove photo",
+    "enlargePhoto": "Enlarge photo",
+    "closePhoto": "Close photo",
     "addParentsTitle": "Add parents",
     "addParentsHint": "A child always has a father and a mother. Both people are created together.",
     "addPartnerTitle": "Add partner",

@@ -150,6 +150,8 @@
     "uploadPhoto": "رفع صورة",
     "changePhoto": "تغيير الصورة",
     "removePhoto": "إزالة الصورة",
+    "enlargePhoto": "تكبير الصورة",
+    "closePhoto": "إغلاق الصورة",
     "addParentsTitle": "إضافة الوالدين",
     "addParentsHint": "لكل طفل أب وأم. يتم إنشاء الشخصين معًا.",
     "addPartnerTitle": "إضافة شريك",

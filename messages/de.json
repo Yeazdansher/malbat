@@ -150,6 +150,8 @@
     "uploadPhoto": "Foto hochladen",
     "changePhoto": "Foto ändern",
     "removePhoto": "Foto entfernen",
+    "enlargePhoto": "Foto vergrößern",
+    "closePhoto": "Foto schließen",
     "addParentsTitle": "Eltern hinzufügen",
     "addParentsHint": "Ein Kind hat immer einen Vater und eine Mutter. Beide Personen werden gemeinsam angelegt.",
     "addPartnerTitle": "Partner hinzufügen",

@@ -1,5 +1,7 @@
 "use client";
 
+import { useEffect, useState } from "react";
+
 import { formatDate } from "@/lib/dates";
 import { useTranslations } from "@/lib/i18n/client";
 
@@ -65,6 +67,28 @@ export default function PersonDetailsDialog({
   childNames,
 }: PersonDetailsDialogProps) {
   const t = useTranslations("person");
+  const [photoOpen, setPhotoOpen] = useState(false);
+
+  useEffect(() => {
+    if (!open) {
+      setPhotoOpen(false);
+    }
+  }, [open]);
+
+  useEffect(() => {
+    if (!photoOpen) {
+      return;
+    }
+
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        setPhotoOpen(false);
+      }
+    }
+
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [photoOpen]);
 
   if (!open) return null;
 
@@ -75,17 +99,27 @@ export default function PersonDetailsDialog({
         ? t("genderFemale")
         : t("genderUnknown");
 
+  const fullName = `${firstName} ${lastName}`.trim();
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
       <div className="max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-2xl bg-white p-8 shadow-xl sm:p-10">
         <div className="flex items-center gap-5">
           {photoUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={photoUrl}
-              alt=""
-              className="h-20 w-20 shrink-0 rounded-lg object-cover"
-            />
+            <button
+              type="button"
+              onClick={() => setPhotoOpen(true)}
+              className="group relative shrink-0 rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-green-700"
+              aria-label={t("enlargePhoto")}
+              title={t("enlargePhoto")}
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={photoUrl}
+                alt={fullName}
+                className="h-20 w-20 rounded-lg object-cover transition group-hover:brightness-95"
+              />
+            </button>
           ) : (
             <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-lg bg-green-700 text-2xl font-bold text-white">
               {`${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase()}
@@ -94,7 +128,7 @@ export default function PersonDetailsDialog({
 
           <div>
             <h2 className="text-3xl font-bold tracking-tight text-gray-900">
-              {firstName} {lastName}
+              {fullName}
             </h2>
             <p className="mt-1 text-gray-500">{genderLabel}</p>
           </div>
@@ -185,6 +219,32 @@ export default function PersonDetailsDialog({
           </div>
         </div>
       </div>
+
+      {photoOpen && photoUrl && (
+        <div
+          className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-label={t("enlargePhoto")}
+          onClick={() => setPhotoOpen(false)}
+        >
+          <button
+            type="button"
+            onClick={() => setPhotoOpen(false)}
+            className="absolute top-4 right-4 rounded-lg bg-white/10 px-3 py-2 text-sm text-white hover:bg-white/20"
+            aria-label={t("closePhoto")}
+          >
+            ×
+          </button>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={photoUrl}
+            alt={fullName}
+            className="max-h-[90vh] max-w-[90vw] rounded-lg object-contain shadow-2xl"
+            onClick={(event) => event.stopPropagation()}
+          />
+        </div>
+      )}
     </div>
   );
 }
