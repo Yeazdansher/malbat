@@ -137,8 +137,14 @@ export default function PersonCard({
 
       <div className="mt-5">
         <button
-          onClick={onOpenDetails}
-          className="w-full rounded border border-gray-300 py-2 text-sm transition hover:bg-gray-100"
+          type="button"
+          onPointerDown={(event) => event.stopPropagation()}
+          onClick={(event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            onOpenDetails();
+          }}
+          className="nodrag nopan nowheel w-full rounded border border-gray-300 py-2 text-sm transition hover:bg-gray-100"
         >
           {t("furtherDetails")}
         </button>

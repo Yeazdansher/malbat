@@ -884,3 +884,76 @@ export async function deleteFamilyTree(
   revalidatePath(`/family/${familyId}`);
   return { ok: true };
 }
+
+export type LayoutNodePosition = {
+  nodeId: string;
+  x: number;
+  y: number;
+};
+
+export async function saveFamilyLayoutOverrides(
+  familyId: string,
+  positions: LayoutNodePosition[],
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  const supabase = await createClient();
+
+  try {
+    await requireFamilyEditor(supabase, familyId);
+  } catch (error) {
+    return {
+      ok: false,
+      error:
+        error instanceof Error ? error.message : "Keine Berechtigung.",
+    };
+  }
+
+  if (positions.length === 0) return { ok: true };
+
+  const rows = positions.map((p) => ({
+    family_id: familyId,
+    node_id: p.nodeId,
+    pos_x: p.x,
+    pos_y: p.y,
+    updated_at: new Date().toISOString(),
+  }));
+
+  const { error } = await supabase
+    .from("family_layout_overrides")
+    .upsert(rows, { onConflict: "family_id,node_id" });
+
+  if (error) {
+    console.error("saveFamilyLayoutOverrides:", error);
+    return { ok: false, error: "Positionen konnten nicht gespeichert werden." };
+  }
+
+  return { ok: true };
+}
+
+export async function resetFamilyLayoutOverrides(
+  familyId: string,
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  const supabase = await createClient();
+
+  try {
+    await requireFamilyEditor(supabase, familyId);
+  } catch (error) {
+    return {
+      ok: false,
+      error:
+        error instanceof Error ? error.message : "Keine Berechtigung.",
+    };
+  }
+
+  const { error } = await supabase
+    .from("family_layout_overrides")
+    .delete()
+    .eq("family_id", familyId);
+
+  if (error) {
+    console.error("resetFamilyLayoutOverrides:", error);
+    return { ok: false, error: "Auto-Layout konnte nicht zurückgesetzt werden." };
+  }
+
+  revalidatePath(`/family/${familyId}`);
+  return { ok: true };
+}

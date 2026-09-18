@@ -1,6 +1,13 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
+import {
+  resetFamilyLayoutOverrides,
+  saveFamilyLayoutOverrides,
+  type LayoutNodePosition,
+} from "@/app/family/[id]/actions";
+import type { LayoutOverrideMap } from "@/lib/layout-overrides";
 import PersonDetailsDialog from "@/components/dialogs/PersonDetailsDialog";
 import EditPersonDialog from "@/components/dialogs/EditPersonDialog";
 import EmptyTree from "@/components/family/EmptyTree";
@@ -50,6 +57,7 @@ type Props = {
   personLimitLabel?: string | null;
   persons: Person[];
   relationships: Relationship[];
+  layoutOverrides: LayoutOverrideMap;
   canEdit: boolean;
   canAddPerson: boolean;
 };
@@ -60,9 +68,13 @@ export default function FamilyTree({
   personLimitLabel,
   persons,
   relationships,
+  layoutOverrides,
   canEdit,
   canAddPerson,
 }: Props) {
+  const router = useRouter();
+  const [layoutPending, startLayoutTransition] = useTransition();
+  const [layoutMessage, setLayoutMessage] = useState("");
   const [selectedPerson, setSelectedPerson] =
     useState<Person | null>(null);
 
@@ -95,6 +107,29 @@ const [deleteOpen, setDeleteOpen] =
   const [focusedPersonId, setFocusedPersonId] = useState<string>();
   const [focusRequest, setFocusRequest] = useState(0);
   const tSearch = useTranslations("tree");
+
+  const handlePositionsPersist = useCallback(
+    (positions: LayoutNodePosition[]) => {
+      void saveFamilyLayoutOverrides(familyId, positions).then((result) => {
+        if (!result.ok) {
+          setLayoutMessage(result.error);
+        }
+      });
+    },
+    [familyId]
+  );
+
+  function handleResetLayout() {
+    setLayoutMessage("");
+    startLayoutTransition(async () => {
+      const result = await resetFamilyLayoutOverrides(familyId);
+      if (!result.ok) {
+        setLayoutMessage(result.error);
+        return;
+      }
+      router.refresh();
+    });
+  }
 
   // Nach Soft-Refresh Personendaten in offenem Dialog aktualisieren.
   useEffect(() => {
@@ -223,15 +258,38 @@ const [deleteOpen, setDeleteOpen] =
             </div>
           )}
         </div>
+
+        {canEdit && (
+          <div className="flex flex-wrap items-center gap-3">
+            <p className="text-sm text-gray-600">{tSearch("arrangeHint")}</p>
+            <button
+              type="button"
+              disabled={layoutPending}
+              onClick={handleResetLayout}
+              className="rounded-lg border border-gray-300 px-3 py-2 text-sm hover:bg-gray-100 disabled:opacity-60"
+            >
+              {layoutPending
+                ? tSearch("autoLayoutResetting")
+                : tSearch("autoLayout")}
+            </button>
+            {layoutMessage && (
+              <p className="w-full text-sm text-red-700 sm:w-auto">
+                {layoutMessage}
+              </p>
+            )}
+          </div>
+        )}
       </div>
 
       <div className="min-h-0 flex-1" dir="ltr">
         <TreeView
           persons={persons}
           relationships={relationships}
+          layoutOverrides={layoutOverrides}
           canEdit={canEdit}
           focusPersonId={focusedPersonId}
           focusRequest={focusRequest}
+          onPositionsPersist={handlePositionsPersist}
           onFocusPerson={(personId) => {
             setFocusedPersonId(personId);
           }}

@@ -188,7 +188,10 @@
     "lockedTitle": "Stammbaum gesperrt",
     "lockedBody": "Dieser Stammbaum ist durch den Free-Tarif gesperrt. Der Besitzer muss Premium aktivieren, damit der Baum wieder geöffnet werden kann.",
     "toDashboard": "Zum Dashboard",
-    "managePlan": "Tarif verwalten"
+    "managePlan": "Tarif verwalten",
+    "arrangeHint": "Karten ziehen zum Anordnen",
+    "autoLayout": "Auto-Layout",
+    "autoLayoutResetting": "Zurücksetzen…"
   },
   "familyNew": {
     "title": "Neuer Stammbaum",

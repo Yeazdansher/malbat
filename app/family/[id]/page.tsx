@@ -61,6 +61,11 @@ export default async function FamilyPage({
     .select("*")
     .eq("family_id", id);
 
+  const { data: layoutOverrideRows } = await supabase
+    .from("family_layout_overrides")
+    .select("node_id, pos_x, pos_y")
+    .eq("family_id", id);
+
   const { data: membership } = await supabase
     .from("family_members")
     .select("role")
@@ -203,6 +208,12 @@ export default async function FamilyPage({
             }
             persons={persons ?? []}
             relationships={relationships ?? []}
+            layoutOverrides={Object.fromEntries(
+              (layoutOverrideRows ?? []).map((row) => [
+                row.node_id,
+                { x: row.pos_x, y: row.pos_y },
+              ])
+            )}
             canEdit={canEditTree}
             canAddPerson={canAddPerson}
           />

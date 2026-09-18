@@ -188,7 +188,10 @@
     "lockedTitle": "شجرة العائلة مقفلة",
     "lockedBody": "هذه الشجرة مقفلة بسبب خطة Free. يجب على المالك تفعيل Premium لفتحها مجددًا.",
     "toDashboard": "إلى لوحة التحكم",
-    "managePlan": "إدارة الخطة"
+    "managePlan": "إدارة الخطة",
+    "arrangeHint": "اسحب البطاقات للترتيب",
+    "autoLayout": "تخطيط تلقائي",
+    "autoLayoutResetting": "جارٍ الإعادة…"
   },
   "familyNew": {
     "title": "شجرة عائلة جديدة",

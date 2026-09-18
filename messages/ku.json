@@ -188,7 +188,10 @@
     "lockedTitle": "Dara malbatê qefilandî ye",
     "lockedBody": "Ev dara malbatê bi plana Free qefilandî ye. Xwedî divê Premium çalak bike da dîsa veke.",
     "toDashboard": "Here panelê",
-    "managePlan": "Planê birêve bibe"
+    "managePlan": "Planê birêve bibe",
+    "arrangeHint": "Kartan bikşîne bo rêzkirinê",
+    "autoLayout": "Rêzkirina otomatîk",
+    "autoLayoutResetting": "Tê vegerandin…"
   },
   "familyNew": {
     "title": "Dara malbatê ya nû",

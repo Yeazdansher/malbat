@@ -1,10 +1,15 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Background,
   Controls,
   ReactFlow,
+  applyNodeChanges,
+  type Edge,
+  type Node,
+  type NodeChange,
+  type OnNodeDrag,
   type ReactFlowInstance,
 } from "@xyflow/react";
 
@@ -21,25 +26,26 @@ import {
   type Relationship,
 } from "@/lib/tree-engine";
 import { collectSearchBranch } from "@/lib/search-branch";
+import { collectDragGroupNodeIds } from "@/lib/drag-subtree";
+import {
+  applyLayoutOverrides,
+  type LayoutOverrideMap,
+} from "@/lib/layout-overrides";
+import { recomputePartnerHandles } from "@/lib/partner-handles";
+import type { LayoutNodePosition } from "@/app/family/[id]/actions";
 import { useTranslations } from "@/lib/i18n/client";
 
 type Person = {
   id: string;
   family_id: string;
-
   first_name: string;
   last_name: string;
-
   gender: "male" | "female" | "unknown";
-
   birth_date: string | null;
   birth_place: string | null;
-
   is_deceased: boolean;
-
   death_date: string | null;
   death_place: string | null;
-
   notes: string | null;
   photo_url?: string | null;
 };
@@ -47,10 +53,11 @@ type Person = {
 type Props = {
   persons: Person[];
   relationships: Relationship[];
+  layoutOverrides: LayoutOverrideMap;
   canEdit: boolean;
   focusPersonId?: string;
   focusRequest: number;
-
+  onPositionsPersist: (positions: LayoutNodePosition[]) => void;
   onOpenDetails: (person: Person) => void;
   onOpenRelationship: (person: Person) => void;
   onOpenParents: (person: Person) => void;
@@ -62,9 +69,11 @@ type Props = {
 export default function TreeView({
   persons,
   relationships,
+  layoutOverrides,
   canEdit,
   focusPersonId,
   focusRequest,
+  onPositionsPersist,
   onOpenDetails,
   onOpenRelationship,
   onOpenParents,
@@ -75,6 +84,36 @@ export default function TreeView({
   const t = useTranslations("tree");
   const [flowInstance, setFlowInstance] =
     useState<ReactFlowInstance | null>(null);
+  const [flowNodes, setFlowNodes] = useState<Node[]>([]);
+  const [flowEdges, setFlowEdges] = useState<Edge[]>([]);
+
+  const draggingRef = useRef(false);
+  const onPositionsPersistRef = useRef(onPositionsPersist);
+  onPositionsPersistRef.current = onPositionsPersist;
+
+  const dragRef = useRef<{
+    nodeId: string;
+    group: Set<string>;
+    starts: Record<string, { x: number; y: number }>;
+  } | null>(null);
+
+  const flowNodesRef = useRef(flowNodes);
+  flowNodesRef.current = flowNodes;
+  const relationshipsRef = useRef(relationships);
+  relationshipsRef.current = relationships;
+
+  const handlersRef = useRef({
+    onOpenDetails,
+    onOpenRelationship,
+    onOpenParents,
+    onOpenSiblings,
+  });
+  handlersRef.current = {
+    onOpenDetails,
+    onOpenRelationship,
+    onOpenParents,
+    onOpenSiblings,
+  };
 
   const nodeTypes = useMemo(
     () => ({
@@ -91,17 +130,11 @@ export default function TreeView({
     []
   );
 
-  /**
-   * 1. Domänengraph erzeugen
-   */
   const graph = useMemo(
     () => buildTreeGraph(persons, relationships),
     [persons, relationships]
   );
 
-  /**
-   * 2. Layout berechnen
-   */
   const layoutResult = useMemo(() => {
     try {
       return { layout: buildTreeLayout(graph), error: null as string | null };
@@ -112,32 +145,29 @@ export default function TreeView({
     }
   }, [graph, t]);
 
-  /**
-   * 3. React-Flow-Struktur erzeugen
-   */
-  const { nodes, edges } = useMemo(() => {
+  const layoutWithOverrides = useMemo(() => {
     if (!layoutResult.layout) {
-      return { nodes: [], edges: [] };
+      return null;
+    }
+
+    return applyLayoutOverrides(layoutResult.layout, layoutOverrides);
+  }, [layoutResult.layout, layoutOverrides]);
+
+  const { nodes: baseNodes, edges: baseEdges } = useMemo(() => {
+    if (!layoutWithOverrides) {
+      return { nodes: [] as Node[], edges: [] as Edge[] };
     }
 
     return buildReactFlowGraph(
       graph,
-      layoutResult.layout,
-      onOpenDetails,
-      onOpenRelationship,
-      onOpenParents,
-      onOpenSiblings,
+      layoutWithOverrides,
+      (person) => handlersRef.current.onOpenDetails(person),
+      (person) => handlersRef.current.onOpenRelationship(person),
+      (person) => handlersRef.current.onOpenParents(person),
+      (person) => handlersRef.current.onOpenSiblings(person),
       canEdit
     );
-  }, [
-    graph,
-    layoutResult.layout,
-    onOpenDetails,
-    onOpenRelationship,
-    onOpenParents,
-    onOpenSiblings,
-    canEdit,
-  ]);
+  }, [graph, layoutWithOverrides, canEdit]);
 
   const {
     ancestors: ancestorPersonIds,
@@ -157,14 +187,17 @@ export default function TreeView({
     return collectSearchBranch(focusPersonId, relationships);
   }, [focusPersonId, relationships]);
 
-  const displayedNodes = useMemo(
-    () =>
-      nodes.map((node) => {
+  const decorateNodes = useCallback(
+    (sourceNodes: Node[]): Node[] =>
+      sourceNodes.map((node) => {
         if (node.type === "person") {
           return {
             ...node,
+            draggable: canEdit,
+            selectable: true,
             data: {
               ...node.data,
+              canEdit,
               searchHighlighted: node.id === focusPersonId,
               branchHighlighted:
                 node.id !== focusPersonId &&
@@ -183,6 +216,8 @@ export default function TreeView({
 
           return {
             ...node,
+            draggable: false,
+            selectable: true,
             style: {
               ...node.style,
               outline: onDescendantBranch
@@ -202,21 +237,51 @@ export default function TreeView({
           };
         }
 
-        return node;
+        return {
+          ...node,
+          draggable: false,
+        };
       }),
     [
-      nodes,
-      focusPersonId,
-      ancestorPersonIds,
-      descendantPersonIds,
       ancestorFamilyIds,
+      ancestorPersonIds,
+      canEdit,
       descendantFamilyIds,
+      descendantPersonIds,
+      focusPersonId,
     ]
   );
 
+  // Soft-Refresh / Graph-/Override-Änderung: Positionen neu seedern.
+  useEffect(() => {
+    if (draggingRef.current) {
+      return;
+    }
+
+    const seeded = decorateNodes(baseNodes);
+    setFlowNodes(seeded);
+    setFlowEdges(recomputePartnerHandles(seeded, baseEdges));
+    // decorateNodes bewusst ausgelassen: Highlight-Updates laufen separat.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [baseNodes, baseEdges]);
+
+  // Suche / canEdit: Daten aktualisieren, Positionen behalten.
+  useEffect(() => {
+    if (draggingRef.current) {
+      return;
+    }
+
+    setFlowNodes((current) => {
+      if (current.length === 0) {
+        return current;
+      }
+      return decorateNodes(current);
+    });
+  }, [decorateNodes]);
+
   const displayedEdges = useMemo(
     () =>
-      edges.map((edge) => {
+      flowEdges.map((edge) => {
         if (!focusPersonId) {
           return edge;
         }
@@ -233,11 +298,8 @@ export default function TreeView({
         const sourceAnc = ancestorPersonIds.has(edge.source);
         const targetAnc = ancestorPersonIds.has(edge.target);
 
-        // Grün: Nachkommen-Familien und Nachkommen-Personen
         const isDown =
           touchesDescendantFamily || sourceDesc || targetDesc;
-
-        // Rot: nur Vorfahren-Familien / Vorfahren-Personen
         const isUp =
           !isDown &&
           (touchesAncestorFamily || sourceAnc || targetAnc);
@@ -256,7 +318,7 @@ export default function TreeView({
         };
       }),
     [
-      edges,
+      flowEdges,
       focusPersonId,
       ancestorPersonIds,
       descendantPersonIds,
@@ -270,10 +332,7 @@ export default function TreeView({
       return;
     }
 
-    const personNode = nodes.find(
-      (node) => node.id === focusPersonId
-    );
-
+    const personNode = flowNodes.find((node) => node.id === focusPersonId);
     if (!personNode) {
       return;
     }
@@ -286,7 +345,114 @@ export default function TreeView({
         duration: 500,
       }
     );
-  }, [flowInstance, focusPersonId, focusRequest, nodes]);
+  }, [flowInstance, focusPersonId, focusRequest, flowNodes]);
+
+  const handleNodesChange = useCallback(
+    (changes: NodeChange[]) => {
+      if (!canEdit) {
+        const safeChanges = changes.filter(
+          (change) => change.type !== "position"
+        );
+        if (safeChanges.length === 0) {
+          return;
+        }
+        setFlowNodes((current) => applyNodeChanges(safeChanges, current));
+        return;
+      }
+
+      // Controlled mode: Position-Changes müssen angewandt werden.
+      setFlowNodes((current) => applyNodeChanges(changes, current));
+    },
+    [canEdit]
+  );
+
+  const handleNodeDragStart: OnNodeDrag = useCallback((_event, node) => {
+    if (node.type !== "person") {
+      return;
+    }
+
+    draggingRef.current = true;
+
+    const group = collectDragGroupNodeIds(
+      node.id,
+      relationshipsRef.current
+    );
+
+    const starts: Record<string, { x: number; y: number }> = {};
+    for (const entry of flowNodesRef.current) {
+      if (group.has(entry.id)) {
+        starts[entry.id] = { ...entry.position };
+      }
+    }
+
+    dragRef.current = {
+      nodeId: node.id,
+      group,
+      starts,
+    };
+  }, []);
+
+  const handleNodeDrag: OnNodeDrag = useCallback((_event, node) => {
+    const drag = dragRef.current;
+    if (!drag || drag.nodeId !== node.id) {
+      return;
+    }
+
+    const origin = drag.starts[node.id];
+    if (!origin) {
+      return;
+    }
+
+    const dx = node.position.x - origin.x;
+    const dy = node.position.y - origin.y;
+
+    setFlowNodes((current) => {
+      const next = current.map((entry) => {
+        if (entry.id === node.id || !drag.group.has(entry.id)) {
+          return entry;
+        }
+
+        const start = drag.starts[entry.id];
+        if (!start) {
+          return entry;
+        }
+
+        return {
+          ...entry,
+          position: {
+            x: start.x + dx,
+            y: start.y + dy,
+          },
+        };
+      });
+
+      setFlowEdges((edges) => recomputePartnerHandles(next, edges));
+      return next;
+    });
+  }, []);
+
+  const handleNodeDragStop: OnNodeDrag = useCallback(() => {
+    const drag = dragRef.current;
+    draggingRef.current = false;
+    dragRef.current = null;
+
+    const nodes = flowNodesRef.current;
+    setFlowEdges((edges) => recomputePartnerHandles(nodes, edges));
+
+    if (!drag) {
+      return;
+    }
+
+    const positions = nodes
+      .filter((node) => drag.group.has(node.id))
+      .map((node) => ({
+        nodeId: node.id,
+        x: node.position.x,
+        y: node.position.y,
+      }));
+
+    onPositionsPersistRef.current(positions);
+  }, []);
 
   if (layoutResult.error) {
     return (
@@ -309,14 +475,20 @@ export default function TreeView({
   return (
     <div className="relative z-0 h-full w-full">
       <ReactFlow
-        nodes={displayedNodes}
+        nodes={flowNodes}
         edges={displayedEdges}
         nodeTypes={nodeTypes}
         edgeTypes={edgeTypes}
         nodesConnectable={false}
-        nodesDraggable={false}
+        nodesDraggable={canEdit}
+        nodeDragThreshold={5}
         elementsSelectable={true}
+        selectNodesOnDrag={false}
         panOnDrag
+        panOnScroll={false}
+        zoomOnScroll
+        zoomOnPinch
+        zoomOnDoubleClick
         fitViewOptions={{ padding: 0.2, minZoom: 0.1, maxZoom: 1.5 }}
         minZoom={0.1}
         maxZoom={2}
@@ -328,6 +500,10 @@ export default function TreeView({
             maxZoom: 1.5,
           });
         }}
+        onNodesChange={handleNodesChange}
+        onNodeDragStart={canEdit ? handleNodeDragStart : undefined}
+        onNodeDrag={canEdit ? handleNodeDrag : undefined}
+        onNodeDragStop={canEdit ? handleNodeDragStop : undefined}
         onNodeClick={(_event, node) => {
           if (node.type === "person") {
             onFocusPerson(node.id);
@@ -347,8 +523,7 @@ export default function TreeView({
             return;
           }
 
-          const parentIds = data.parentIds ?? [];
-          onAddChild(parentIds);
+          onAddChild(data.parentIds ?? []);
         }}
         onPaneClick={() => {
           onFocusPerson(undefined);

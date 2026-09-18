@@ -188,7 +188,10 @@
     "lockedTitle": "Family tree locked",
     "lockedBody": "This family tree is locked by the Free plan. The owner must enable Premium to open it again.",
     "toDashboard": "Go to dashboard",
-    "managePlan": "Manage plan"
+    "managePlan": "Manage plan",
+    "arrangeHint": "Drag cards to rearrange",
+    "autoLayout": "Auto layout",
+    "autoLayoutResetting": "Resetting…"
   },
   "familyNew": {
     "title": "New family tree",
