@@ -270,6 +270,11 @@ export function buildTreeLayout(graph: TreeGraph): TreeLayout {
     return width;
   }
 
+  function partnerSideForUnionIndex(index: number): "left" | "right" {
+    // 1. Frau rechts, 2. links, 3. rechts, …
+    return index % 2 === 0 ? "right" : "left";
+  }
+
   function measureOwnGenerationWidth(personId: string): number {
     if (!graph.persons.has(personId)) {
       return 0;
@@ -285,28 +290,30 @@ export function buildTreeLayout(graph: TreeGraph): TreeLayout {
       return CARD_WIDTH;
     }
 
-    // Erste Union rechts; Extra-Partner links in einer Zeile.
+    // Abwechselnd: Index 0,2,4… rechts; 1,3,5… links.
     const visited = new Set<string>([personId]);
     let leftWidth = 0;
     let rightWidth = CARD_WIDTH;
 
-    const first = unions[0];
-    for (const partnerId of otherPartnersOf(first, personId)) {
-      rightWidth += PARTNER_GAP + CARD_WIDTH;
-      visited.add(partnerId);
-      rightWidth += measureExtraUnionsOwnGen(partnerId, first.id, visited);
-    }
-
-    if (otherPartnersOf(first, personId).length === 0) {
-      rightWidth += PARTNER_GAP;
-    }
-
-    for (let index = 1; index < unions.length; index++) {
+    for (let index = 0; index < unions.length; index++) {
       const union = unions[index];
+      const side = partnerSideForUnionIndex(index);
+      let sideWidth = 0;
+
       for (const partnerId of otherPartnersOf(union, personId)) {
-        leftWidth += PARTNER_GAP + CARD_WIDTH;
+        sideWidth += PARTNER_GAP + CARD_WIDTH;
         visited.add(partnerId);
-        leftWidth += measureExtraUnionsOwnGen(partnerId, union.id, visited);
+        sideWidth += measureExtraUnionsOwnGen(partnerId, union.id, visited);
+      }
+
+      if (index === 0 && otherPartnersOf(union, personId).length === 0) {
+        sideWidth += PARTNER_GAP;
+      }
+
+      if (side === "left") {
+        leftWidth += sideWidth;
+      } else {
+        rightWidth += sideWidth;
       }
     }
 
@@ -1254,18 +1261,18 @@ export function buildTreeLayout(graph: TreeGraph): TreeLayout {
     if (placedPersons.has(personId)) {
       const claimable = unionsForPerson(personId);
       if (claimable.length > 0) {
-        placeExtraUnions(personId, preferredExtraDirection(personId));
+        placeExtraUnionsAlternating(personId);
       }
       return;
     }
 
     const unions = unionsForPerson(personId);
-    const extraUnionsList = unions.slice(1);
 
     let leftWidth = 0;
-    if (extraUnionsList.length > 0) {
+    if (unions.length > 1) {
       const visited = new Set<string>([personId]);
-      for (const union of extraUnionsList) {
+      for (let index = 1; index < unions.length; index += 2) {
+        const union = unions[index];
         for (const partnerId of otherPartnersOf(union, personId)) {
           leftWidth += PARTNER_GAP + CARD_WIDTH;
           visited.add(partnerId);
@@ -1311,9 +1318,13 @@ export function buildTreeLayout(graph: TreeGraph): TreeLayout {
       placeExtraUnions(partnerId, "right");
     }
 
-    const extraDir = preferredExtraDirection(personId);
-    for (let index = 0; index < extraUnionsList.length; index++) {
-      placeExtraUnion(personId, extraUnionsList[index], extraDir, index);
+    for (let index = 1; index < unions.length; index++) {
+      placeExtraUnion(
+        personId,
+        unions[index],
+        partnerSideForUnionIndex(index),
+        Math.floor(index / 2)
+      );
     }
   }
 
@@ -1456,6 +1467,25 @@ export function buildTreeLayout(graph: TreeGraph): TreeLayout {
     }
   }
 
+  /** Verbleibende Ehen des Ankers abwechselnd links/rechts anhängen. */
+  function placeExtraUnionsAlternating(personId: string): void {
+    const placedCount = (familiesByPartner.get(personId) ?? []).filter(
+      (family) =>
+        placedFamilies.has(family.id) && canClaimUnion(personId, family)
+    ).length;
+    const unions = extraUnionsOf(personId);
+
+    for (let index = 0; index < unions.length; index++) {
+      const unionIndex = placedCount + index;
+      placeExtraUnion(
+        personId,
+        unions[index],
+        partnerSideForUnionIndex(unionIndex),
+        Math.floor(unionIndex / 2)
+      );
+    }
+  }
+
   function placeFamily(family: Family, boxLeft: number, y: number): void {
     if (placedFamilies.has(family.id)) {
       return;
@@ -1464,7 +1494,7 @@ export function buildTreeLayout(graph: TreeGraph): TreeLayout {
     // Familie hängt schon an einer platzierten Person → außen anhängen, keine neue Reihe.
     const placedAnchor = pickPlacedUnionAnchor(family);
     if (placedAnchor && family.kind !== "sibling-group") {
-      placeExtraUnions(placedAnchor, preferredExtraDirection(placedAnchor));
+      placeExtraUnionsAlternating(placedAnchor);
       return;
     }
 
@@ -1634,7 +1664,7 @@ export function buildTreeLayout(graph: TreeGraph): TreeLayout {
     const placedPartner = pickPlacedUnionAnchor(family);
 
     if (placedPartner) {
-      placeExtraUnions(placedPartner, preferredExtraDirection(placedPartner));
+      placeExtraUnionsAlternating(placedPartner);
       continue;
     }
 
@@ -1658,49 +1688,101 @@ export function buildTreeLayout(graph: TreeGraph): TreeLayout {
   resolveSiblingOverlaps(topLevelSubtrees, FAMILY_GAP);
 
   /**
-   * Cousinen-Ehen: Ehefrau fest neben den Mann setzen, falls sie
-   * noch in der Herkunftsreihe lag — danach Überlappungen lösen.
+   * Ehefrauen fest neben den Mann setzen (abwechselnd rechts/links),
+   * falls Packing/Overlap sie verschoben hat — danach Überlappungen lösen.
    */
   function reconcileRelocatedWives(): void {
+    const husbandIds = new Set<string>();
+
     for (const family of graph.families.values()) {
       if (family.kind === "sibling-group") {
         continue;
       }
 
       const husbandId = preferredUnionAnchor(family);
-      if (!husbandId || !placedPersons.has(husbandId)) {
-        continue;
+      if (husbandId && placedPersons.has(husbandId)) {
+        husbandIds.add(husbandId);
       }
+    }
 
+    for (const husbandId of husbandIds) {
       const origin = personPositions.get(husbandId);
       if (!origin) {
         continue;
       }
 
-      const wives = otherPartnersOf(family, husbandId).filter((id) =>
-        shouldRelocateBesideHusband(id)
-      );
+      const unions = (familiesByPartner.get(husbandId) ?? [])
+        .filter(
+          (family) =>
+            family.kind !== "sibling-group" &&
+            canClaimUnion(husbandId, family)
+        )
+        .sort((a, b) => a.id.localeCompare(b.id));
 
-      if (wives.length === 0) {
-        continue;
-      }
+      let rightEdge = origin.x + CARD_WIDTH;
+      let leftEdge = origin.x;
 
-      let cursorX = origin.x + CARD_WIDTH + PARTNER_GAP;
-
-      for (const wifeId of wives) {
-        placeOrMovePerson(wifeId, cursorX, origin.y);
-        linkBirthFamilyEdge(wifeId);
-        addEdge(wifeId, family.familyNodeId);
-        addEdge(husbandId, family.familyNodeId);
-        cursorX += CARD_WIDTH + PARTNER_GAP;
-      }
-
-      if (nodes.some((node) => node.id === family.familyNodeId)) {
-        moveFamilyNodeTo(
-          family.familyNodeId,
-          origin.x + CARD_WIDTH + PARTNER_GAP / 2,
-          origin.y + CARD_HEIGHT / 2
+      for (let index = 0; index < unions.length; index++) {
+        const union = unions[index];
+        const wives = otherPartnersOf(union, husbandId).filter((id) =>
+          shouldRelocateBesideHusband(id)
         );
+
+        if (wives.length === 0) {
+          continue;
+        }
+
+        const side = partnerSideForUnionIndex(index);
+        const placedXs: number[] = [];
+
+        if (side === "right") {
+          let cursorX = rightEdge;
+          for (const wifeId of wives) {
+            cursorX += PARTNER_GAP;
+            placeOrMovePerson(wifeId, cursorX, origin.y);
+            linkBirthFamilyEdge(wifeId);
+            addEdge(wifeId, union.familyNodeId);
+            addEdge(husbandId, union.familyNodeId);
+            placedXs.push(cursorX);
+            cursorX += CARD_WIDTH;
+          }
+          rightEdge = cursorX;
+        } else {
+          let cursorX = leftEdge;
+          for (const wifeId of wives) {
+            cursorX -= PARTNER_GAP + CARD_WIDTH;
+            placeOrMovePerson(wifeId, cursorX, origin.y);
+            linkBirthFamilyEdge(wifeId);
+            addEdge(wifeId, union.familyNodeId);
+            addEdge(husbandId, union.familyNodeId);
+            placedXs.push(cursorX);
+          }
+          leftEdge = Math.min(...placedXs, leftEdge);
+        }
+
+        if (
+          placedXs.length > 0 &&
+          nodes.some((node) => node.id === union.familyNodeId)
+        ) {
+          const partnerInnerEdge =
+            side === "left"
+              ? Math.max(...placedXs) + CARD_WIDTH
+              : Math.min(...placedXs);
+          const anchorInnerEdge =
+            side === "left" ? origin.x : origin.x + CARD_WIDTH;
+          const familyCenterX = (partnerInnerEdge + anchorInnerEdge) / 2;
+          const sideStack = Math.floor(index / 2);
+          const familyCenterY =
+            sideStack === 0
+              ? origin.y + CARD_HEIGHT / 2
+              : origin.y - 36 - (sideStack - 1) * (FAMILY_NODE_SIZE + 24);
+
+          moveFamilyNodeTo(
+            union.familyNodeId,
+            familyCenterX,
+            familyCenterY
+          );
+        }
       }
     }
   }
