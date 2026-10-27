@@ -39,11 +39,11 @@ export default async function Header({
     <header
       className={
         glass
-          ? "relative z-50 border-b border-white/10 bg-[#0c1a12]/82 backdrop-blur-md"
-          : "relative z-50 border-b border-[var(--border)] bg-[var(--header-bg)]"
+          ? "relative z-50 overflow-visible border-b border-white/10 bg-[#0c1a12]/82 backdrop-blur-md"
+          : "relative z-50 overflow-visible border-b border-[var(--border)] bg-[var(--header-bg)]"
       }
     >
-      <div className="relative flex items-center justify-between gap-3 px-6 py-3">
+      <div className="relative flex items-center justify-between gap-3 overflow-visible px-6 py-3">
         <div className="flex min-w-0 flex-1 items-center gap-4">
           {backHref && backLabel && (
             <Link
@@ -81,7 +81,7 @@ export default async function Header({
         </div>
 
         {center && (
-          <div className="pointer-events-none absolute inset-y-0 left-1/2 flex -translate-x-1/2 items-center">
+          <div className="pointer-events-none absolute left-1/2 top-1/2 z-10 flex -translate-x-1/2 -translate-y-1/2 items-center justify-center">
             <div className="pointer-events-auto">{center}</div>
           </div>
         )}
