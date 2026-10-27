@@ -146,11 +146,13 @@ export default async function DashboardPage({
   return (
     <AppBackdrop>
       <main className="min-h-screen">
-        <Header profile={profile} glass />
+        <Header
+          profile={profile}
+          glass
+          center={<DashboardTreeEasterEgg />}
+        />
 
         <div className="mx-auto max-w-5xl p-8">
-          <DashboardTreeEasterEgg />
-
           {familyDeleted === "1" && (
             <div className="mb-6 rounded-lg border border-green-200 bg-green-50/95 px-4 py-3 text-green-800 shadow-sm">
               {t("deleted")}

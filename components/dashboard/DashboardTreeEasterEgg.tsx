@@ -96,24 +96,22 @@ export default function DashboardTreeEasterEgg() {
 
   return (
     <>
-      <div className="mb-6 flex justify-center">
-        <button
-          type="button"
-          onClick={start}
-          disabled={playing}
-          className="rounded-2xl opacity-90 transition hover:scale-105 hover:opacity-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white/70 disabled:cursor-default disabled:hover:scale-100"
-          aria-label="MALBAT"
-          title="MALBAT"
-        >
-          <Image
-            src="/icon.png"
-            alt=""
-            width={72}
-            height={72}
-            className="rounded-xl shadow-lg shadow-black/30"
-          />
-        </button>
-      </div>
+      <button
+        type="button"
+        onClick={start}
+        disabled={playing}
+        className="rounded-xl opacity-95 transition hover:scale-105 hover:opacity-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white/70 disabled:cursor-default disabled:hover:scale-100"
+        aria-label="MALBAT"
+        title="MALBAT"
+      >
+        <Image
+          src="/icon.png"
+          alt=""
+          width={44}
+          height={44}
+          className="rounded-lg shadow-md shadow-black/35"
+        />
+      </button>
 
       {playing && (
         <div
