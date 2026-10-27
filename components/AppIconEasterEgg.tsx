@@ -15,22 +15,26 @@ type Phase =
   | "trunk"
   | "branches"
   | "leaves"
+  | "people"
   | "glow"
+  | "finale"
   | "leaving";
 
 const STEPS: { phase: Phase; at: number }[] = [
   { phase: "dim", at: 0 },
-  { phase: "soil", at: 200 },
-  { phase: "seed", at: 900 },
-  { phase: "roots", at: 2100 },
-  { phase: "trunk", at: 3000 },
-  { phase: "branches", at: 4000 },
-  { phase: "leaves", at: 4700 },
-  { phase: "glow", at: 5400 },
-  { phase: "leaving", at: 6800 },
+  { phase: "soil", at: 180 },
+  { phase: "seed", at: 850 },
+  { phase: "roots", at: 2000 },
+  { phase: "trunk", at: 2900 },
+  { phase: "branches", at: 3800 },
+  { phase: "leaves", at: 4550 },
+  { phase: "people", at: 5400 },
+  { phase: "glow", at: 6100 },
+  { phase: "finale", at: 7000 },
+  { phase: "leaving", at: 8600 },
 ];
 
-const END_MS = 7800;
+const END_MS = 9600;
 
 function reached(phase: Phase, target: Phase): boolean {
   const order: Phase[] = [
@@ -42,10 +46,28 @@ function reached(phase: Phase, target: Phase): boolean {
     "trunk",
     "branches",
     "leaves",
+    "people",
     "glow",
+    "finale",
     "leaving",
   ];
   return order.indexOf(phase) >= order.indexOf(target);
+}
+
+function leafClass(
+  phase: Phase,
+  delay: string,
+  tone?: "dark" | "light"
+): string {
+  return [
+    styles.leaf,
+    tone === "dark" ? styles.leafDark : "",
+    tone === "light" ? styles.leafLight : "",
+    delay,
+    reached(phase, "leaves") ? styles.leafVisible : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
 }
 
 type Props = {
@@ -55,6 +77,7 @@ type Props = {
 export default function AppIconEasterEgg({ size = 44 }: Props) {
   const [phase, setPhase] = useState<Phase>("idle");
   const [overlayReady, setOverlayReady] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const timers = useRef<number[]>([]);
 
   const clearTimers = useCallback(() => {
@@ -65,6 +88,10 @@ export default function AppIconEasterEgg({ size = 44 }: Props) {
   }, []);
 
   useEffect(() => () => clearTimers(), [clearTimers]);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     if (phase === "idle") {
@@ -98,11 +125,8 @@ export default function AppIconEasterEgg({ size = 44 }: Props) {
   }
 
   const playing = phase !== "idle";
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  const showDrawnTree = !reached(phase, "finale");
+  const showFinale = reached(phase, "finale");
 
   const overlay =
     playing && mounted
@@ -125,10 +149,7 @@ export default function AppIconEasterEgg({ size = 44 }: Props) {
               <div
                 className={[
                   styles.soil,
-                  reached(phase, "soil") && phase !== "leaving"
-                    ? styles.soilVisible
-                    : "",
-                  phase === "leaving" ? styles.soilVisible : "",
+                  reached(phase, "soil") ? styles.soilVisible : "",
                 ]
                   .filter(Boolean)
                   .join(" ")}
@@ -144,19 +165,43 @@ export default function AppIconEasterEgg({ size = 44 }: Props) {
                   .join(" ")}
               />
 
-              <div className={styles.tree}>
-                <svg viewBox="0 0 260 360" aria-hidden="true">
-                  <circle
+              <div
+                className={[
+                  styles.tree,
+                  showDrawnTree ? "" : styles.treeHidden,
+                ]
+                  .filter(Boolean)
+                  .join(" ")}
+              >
+                <svg viewBox="0 0 280 400" aria-hidden="true">
+                  <defs>
+                    <radialGradient id="sunGrad" cx="50%" cy="50%" r="50%">
+                      <stop offset="0%" stopColor="#fff6c8" />
+                      <stop offset="45%" stopColor="#f5d76e" />
+                      <stop offset="100%" stopColor="#f0b429" stopOpacity="0.15" />
+                    </radialGradient>
+                    <linearGradient id="trunkGrad" x1="0" y1="0" x2="1" y2="0">
+                      <stop offset="0%" stopColor="#6a3f22" />
+                      <stop offset="45%" stopColor="#8b5a2b" />
+                      <stop offset="100%" stopColor="#5c3518" />
+                    </linearGradient>
+                  </defs>
+
+                  <g
                     className={[
-                      styles.glow,
-                      reached(phase, "glow") ? styles.glowVisible : "",
+                      styles.sun,
+                      reached(phase, "glow") ? styles.sunVisible : "",
                     ]
                       .filter(Boolean)
                       .join(" ")}
-                    cx="130"
-                    cy="70"
-                    r="48"
-                  />
+                  >
+                    <line className={styles.sunRay} x1="140" y1="18" x2="140" y2="0" />
+                    <line className={styles.sunRay} x1="175" y1="28" x2="192" y2="10" />
+                    <line className={styles.sunRay} x1="105" y1="28" x2="88" y2="10" />
+                    <line className={styles.sunRay} x1="198" y1="55" x2="218" y2="45" />
+                    <line className={styles.sunRay} x1="82" y1="55" x2="62" y2="45" />
+                    <circle className={styles.sunCore} cx="140" cy="70" r="52" />
+                  </g>
 
                   <path
                     className={[
@@ -165,7 +210,7 @@ export default function AppIconEasterEgg({ size = 44 }: Props) {
                     ]
                       .filter(Boolean)
                       .join(" ")}
-                    d="M130 330 C118 345 95 352 78 355"
+                    d="M140 330 C120 345 88 352 62 348"
                   />
                   <path
                     className={[
@@ -174,7 +219,7 @@ export default function AppIconEasterEgg({ size = 44 }: Props) {
                     ]
                       .filter(Boolean)
                       .join(" ")}
-                    d="M130 330 C142 345 165 352 182 355"
+                    d="M140 330 C160 345 192 352 218 348"
                   />
                   <path
                     className={[
@@ -183,7 +228,7 @@ export default function AppIconEasterEgg({ size = 44 }: Props) {
                     ]
                       .filter(Boolean)
                       .join(" ")}
-                    d="M130 332 C125 348 130 355 130 360"
+                    d="M140 332 C132 350 140 360 148 355"
                   />
 
                   <g
@@ -196,7 +241,15 @@ export default function AppIconEasterEgg({ size = 44 }: Props) {
                   >
                     <path
                       className={styles.trunk}
-                      d="M118 330 C116 250 120 180 124 120 C126 100 128 85 130 70 C132 85 134 100 136 120 C140 180 144 250 142 330 Z"
+                      d="M122 332
+                         C118 280 120 230 124 185
+                         C126 155 128 130 132 108
+                         C134 95 136 88 140 78
+                         C144 88 146 95 148 108
+                         C152 130 154 155 156 185
+                         C160 230 162 280 158 332
+                         C152 338 146 340 140 340
+                         C134 340 128 338 122 332 Z"
                     />
                   </g>
 
@@ -208,7 +261,7 @@ export default function AppIconEasterEgg({ size = 44 }: Props) {
                     ]
                       .filter(Boolean)
                       .join(" ")}
-                    d="M130 150 C100 140 75 125 55 105"
+                    d="M140 160 C110 150 78 130 55 108"
                   />
                   <path
                     className={[
@@ -218,106 +271,154 @@ export default function AppIconEasterEgg({ size = 44 }: Props) {
                     ]
                       .filter(Boolean)
                       .join(" ")}
-                    d="M130 130 C160 120 185 105 205 85"
+                    d="M140 145 C170 135 202 115 225 92"
                   />
                   <path
                     className={[
                       styles.branch,
+                      styles.branchThin,
                       styles.branchDelay3,
                       reached(phase, "branches") ? styles.branchVisible : "",
                     ]
                       .filter(Boolean)
                       .join(" ")}
-                    d="M130 110 C115 95 105 75 100 55"
+                    d="M140 125 C118 110 100 88 92 62"
+                  />
+                  <path
+                    className={[
+                      styles.branch,
+                      styles.branchThin,
+                      styles.branchDelay4,
+                      reached(phase, "branches") ? styles.branchVisible : "",
+                    ]
+                      .filter(Boolean)
+                      .join(" ")}
+                    d="M140 118 C162 102 180 80 188 55"
                   />
 
-                  <ellipse
+                  {/* Leaf clusters – icon-like pointed ovals */}
+                  <ellipse className={leafClass(phase, styles.leafDelay1, "light")} cx="48" cy="100" rx="16" ry="10" transform="rotate(-40 48 100)" />
+                  <ellipse className={leafClass(phase, styles.leafDelay2)} cx="68" cy="118" rx="15" ry="9" transform="rotate(-28 68 118)" />
+                  <ellipse className={leafClass(phase, styles.leafDelay3, "dark")} cx="42" cy="122" rx="13" ry="8" transform="rotate(-50 42 122)" />
+                  <ellipse className={leafClass(phase, styles.leafDelay2, "light")} cx="232" cy="86" rx="16" ry="10" transform="rotate(38 232 86)" />
+                  <ellipse className={leafClass(phase, styles.leafDelay3)} cx="214" cy="108" rx="15" ry="9" transform="rotate(26 214 108)" />
+                  <ellipse className={leafClass(phase, styles.leafDelay4, "dark")} cx="238" cy="112" rx="13" ry="8" transform="rotate(48 238 112)" />
+                  <ellipse className={leafClass(phase, styles.leafDelay4, "light")} cx="88" cy="55" rx="14" ry="9" transform="rotate(-18 88 55)" />
+                  <ellipse className={leafClass(phase, styles.leafDelay5)} cx="192" cy="48" rx="14" ry="9" transform="rotate(16 192 48)" />
+                  <ellipse className={leafClass(phase, styles.leafDelay5, "light")} cx="118" cy="42" rx="15" ry="10" transform="rotate(-8 118 42)" />
+                  <ellipse className={leafClass(phase, styles.leafDelay6)} cx="162" cy="38" rx="15" ry="10" transform="rotate(8 162 38)" />
+                  <ellipse className={leafClass(phase, styles.leafDelay6, "dark")} cx="140" cy="28" rx="18" ry="11" />
+                  <ellipse className={leafClass(phase, styles.leafDelay7, "light")} cx="100" cy="78" rx="12" ry="8" transform="rotate(-22 100 78)" />
+                  <ellipse className={leafClass(phase, styles.leafDelay7)} cx="180" cy="72" rx="12" ry="8" transform="rotate(20 180 72)" />
+                  <ellipse className={leafClass(phase, styles.leafDelay8, "dark")} cx="70" cy="88" rx="11" ry="7" transform="rotate(-30 70 88)" />
+                  <ellipse className={leafClass(phase, styles.leafDelay8, "light")} cx="210" cy="82" rx="11" ry="7" transform="rotate(28 210 82)" />
+
+                  {/* Family person bubbles – like the icon */}
+                  <g
                     className={[
-                      styles.leaf,
-                      styles.leafDelay1,
-                      reached(phase, "leaves") ? styles.leafVisible : "",
+                      styles.person,
+                      styles.personDelay1,
+                      reached(phase, "people") ? styles.personVisible : "",
                     ]
                       .filter(Boolean)
                       .join(" ")}
-                    cx="52"
-                    cy="98"
-                    rx="22"
-                    ry="14"
-                    transform="rotate(-35 52 98)"
-                  />
-                  <ellipse
+                    transform="translate(118 48)"
+                  >
+                    <circle className={styles.personRing} cx="22" cy="22" r="22" />
+                    <circle className={styles.personSilhouette} cx="14" cy="16" r="5" />
+                    <circle className={styles.personSilhouette} cx="30" cy="16" r="5" />
+                    <path
+                      className={styles.personSilhouette}
+                      d="M6 34 C6 26 12 22 14 22 C18 22 20 26 22 26 C24 26 26 22 30 22 C32 22 38 26 38 34 Z"
+                    />
+                  </g>
+
+                  <g
                     className={[
-                      styles.leaf,
-                      styles.leafLate,
-                      styles.leafDelay2,
-                      reached(phase, "leaves") ? styles.leafVisible : "",
+                      styles.person,
+                      styles.personDelay2,
+                      reached(phase, "people") ? styles.personVisible : "",
                     ]
                       .filter(Boolean)
                       .join(" ")}
-                    cx="70"
-                    cy="118"
-                    rx="18"
-                    ry="12"
-                    transform="rotate(-20 70 118)"
-                  />
-                  <ellipse
+                    transform="translate(42 88)"
+                  >
+                    <circle className={styles.personRing} cx="16" cy="16" r="16" />
+                    <circle className={styles.personSilhouette} cx="16" cy="12" r="5" />
+                    <path
+                      className={styles.personSilhouette}
+                      d="M6 28 C6 21 11 18 16 18 C21 18 26 21 26 28 Z"
+                    />
+                  </g>
+
+                  <g
                     className={[
-                      styles.leaf,
-                      styles.leafDelay3,
-                      reached(phase, "leaves") ? styles.leafVisible : "",
+                      styles.person,
+                      styles.personDelay3,
+                      reached(phase, "people") ? styles.personVisible : "",
                     ]
                       .filter(Boolean)
                       .join(" ")}
-                    cx="208"
-                    cy="78"
-                    rx="22"
-                    ry="14"
-                    transform="rotate(30 208 78)"
-                  />
-                  <ellipse
+                    transform="translate(206 72)"
+                  >
+                    <circle className={styles.personRing} cx="16" cy="16" r="16" />
+                    <circle className={styles.personSilhouette} cx="16" cy="12" r="5" />
+                    <path
+                      className={styles.personSilhouette}
+                      d="M6 28 C6 21 11 18 16 18 C21 18 26 21 26 28 Z"
+                    />
+                  </g>
+
+                  <g
                     className={[
-                      styles.leaf,
-                      styles.leafLate,
-                      styles.leafDelay4,
-                      reached(phase, "leaves") ? styles.leafVisible : "",
+                      styles.person,
+                      styles.personDelay4,
+                      reached(phase, "people") ? styles.personVisible : "",
                     ]
                       .filter(Boolean)
                       .join(" ")}
-                    cx="190"
-                    cy="100"
-                    rx="18"
-                    ry="12"
-                    transform="rotate(18 190 100)"
-                  />
-                  <ellipse
+                    transform="translate(58 128)"
+                  >
+                    <circle className={styles.personRing} cx="14" cy="14" r="14" />
+                    <circle className={styles.personSilhouette} cx="14" cy="11" r="4" />
+                    <path
+                      className={styles.personSilhouette}
+                      d="M5 24 C5 18 9 16 14 16 C19 16 23 18 23 24 Z"
+                    />
+                  </g>
+
+                  <g
                     className={[
-                      styles.leaf,
-                      styles.leafDelay5,
-                      reached(phase, "leaves") ? styles.leafVisible : "",
+                      styles.person,
+                      styles.personDelay5,
+                      reached(phase, "people") ? styles.personVisible : "",
                     ]
                       .filter(Boolean)
                       .join(" ")}
-                    cx="98"
-                    cy="48"
-                    rx="20"
-                    ry="13"
-                    transform="rotate(-12 98 48)"
-                  />
-                  <ellipse
-                    className={[
-                      styles.leaf,
-                      styles.leafLate,
-                      styles.leafDelay6,
-                      reached(phase, "leaves") ? styles.leafVisible : "",
-                    ]
-                      .filter(Boolean)
-                      .join(" ")}
-                    cx="130"
-                    cy="42"
-                    rx="28"
-                    ry="18"
-                  />
+                    transform="translate(194 118)"
+                  >
+                    <circle className={styles.personRing} cx="14" cy="14" r="14" />
+                    <circle className={styles.personSilhouette} cx="9" cy="10" r="2.2" />
+                    <circle className={styles.personSilhouette} cx="19" cy="10" r="2.2" />
+                    <circle className={styles.personSilhouette} cx="14" cy="11" r="4" />
+                    <path
+                      className={styles.personSilhouette}
+                      d="M5 24 C5 18 9 16 14 16 C19 16 23 18 23 24 Z"
+                    />
+                  </g>
                 </svg>
+              </div>
+
+              <div
+                className={[
+                  styles.finale,
+                  showFinale ? styles.finaleVisible : "",
+                ]
+                  .filter(Boolean)
+                  .join(" ")}
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src="/icon.png" alt="" />
               </div>
             </div>
           </div>,
