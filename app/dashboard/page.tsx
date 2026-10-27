@@ -149,6 +149,8 @@ export default async function DashboardPage({
         <Header profile={profile} glass />
 
         <div className="mx-auto max-w-5xl p-8">
+          <DashboardTreeEasterEgg />
+
           {familyDeleted === "1" && (
             <div className="mb-6 rounded-lg border border-green-200 bg-green-50/95 px-4 py-3 text-green-800 shadow-sm">
               {t("deleted")}
@@ -293,8 +295,6 @@ export default async function DashboardPage({
               })}
             </DashboardCardsReveal>
           )}
-
-          <DashboardTreeEasterEgg />
         </div>
       </main>
     </AppBackdrop>

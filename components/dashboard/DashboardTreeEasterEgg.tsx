@@ -96,7 +96,7 @@ export default function DashboardTreeEasterEgg() {
 
   return (
     <>
-      <footer className="mt-12 flex justify-center pb-8">
+      <div className="mb-6 flex justify-center">
         <button
           type="button"
           onClick={start}
@@ -113,7 +113,7 @@ export default function DashboardTreeEasterEgg() {
             className="rounded-xl shadow-lg shadow-black/30"
           />
         </button>
-      </footer>
+      </div>
 
       {playing && (
         <div
