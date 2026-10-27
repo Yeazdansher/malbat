@@ -48,6 +48,40 @@ function reached(phase: Phase, target: Phase): boolean {
   return order.indexOf(phase) >= order.indexOf(target);
 }
 
+function Leaf({
+  x,
+  y,
+  rotate = 0,
+  size = 1,
+  late = false,
+  delayClass,
+  visible,
+}: {
+  x: number;
+  y: number;
+  rotate?: number;
+  size?: number;
+  late?: boolean;
+  delayClass: string;
+  visible: boolean;
+}) {
+  return (
+    <g transform={`translate(${x} ${y}) rotate(${rotate})`}>
+      <path
+        className={[
+          styles.leaf,
+          late ? styles.leafLate : "",
+          delayClass,
+          visible ? styles.leafVisible : "",
+        ]
+          .filter(Boolean)
+          .join(" ")}
+        d={`M0 ${-16 * size} C${10 * size} ${-6 * size} ${10 * size} ${8 * size} 0 ${16 * size} C${-10 * size} ${8 * size} ${-10 * size} ${-6 * size} 0 ${-16 * size} Z`}
+      />
+    </g>
+  );
+}
+
 type Props = {
   size?: number;
 };
@@ -146,6 +180,14 @@ export default function AppIconEasterEgg({ size = 44 }: Props) {
 
               <div className={styles.tree}>
                 <svg viewBox="0 0 260 360" aria-hidden="true">
+                  <defs>
+                    <radialGradient id="sunGrad" cx="50%" cy="50%" r="50%">
+                      <stop offset="0%" stopColor="#fff6c2" />
+                      <stop offset="55%" stopColor="#f5d76e" stopOpacity="0.7" />
+                      <stop offset="100%" stopColor="#f5d76e" stopOpacity="0" />
+                    </radialGradient>
+                  </defs>
+
                   <circle
                     className={[
                       styles.glow,
@@ -154,8 +196,9 @@ export default function AppIconEasterEgg({ size = 44 }: Props) {
                       .filter(Boolean)
                       .join(" ")}
                     cx="130"
-                    cy="70"
-                    r="48"
+                    cy="68"
+                    r="56"
+                    fill="url(#sunGrad)"
                   />
 
                   <path
@@ -231,74 +274,79 @@ export default function AppIconEasterEgg({ size = 44 }: Props) {
                     d="M130 110 C115 95 105 75 100 55"
                   />
 
-                  <path
-                    className={[
-                      styles.leaf,
-                      styles.leafDelay1,
-                      reached(phase, "leaves") ? styles.leafVisible : "",
-                    ]
-                      .filter(Boolean)
-                      .join(" ")}
-                    d="M0 -16 C10 -6 10 8 0 16 C-10 8 -10 -6 0 -16 Z"
-                    transform="translate(52 98) rotate(-35)"
+                  <Leaf
+                    x={52}
+                    y={98}
+                    rotate={-40}
+                    delayClass={styles.leafDelay1}
+                    visible={reached(phase, "leaves")}
                   />
-                  <path
-                    className={[
-                      styles.leaf,
-                      styles.leafLate,
-                      styles.leafDelay2,
-                      reached(phase, "leaves") ? styles.leafVisible : "",
-                    ]
-                      .filter(Boolean)
-                      .join(" ")}
-                    d="M0 -13 C8 -5 8 7 0 13 C-8 7 -8 -5 0 -13 Z"
-                    transform="translate(70 118) rotate(-20)"
+                  <Leaf
+                    x={68}
+                    y={118}
+                    rotate={-22}
+                    size={0.85}
+                    late
+                    delayClass={styles.leafDelay2}
+                    visible={reached(phase, "leaves")}
                   />
-                  <path
-                    className={[
-                      styles.leaf,
-                      styles.leafDelay3,
-                      reached(phase, "leaves") ? styles.leafVisible : "",
-                    ]
-                      .filter(Boolean)
-                      .join(" ")}
-                    d="M0 -16 C10 -6 10 8 0 16 C-10 8 -10 -6 0 -16 Z"
-                    transform="translate(208 78) rotate(30)"
+                  <Leaf
+                    x={208}
+                    y={78}
+                    rotate={35}
+                    delayClass={styles.leafDelay3}
+                    visible={reached(phase, "leaves")}
                   />
-                  <path
-                    className={[
-                      styles.leaf,
-                      styles.leafLate,
-                      styles.leafDelay4,
-                      reached(phase, "leaves") ? styles.leafVisible : "",
-                    ]
-                      .filter(Boolean)
-                      .join(" ")}
-                    d="M0 -13 C8 -5 8 7 0 13 C-8 7 -8 -5 0 -13 Z"
-                    transform="translate(190 100) rotate(18)"
+                  <Leaf
+                    x={192}
+                    y={100}
+                    rotate={20}
+                    size={0.85}
+                    late
+                    delayClass={styles.leafDelay4}
+                    visible={reached(phase, "leaves")}
                   />
-                  <path
-                    className={[
-                      styles.leaf,
-                      styles.leafDelay5,
-                      reached(phase, "leaves") ? styles.leafVisible : "",
-                    ]
-                      .filter(Boolean)
-                      .join(" ")}
-                    d="M0 -15 C9 -5 9 7 0 15 C-9 7 -9 -5 0 -15 Z"
-                    transform="translate(98 48) rotate(-12)"
+                  <Leaf
+                    x={98}
+                    y={50}
+                    rotate={-14}
+                    size={0.9}
+                    delayClass={styles.leafDelay5}
+                    visible={reached(phase, "leaves")}
                   />
-                  <path
-                    className={[
-                      styles.leaf,
-                      styles.leafLate,
-                      styles.leafDelay6,
-                      reached(phase, "leaves") ? styles.leafVisible : "",
-                    ]
-                      .filter(Boolean)
-                      .join(" ")}
-                    d="M0 -18 C12 -6 12 10 0 18 C-12 10 -12 -6 0 -18 Z"
-                    transform="translate(130 42)"
+                  <Leaf
+                    x={162}
+                    y={48}
+                    rotate={12}
+                    size={0.9}
+                    late
+                    delayClass={styles.leafDelay5}
+                    visible={reached(phase, "leaves")}
+                  />
+                  <Leaf
+                    x={130}
+                    y={38}
+                    size={1.15}
+                    late
+                    delayClass={styles.leafDelay6}
+                    visible={reached(phase, "leaves")}
+                  />
+                  <Leaf
+                    x={78}
+                    y={88}
+                    rotate={-28}
+                    size={0.75}
+                    late
+                    delayClass={styles.leafDelay3}
+                    visible={reached(phase, "leaves")}
+                  />
+                  <Leaf
+                    x={182}
+                    y={82}
+                    rotate={26}
+                    size={0.75}
+                    delayClass={styles.leafDelay4}
+                    visible={reached(phase, "leaves")}
                   />
                 </svg>
               </div>
