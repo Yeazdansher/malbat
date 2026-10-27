@@ -4,7 +4,7 @@ import Image from "next/image";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 
-import styles from "./DashboardTreeEasterEgg.module.css";
+import styles from "./AppIconEasterEgg.module.css";
 
 type Phase =
   | "idle"
@@ -48,7 +48,7 @@ function reached(phase: Phase, target: Phase): boolean {
   return order.indexOf(phase) >= order.indexOf(target);
 }
 
-export default function DashboardTreeEasterEgg() {
+export default function AppIconEasterEgg() {
   const [phase, setPhase] = useState<Phase>("idle");
   const [overlayReady, setOverlayReady] = useState(false);
   const timers = useRef<number[]>([]);
@@ -327,16 +327,16 @@ export default function DashboardTreeEasterEgg() {
         type="button"
         onClick={start}
         disabled={playing}
-        className="block shrink-0 rounded-lg opacity-95 transition hover:scale-105 hover:opacity-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white/70 disabled:cursor-default disabled:hover:scale-100"
+        className="block shrink-0 rounded-xl opacity-95 transition hover:scale-105 hover:opacity-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white/70 disabled:cursor-default disabled:hover:scale-100"
         aria-label="MALBAT"
         title="MALBAT"
       >
         <Image
           src="/icon.png"
           alt=""
-          width={40}
-          height={40}
-          className="h-10 w-10 rounded-md object-contain shadow-md shadow-black/35"
+          width={56}
+          height={56}
+          className="h-14 w-14 rounded-lg object-contain shadow-md shadow-black/35"
         />
       </button>
       {overlay}

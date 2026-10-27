@@ -1,6 +1,6 @@
 import Link from "next/link";
-import type { ReactNode } from "react";
 
+import AppIconEasterEgg from "@/components/AppIconEasterEgg";
 import BrandMark from "@/components/BrandMark";
 import UserMenu from "./UserMenu";
 import { getTranslator } from "@/lib/i18n/server";
@@ -20,8 +20,6 @@ type HeaderProps = {
   profile?: Profile;
   /** Dunkler Glas-Header über Hero-Hintergründen */
   glass?: boolean;
-  /** Optional mittig im Header (z. B. Dashboard-Icon) */
-  center?: ReactNode;
 };
 
 export default async function Header({
@@ -30,7 +28,6 @@ export default async function Header({
   backLabel,
   profile,
   glass = false,
-  center,
 }: HeaderProps) {
   const t = await getTranslator("common");
   const isBrandTitle = title === "MALBAT" || title === t("appName");
@@ -43,7 +40,7 @@ export default async function Header({
           : "relative z-50 overflow-visible border-b border-[var(--border)] bg-[var(--header-bg)]"
       }
     >
-      <div className="relative flex items-center justify-between gap-3 overflow-visible px-6 py-3">
+      <div className="relative flex min-h-[4.75rem] items-center justify-between gap-3 overflow-visible px-6 py-4">
         <div className="flex min-w-0 flex-1 items-center gap-4">
           {backHref && backLabel && (
             <Link
@@ -80,11 +77,11 @@ export default async function Header({
           )}
         </div>
 
-        {center && (
-          <div className="pointer-events-none absolute left-1/2 top-1/2 z-10 flex -translate-x-1/2 -translate-y-1/2 items-center justify-center">
-            <div className="pointer-events-auto">{center}</div>
+        <div className="pointer-events-none absolute left-1/2 top-1/2 z-10 flex -translate-x-1/2 -translate-y-1/2 items-center justify-center">
+          <div className="pointer-events-auto">
+            <AppIconEasterEgg />
           </div>
-        )}
+        </div>
 
         <div className="flex flex-1 justify-end">
           <UserMenu profile={profile} />

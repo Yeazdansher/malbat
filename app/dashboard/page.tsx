@@ -7,7 +7,6 @@ import BirthdaysThisMonthBadge, {
   type BirthdayPerson,
 } from "@/components/dashboard/BirthdaysThisMonthBadge";
 import DashboardCardsReveal from "@/components/dashboard/DashboardCardsReveal";
-import DashboardTreeEasterEgg from "@/components/dashboard/DashboardTreeEasterEgg";
 import FamilyActionsMenu from "@/components/dashboard/FamilyActionsMenu";
 import { getTranslator } from "@/lib/i18n/server";
 import { getCurrentPlanUsage } from "@/lib/plans";
@@ -146,11 +145,7 @@ export default async function DashboardPage({
   return (
     <AppBackdrop>
       <main className="min-h-screen">
-        <Header
-          profile={profile}
-          glass
-          center={<DashboardTreeEasterEgg />}
-        />
+        <Header profile={profile} glass />
 
         <div className="mx-auto max-w-5xl p-8">
           {familyDeleted === "1" && (
