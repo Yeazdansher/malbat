@@ -145,18 +145,69 @@ export default function AppIconEasterEgg({ size = 44 }: Props) {
               />
 
               <div className={styles.tree}>
-                <svg viewBox="0 0 260 360" aria-hidden="true">
-                  <circle
-                    className={[
-                      styles.glow,
-                      reached(phase, "glow") ? styles.glowVisible : "",
-                    ]
-                      .filter(Boolean)
-                      .join(" ")}
-                    cx="130"
-                    cy="70"
-                    r="48"
-                  />
+                <svg viewBox="0 0 280 380" aria-hidden="true">
+                  <defs>
+                    <radialGradient id="sunGrad" cx="50%" cy="50%" r="50%">
+                      <stop offset="0%" stopColor="#fff8d0" />
+                      <stop offset="55%" stopColor="#f5d76e" />
+                      <stop offset="100%" stopColor="#f0b429" stopOpacity="0" />
+                    </radialGradient>
+                    <linearGradient id="trunkGrad" x1="0" y1="0" x2="1" y2="0">
+                      <stop offset="0%" stopColor="#5c3a1f" />
+                      <stop offset="45%" stopColor="#8b5a2b" />
+                      <stop offset="100%" stopColor="#4e3018" />
+                    </linearGradient>
+                  </defs>
+
+                  <g>
+                    <line
+                      className={[
+                        styles.glowRay,
+                        reached(phase, "glow") ? styles.glowRayVisible : "",
+                      ]
+                        .filter(Boolean)
+                        .join(" ")}
+                      x1="140"
+                      y1="22"
+                      x2="140"
+                      y2="4"
+                    />
+                    <line
+                      className={[
+                        styles.glowRay,
+                        reached(phase, "glow") ? styles.glowRayVisible : "",
+                      ]
+                        .filter(Boolean)
+                        .join(" ")}
+                      x1="172"
+                      y1="30"
+                      x2="188"
+                      y2="12"
+                    />
+                    <line
+                      className={[
+                        styles.glowRay,
+                        reached(phase, "glow") ? styles.glowRayVisible : "",
+                      ]
+                        .filter(Boolean)
+                        .join(" ")}
+                      x1="108"
+                      y1="30"
+                      x2="92"
+                      y2="12"
+                    />
+                    <circle
+                      className={[
+                        styles.glow,
+                        reached(phase, "glow") ? styles.glowVisible : "",
+                      ]
+                        .filter(Boolean)
+                        .join(" ")}
+                      cx="140"
+                      cy="72"
+                      r="54"
+                    />
+                  </g>
 
                   <path
                     className={[
@@ -165,7 +216,7 @@ export default function AppIconEasterEgg({ size = 44 }: Props) {
                     ]
                       .filter(Boolean)
                       .join(" ")}
-                    d="M130 330 C118 345 95 352 78 355"
+                    d="M140 325 C122 340 90 348 64 344"
                   />
                   <path
                     className={[
@@ -174,7 +225,7 @@ export default function AppIconEasterEgg({ size = 44 }: Props) {
                     ]
                       .filter(Boolean)
                       .join(" ")}
-                    d="M130 330 C142 345 165 352 182 355"
+                    d="M140 325 C158 340 190 348 216 344"
                   />
                   <path
                     className={[
@@ -183,7 +234,7 @@ export default function AppIconEasterEgg({ size = 44 }: Props) {
                     ]
                       .filter(Boolean)
                       .join(" ")}
-                    d="M130 332 C125 348 130 355 130 360"
+                    d="M140 328 C134 345 140 355 148 350"
                   />
 
                   <g
@@ -196,7 +247,15 @@ export default function AppIconEasterEgg({ size = 44 }: Props) {
                   >
                     <path
                       className={styles.trunk}
-                      d="M118 330 C116 250 120 180 124 120 C126 100 128 85 130 70 C132 85 134 100 136 120 C140 180 144 250 142 330 Z"
+                      d="M124 328
+                         C120 275 122 225 126 180
+                         C128 150 130 125 134 100
+                         C136 88 138 80 140 72
+                         C142 80 144 88 146 100
+                         C150 125 152 150 154 180
+                         C158 225 160 275 156 328
+                         C150 334 144 336 140 336
+                         C136 336 130 334 124 328 Z"
                     />
                   </g>
 
@@ -208,7 +267,7 @@ export default function AppIconEasterEgg({ size = 44 }: Props) {
                     ]
                       .filter(Boolean)
                       .join(" ")}
-                    d="M130 150 C100 140 75 125 55 105"
+                    d="M140 155 C112 148 82 132 58 108"
                   />
                   <path
                     className={[
@@ -218,49 +277,76 @@ export default function AppIconEasterEgg({ size = 44 }: Props) {
                     ]
                       .filter(Boolean)
                       .join(" ")}
-                    d="M130 130 C160 120 185 105 205 85"
+                    d="M140 142 C168 134 198 116 222 90"
                   />
                   <path
                     className={[
                       styles.branch,
+                      styles.branchThin,
                       styles.branchDelay3,
                       reached(phase, "branches") ? styles.branchVisible : "",
                     ]
                       .filter(Boolean)
                       .join(" ")}
-                    d="M130 110 C115 95 105 75 100 55"
+                    d="M140 120 C120 108 105 88 96 62"
+                  />
+                  <path
+                    className={[
+                      styles.branch,
+                      styles.branchThin,
+                      styles.branchDelay4,
+                      reached(phase, "branches") ? styles.branchVisible : "",
+                    ]
+                      .filter(Boolean)
+                      .join(" ")}
+                    d="M140 115 C160 102 176 82 186 56"
                   />
 
-                  <ellipse
+                  {/* Teardrop-ish leaves */}
+                  <path
                     className={[
                       styles.leaf,
+                      styles.leafLight,
                       styles.leafDelay1,
                       reached(phase, "leaves") ? styles.leafVisible : "",
                     ]
                       .filter(Boolean)
                       .join(" ")}
-                    cx="52"
-                    cy="98"
-                    rx="22"
-                    ry="14"
-                    transform="rotate(-35 52 98)"
+                    d="M58 108 C48 98 42 88 48 80 C56 88 64 98 58 108 Z"
                   />
-                  <ellipse
+                  <path
                     className={[
                       styles.leaf,
-                      styles.leafLate,
                       styles.leafDelay2,
                       reached(phase, "leaves") ? styles.leafVisible : "",
                     ]
                       .filter(Boolean)
                       .join(" ")}
-                    cx="70"
-                    cy="118"
-                    rx="18"
-                    ry="12"
-                    transform="rotate(-20 70 118)"
+                    d="M72 122 C60 112 54 100 62 92 C70 102 78 112 72 122 Z"
                   />
-                  <ellipse
+                  <path
+                    className={[
+                      styles.leaf,
+                      styles.leafDark,
+                      styles.leafDelay3,
+                      reached(phase, "leaves") ? styles.leafVisible : "",
+                    ]
+                      .filter(Boolean)
+                      .join(" ")}
+                    d="M48 124 C38 116 34 106 40 98 C48 106 54 116 48 124 Z"
+                  />
+                  <path
+                    className={[
+                      styles.leaf,
+                      styles.leafLight,
+                      styles.leafDelay2,
+                      reached(phase, "leaves") ? styles.leafVisible : "",
+                    ]
+                      .filter(Boolean)
+                      .join(" ")}
+                    d="M222 92 C232 82 238 72 232 64 C224 72 216 82 222 92 Z"
+                  />
+                  <path
                     className={[
                       styles.leaf,
                       styles.leafDelay3,
@@ -268,28 +354,31 @@ export default function AppIconEasterEgg({ size = 44 }: Props) {
                     ]
                       .filter(Boolean)
                       .join(" ")}
-                    cx="208"
-                    cy="78"
-                    rx="22"
-                    ry="14"
-                    transform="rotate(30 208 78)"
+                    d="M208 108 C220 98 226 86 218 78 C210 88 202 98 208 108 Z"
                   />
-                  <ellipse
+                  <path
                     className={[
                       styles.leaf,
-                      styles.leafLate,
+                      styles.leafDark,
                       styles.leafDelay4,
                       reached(phase, "leaves") ? styles.leafVisible : "",
                     ]
                       .filter(Boolean)
                       .join(" ")}
-                    cx="190"
-                    cy="100"
-                    rx="18"
-                    ry="12"
-                    transform="rotate(18 190 100)"
+                    d="M232 112 C242 104 246 94 240 86 C232 94 226 104 232 112 Z"
                   />
-                  <ellipse
+                  <path
+                    className={[
+                      styles.leaf,
+                      styles.leafLight,
+                      styles.leafDelay4,
+                      reached(phase, "leaves") ? styles.leafVisible : "",
+                    ]
+                      .filter(Boolean)
+                      .join(" ")}
+                    d="M96 58 C88 48 84 38 92 32 C98 40 104 50 96 58 Z"
+                  />
+                  <path
                     className={[
                       styles.leaf,
                       styles.leafDelay5,
@@ -297,25 +386,82 @@ export default function AppIconEasterEgg({ size = 44 }: Props) {
                     ]
                       .filter(Boolean)
                       .join(" ")}
-                    cx="98"
-                    cy="48"
-                    rx="20"
-                    ry="13"
-                    transform="rotate(-12 98 48)"
+                    d="M184 52 C192 42 196 32 188 26 C182 34 176 44 184 52 Z"
                   />
-                  <ellipse
+                  <path
                     className={[
                       styles.leaf,
-                      styles.leafLate,
+                      styles.leafLight,
+                      styles.leafDelay5,
+                      reached(phase, "leaves") ? styles.leafVisible : "",
+                    ]
+                      .filter(Boolean)
+                      .join(" ")}
+                    d="M118 44 C110 34 108 24 118 18 C124 26 128 36 118 44 Z"
+                  />
+                  <path
+                    className={[
+                      styles.leaf,
                       styles.leafDelay6,
                       reached(phase, "leaves") ? styles.leafVisible : "",
                     ]
                       .filter(Boolean)
                       .join(" ")}
-                    cx="130"
-                    cy="42"
-                    rx="28"
-                    ry="18"
+                    d="M162 40 C170 30 172 20 162 14 C156 22 152 32 162 40 Z"
+                  />
+                  <path
+                    className={[
+                      styles.leaf,
+                      styles.leafDark,
+                      styles.leafDelay6,
+                      reached(phase, "leaves") ? styles.leafVisible : "",
+                    ]
+                      .filter(Boolean)
+                      .join(" ")}
+                    d="M140 34 C128 24 126 12 140 6 C154 12 152 24 140 34 Z"
+                  />
+                  <path
+                    className={[
+                      styles.leaf,
+                      styles.leafLight,
+                      styles.leafDelay7,
+                      reached(phase, "leaves") ? styles.leafVisible : "",
+                    ]
+                      .filter(Boolean)
+                      .join(" ")}
+                    d="M102 82 C94 74 90 64 98 58 C104 66 110 74 102 82 Z"
+                  />
+                  <path
+                    className={[
+                      styles.leaf,
+                      styles.leafDelay7,
+                      reached(phase, "leaves") ? styles.leafVisible : "",
+                    ]
+                      .filter(Boolean)
+                      .join(" ")}
+                    d="M178 76 C186 68 190 58 182 52 C176 60 170 68 178 76 Z"
+                  />
+                  <path
+                    className={[
+                      styles.leaf,
+                      styles.leafDark,
+                      styles.leafDelay8,
+                      reached(phase, "leaves") ? styles.leafVisible : "",
+                    ]
+                      .filter(Boolean)
+                      .join(" ")}
+                    d="M78 96 C70 90 66 82 72 76 C78 82 84 90 78 96 Z"
+                  />
+                  <path
+                    className={[
+                      styles.leaf,
+                      styles.leafLight,
+                      styles.leafDelay8,
+                      reached(phase, "leaves") ? styles.leafVisible : "",
+                    ]
+                      .filter(Boolean)
+                      .join(" ")}
+                    d="M202 88 C210 82 214 74 208 68 C202 74 196 82 202 88 Z"
                   />
                 </svg>
               </div>
