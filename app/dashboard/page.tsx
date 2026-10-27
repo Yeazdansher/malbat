@@ -7,6 +7,7 @@ import BirthdaysThisMonthBadge, {
   type BirthdayPerson,
 } from "@/components/dashboard/BirthdaysThisMonthBadge";
 import DashboardCardsReveal from "@/components/dashboard/DashboardCardsReveal";
+import DashboardTreeEasterEgg from "@/components/dashboard/DashboardTreeEasterEgg";
 import FamilyActionsMenu from "@/components/dashboard/FamilyActionsMenu";
 import { getTranslator } from "@/lib/i18n/server";
 import { getCurrentPlanUsage } from "@/lib/plans";
@@ -292,6 +293,8 @@ export default async function DashboardPage({
               })}
             </DashboardCardsReveal>
           )}
+
+          <DashboardTreeEasterEgg />
         </div>
       </main>
     </AppBackdrop>

@@ -1,0 +1,255 @@
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  background: rgb(8 18 12 / 0);
+  pointer-events: none;
+  animation: overlay-in 0.6s ease-out forwards;
+}
+
+.overlay.leaving {
+  animation: overlay-out 0.9s ease-in forwards;
+}
+
+.stage {
+  position: relative;
+  width: min(420px, 88vw);
+  height: min(560px, 78vh);
+  margin-bottom: 4vh;
+}
+
+.soil {
+  position: absolute;
+  left: 8%;
+  right: 8%;
+  bottom: 0;
+  height: 22%;
+  border-radius: 50% 50% 18% 18% / 55% 55% 35% 35%;
+  background: linear-gradient(180deg, #5a3a22 0%, #3a2414 55%, #2a1a0e 100%);
+  box-shadow: inset 0 10px 18px rgb(0 0 0 / 0.25);
+  transform: scaleX(0.2) scaleY(0.4);
+  opacity: 0;
+  animation: soil-in 0.7s ease-out 0.15s forwards;
+}
+
+.seed {
+  position: absolute;
+  left: 50%;
+  top: 8%;
+  width: 18px;
+  height: 24px;
+  margin-left: -9px;
+  border-radius: 50% 50% 45% 45%;
+  background: radial-gradient(circle at 35% 30%, #d4a574, #8b5a2b 70%);
+  opacity: 0;
+  animation: seed-fall 1.05s cubic-bezier(0.4, 0.05, 0.6, 1) 0.85s forwards;
+}
+
+.tree {
+  position: absolute;
+  left: 50%;
+  bottom: 16%;
+  width: 260px;
+  height: 360px;
+  margin-left: -130px;
+  overflow: visible;
+}
+
+.tree svg {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.roots {
+  stroke: #6b4423;
+  stroke-width: 3;
+  fill: none;
+  stroke-linecap: round;
+  stroke-dasharray: 120;
+  stroke-dashoffset: 120;
+  opacity: 0;
+  animation: draw-line 0.9s ease-out 1.7s forwards;
+}
+
+.trunk {
+  fill: #6b4423;
+}
+
+.trunkGrow {
+  transform-origin: 130px 330px;
+  transform: scaleY(0);
+  opacity: 0;
+  animation: grow-up 1.1s cubic-bezier(0.22, 1, 0.36, 1) 2.4s forwards;
+}
+
+.branch {
+  stroke: #6b4423;
+  stroke-width: 4;
+  fill: none;
+  stroke-linecap: round;
+  stroke-dasharray: 100;
+  stroke-dashoffset: 100;
+  opacity: 0;
+}
+
+.branchA {
+  animation: draw-line 0.7s ease-out 3.2s forwards;
+}
+
+.branchB {
+  animation: draw-line 0.7s ease-out 3.35s forwards;
+}
+
+.branchC {
+  animation: draw-line 0.7s ease-out 3.5s forwards;
+}
+
+.leaf {
+  fill: #1f7a45;
+  transform-origin: center;
+  transform: scale(0);
+  opacity: 0;
+}
+
+.leafLate {
+  fill: #2d9a58;
+}
+
+.leafA {
+  animation: leaf-pop 0.45s ease-out 3.7s forwards;
+}
+
+.leafB {
+  animation: leaf-pop 0.45s ease-out 3.85s forwards;
+}
+
+.leafC {
+  animation: leaf-pop 0.45s ease-out 4s forwards;
+}
+
+.leafD {
+  animation: leaf-pop 0.45s ease-out 4.15s forwards;
+}
+
+.leafE {
+  animation: leaf-pop 0.45s ease-out 4.3s forwards;
+}
+
+.leafF {
+  animation: leaf-pop 0.45s ease-out 4.45s forwards;
+}
+
+.glow {
+  fill: #f5d76e;
+  opacity: 0;
+  animation: glow-in 0.8s ease-out 4.5s forwards;
+}
+
+@keyframes overlay-in {
+  to {
+    background: rgb(8 18 12 / 0.78);
+    pointer-events: auto;
+  }
+}
+
+@keyframes overlay-out {
+  from {
+    background: rgb(8 18 12 / 0.78);
+    opacity: 1;
+  }
+  to {
+    background: rgb(8 18 12 / 0);
+    opacity: 0;
+  }
+}
+
+@keyframes soil-in {
+  to {
+    opacity: 1;
+    transform: scaleX(1) scaleY(1);
+  }
+}
+
+@keyframes seed-fall {
+  0% {
+    top: 8%;
+    opacity: 0;
+    transform: scale(1);
+  }
+  15% {
+    opacity: 1;
+  }
+  78% {
+    top: 70%;
+    opacity: 1;
+    transform: scale(1);
+  }
+  90% {
+    top: 74%;
+    opacity: 1;
+    transform: scale(0.85, 0.7);
+  }
+  100% {
+    top: 76%;
+    opacity: 0;
+    transform: scale(0.35);
+  }
+}
+
+@keyframes draw-line {
+  to {
+    opacity: 1;
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes grow-up {
+  from {
+    opacity: 0;
+    transform: scaleY(0);
+  }
+  to {
+    opacity: 1;
+    transform: scaleY(1);
+  }
+}
+
+@keyframes leaf-pop {
+  0% {
+    opacity: 0;
+    transform: scale(0);
+  }
+  70% {
+    opacity: 1;
+    transform: scale(1.12);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes glow-in {
+  to {
+    opacity: 0.55;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .overlay,
+  .overlay.leaving,
+  .soil,
+  .seed,
+  .roots,
+  .trunkGrow,
+  .branch,
+  .leaf,
+  .glow {
+    animation-duration: 0.01ms !important;
+    animation-delay: 0ms !important;
+  }
+}
