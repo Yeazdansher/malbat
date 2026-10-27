@@ -31,6 +31,9 @@ export default async function Header({
 }: HeaderProps) {
   const t = await getTranslator("common");
   const isBrandTitle = title === "MALBAT" || title === t("appName");
+  const brandClass = glass
+    ? "text-3xl text-[#d8f0e0]"
+    : "text-3xl text-green-700";
 
   return (
     <header
@@ -55,16 +58,7 @@ export default async function Header({
             </Link>
           )}
 
-          {isBrandTitle ? (
-            <BrandMark
-              as="h1"
-              className={
-                glass
-                  ? "text-3xl text-[#d8f0e0]"
-                  : "text-3xl text-green-700"
-              }
-            />
-          ) : (
+          {!isBrandTitle && (
             <h1
               className={
                 glass
@@ -79,7 +73,11 @@ export default async function Header({
 
         <div className="pointer-events-none absolute left-1/2 top-1/2 z-10 flex -translate-x-1/2 -translate-y-1/2 items-center justify-center">
           <div className="pointer-events-auto">
-            <AppIconEasterEgg />
+            <BrandMark
+              as={isBrandTitle ? "h1" : "div"}
+              className={brandClass}
+              icon={<AppIconEasterEgg size={44} />}
+            />
           </div>
         </div>
 
