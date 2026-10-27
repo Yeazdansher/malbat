@@ -1,8 +1,43 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
 :root {
   --background: #ffffff;
   --foreground: #171717;
+  --page-bg: #f3f4f6;
+  --card-bg: #ffffff;
+  --card-text: #171717;
+  --muted-text: #6b7280;
+  --border: #e5e7eb;
+  --header-bg: #ffffff;
+  --backdrop-dim: 0.5;
+  --backdrop-dim-muted: 0.6;
+  --backdrop-top: 0.45;
+  --backdrop-mid: 0.25;
+  --backdrop-bottom: 0.65;
+  --backdrop-top-muted: 0.55;
+  --backdrop-mid-muted: 0.35;
+  --backdrop-bottom-muted: 0.75;
+}
+
+html[data-theme="dark"] {
+  --background: #0b1210;
+  --foreground: #e7eee9;
+  --page-bg: #0e1613;
+  --card-bg: #17211c;
+  --card-text: #e7eee9;
+  --muted-text: #9ca8a1;
+  --border: #2a3a32;
+  --header-bg: #121c18;
+  --backdrop-dim: 0.72;
+  --backdrop-dim-muted: 0.8;
+  --backdrop-top: 0.7;
+  --backdrop-mid: 0.55;
+  --backdrop-bottom: 0.85;
+  --backdrop-top-muted: 0.78;
+  --backdrop-mid-muted: 0.62;
+  --backdrop-bottom-muted: 0.9;
 }
 
 @theme inline {
@@ -12,15 +47,19 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+}
+
+.surface-page {
+  background: var(--page-bg);
+  color: var(--foreground);
+}
+
+.surface-card {
+  background: var(--card-bg);
+  color: var(--card-text);
+  border-color: var(--border);
 }

@@ -64,10 +64,10 @@ export default async function InvitationPage({
       : t("roleViewer");
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-gray-100 px-6">
-      <div className="w-full max-w-lg rounded-2xl bg-white p-8 shadow-sm">
+    <main className="surface-page flex min-h-screen items-center justify-center px-6">
+      <div className="surface-card w-full max-w-lg rounded-2xl border p-8 shadow-sm">
         <Link href="/" className="inline-block">
-          <BrandMark className="text-3xl text-green-700" />
+          <BrandMark className="text-3xl text-green-700 dark:text-[#8fd4a8]" />
         </Link>
 
         <h1 className="mt-8 text-2xl font-bold">{t("title")}</h1>

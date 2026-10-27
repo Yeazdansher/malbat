@@ -1,3 +1,21 @@
+## MALBAT v1.4.0
+
+Dunkles Design und Geburtstagsliste auf dem Dashboard.
+
+### Neu
+- Design **Hell** / **Dunkel** in den Einstellungen (persistent)
+- Klick auf „Geburtstage diesen Monat“ zeigt die Personen mit Namen und Datum
+
+### Verbessert
+- Dunkler Modus: dunklere Flächen, Karten und Hintergrund-Overlay
+- Geburtstags-Badge in derselben Farbe wie die Personen-Anzahl
+
+### Hinweise
+- Live: https://malbat.vercel.app
+- Migration `database/019_profile_theme.sql` in Supabase ausführen
+
+---
+
 ## MALBAT v1.3.0
 
 Manuelles Anordnen, PNG-Export und Layout-Feinschliff.

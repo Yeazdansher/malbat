@@ -44,10 +44,10 @@ export default function UserMenu({ profile }: UserMenuProps) {
       </button>
 
       {open && (
-        <div className="absolute end-0 z-50 mt-2 w-64 rounded-xl border bg-white shadow-lg">
+        <div className="surface-card absolute end-0 z-50 mt-2 w-64 rounded-xl border shadow-lg">
           <Link
             href="/profile"
-            className="block px-4 py-3 hover:bg-gray-100"
+            className="block px-4 py-3 hover:bg-[var(--page-bg)]"
             onClick={() => setOpen(false)}
           >
             👤 {t("myProfile")}
@@ -55,25 +55,25 @@ export default function UserMenu({ profile }: UserMenuProps) {
 
           <Link
             href="/settings"
-            className="block px-4 py-3 hover:bg-gray-100"
+            className="block px-4 py-3 hover:bg-[var(--page-bg)]"
             onClick={() => setOpen(false)}
           >
             ⚙️ {t("settings")}
           </Link>
 
-          <div className="border-t px-4 py-3">
-            <p className="mb-2 text-xs font-medium uppercase tracking-wide text-gray-500">
+          <div className="border-t border-[var(--border)] px-4 py-3">
+            <p className="mb-2 text-xs font-medium uppercase tracking-wide text-[var(--muted-text)]">
               {tLocale("label")}
             </p>
             <LocaleSwitcher className="w-full justify-between" />
           </div>
 
-          <hr />
+          <hr className="border-[var(--border)]" />
 
           <form action={logout}>
             <button
               type="submit"
-              className="block w-full px-4 py-3 text-start text-red-600 hover:bg-red-50"
+              className="block w-full px-4 py-3 text-start text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40"
             >
               🚪 {t("logout")}
             </button>

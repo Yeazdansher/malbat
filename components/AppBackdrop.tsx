@@ -31,18 +31,20 @@ export default function AppBackdrop({
           className="object-cover object-center"
         />
         <div
-          className={
-            muted
-              ? "absolute inset-0 bg-[#0c1a12]/60"
-              : "absolute inset-0 bg-[#0c1a12]/50"
-          }
+          className="absolute inset-0 bg-[#0c1a12]"
+          style={{
+            opacity: muted
+              ? "var(--backdrop-dim-muted)"
+              : "var(--backdrop-dim)",
+          }}
         />
         <div
-          className={
-            muted
-              ? "absolute inset-0 bg-gradient-to-b from-[#0c1a12]/55 via-[#0c1a12]/35 to-[#0c1a12]/75"
-              : "absolute inset-0 bg-gradient-to-b from-[#0c1a12]/45 via-[#0c1a12]/25 to-[#0c1a12]/65"
-          }
+          className="absolute inset-0"
+          style={{
+            background: muted
+              ? `linear-gradient(to bottom, rgb(12 26 18 / var(--backdrop-top-muted)), rgb(12 26 18 / var(--backdrop-mid-muted)), rgb(12 26 18 / var(--backdrop-bottom-muted)))`
+              : `linear-gradient(to bottom, rgb(12 26 18 / var(--backdrop-top)), rgb(12 26 18 / var(--backdrop-mid)), rgb(12 26 18 / var(--backdrop-bottom)))`,
+          }}
         />
       </div>
       {children}

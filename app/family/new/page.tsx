@@ -34,15 +34,17 @@ export default async function NewFamilyPage({
   const tDashboard = await getTranslator("dashboard");
 
   return (
-    <main className="min-h-screen bg-gray-100">
+    <main className="surface-page min-h-screen">
       <Header
         backHref="/dashboard"
         backLabel={tCommon("dashboard")}
         profile={profile}
       />
 
-      <div className="mx-auto mt-10 max-w-2xl rounded-2xl bg-white p-8 shadow">
-        <h1 className="text-3xl font-bold text-green-700">{t("title")}</h1>
+      <div className="surface-card mx-auto mt-10 max-w-2xl rounded-2xl border p-8 shadow">
+        <h1 className="text-3xl font-bold text-green-700 dark:text-[#8fd4a8]">
+          {t("title")}
+        </h1>
 
         {error === "plan-limit" && (
           <div className="mt-6 rounded-lg border border-amber-200 bg-amber-50 p-4 text-amber-900">

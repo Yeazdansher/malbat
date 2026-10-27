@@ -9,6 +9,7 @@ import { dirForLocale } from "@/lib/i18n/config";
 import { getLocale } from "@/lib/i18n/get-locale";
 import { getMessages } from "@/lib/i18n/get-messages";
 import { getTranslator } from "@/lib/i18n/server";
+import { getTheme } from "@/lib/theme/get-theme";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -52,11 +53,13 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
   const locale = await getLocale();
   const messages = await getMessages(locale);
   const dir = dirForLocale(locale);
+  const theme = await getTheme();
 
   return (
     <html
       lang={locale}
       dir={dir}
+      data-theme={theme}
       className={`${geistSans.variable} ${geistMono.variable} ${malbatDisplay.variable} ${notoArabic.variable} h-full antialiased`}
     >
       <body

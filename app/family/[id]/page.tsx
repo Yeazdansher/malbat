@@ -104,7 +104,7 @@ export default async function FamilyPage({
             profile={profile}
           />
 
-          <div className="mx-auto mt-10 max-w-5xl rounded-2xl border bg-white p-10 shadow-lg">
+          <div className="surface-card mx-auto mt-10 max-w-5xl rounded-2xl border p-10 shadow-lg">
             <h1 className="text-2xl font-bold text-red-600">
               {tTree("notFound")}
             </h1>
@@ -130,15 +130,15 @@ export default async function FamilyPage({
             profile={profile}
           />
 
-          <div className="mx-auto mt-10 max-w-3xl rounded-2xl border bg-white p-10 shadow-lg">
-            <h1 className="text-3xl font-bold text-green-700">
+          <div className="surface-card mx-auto mt-10 max-w-3xl rounded-2xl border p-10 shadow-lg">
+            <h1 className="text-3xl font-bold text-green-700 dark:text-[#8fd4a8]">
               {family.name}
             </h1>
-            <p className="mt-4 text-gray-700">{tTree("lockedBody")}</p>
+            <p className="mt-4 text-[var(--muted-text)]">{tTree("lockedBody")}</p>
             <div className="mt-8 flex flex-wrap gap-3">
               <Link
                 href="/dashboard"
-                className="rounded-lg border px-5 py-3 hover:bg-gray-100"
+                className="rounded-lg border border-[var(--border)] px-5 py-3 hover:bg-[var(--page-bg)]"
               >
                 {tTree("toDashboard")}
               </Link>
@@ -163,7 +163,7 @@ export default async function FamilyPage({
       familyId={family.id}
       familyName={family.name}
     >
-      <div className="flex h-dvh flex-col overflow-hidden bg-white">
+      <div className="flex h-dvh flex-col overflow-hidden bg-[var(--card-bg)]">
         <Header
           backHref="/dashboard"
           backLabel={tCommon("dashboard")}

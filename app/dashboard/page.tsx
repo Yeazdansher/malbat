@@ -3,6 +3,9 @@ import { redirect } from "next/navigation";
 
 import AppBackdrop from "@/components/AppBackdrop";
 import Header from "@/components/Header";
+import BirthdaysThisMonthBadge, {
+  type BirthdayPerson,
+} from "@/components/dashboard/BirthdaysThisMonthBadge";
 import DashboardCardsReveal from "@/components/dashboard/DashboardCardsReveal";
 import FamilyActionsMenu from "@/components/dashboard/FamilyActionsMenu";
 import { getTranslator } from "@/lib/i18n/server";
@@ -28,7 +31,7 @@ type DashboardFamilyItem = {
 
 type FamilyStats = {
   personCount: number;
-  birthdaysThisMonth: number;
+  birthdayPeople: BirthdayPerson[];
 };
 
 function birthMonthFromDate(birthDate: string | null): number | null {
@@ -90,14 +93,14 @@ export default async function DashboardPage({
   for (const familyId of familyIds) {
     statsByFamily.set(familyId, {
       personCount: 0,
-      birthdaysThisMonth: 0,
+      birthdayPeople: [],
     });
   }
 
   if (familyIds.length > 0) {
     const { data: persons, error: personsError } = await supabase
       .from("persons")
-      .select("family_id, birth_date, is_deceased")
+      .select("id, family_id, first_name, last_name, birth_date, is_deceased")
       .in("family_id", familyIds);
 
     if (personsError) {
@@ -114,9 +117,15 @@ export default async function DashboardPage({
 
       if (
         !person.is_deceased &&
+        person.birth_date &&
         birthMonthFromDate(person.birth_date) === currentMonth
       ) {
-        stats.birthdaysThisMonth += 1;
+        stats.birthdayPeople.push({
+          id: person.id,
+          firstName: person.first_name,
+          lastName: person.last_name,
+          birthDate: person.birth_date,
+        });
       }
     }
   }
@@ -127,9 +136,9 @@ export default async function DashboardPage({
     planUsage.ownedFamiliesCount >= planUsage.maxOwnedFamilies;
 
   const activeCardClass =
-    "from-[#e8f6ee] via-white to-[#fff8ef] border-[#9fd4b3]/70";
+    "from-[#e8f6ee] via-white to-[#fff8ef] border-[#9fd4b3]/70 dark:from-[#15241c] dark:via-[#1a2a22] dark:to-[#1f2a20] dark:border-[#3d6b52]/70";
   const lockedCardClass =
-    "from-[#fff4e8] via-white to-[#eef7f1] border-[#f0c9a0]/70";
+    "from-[#fff4e8] via-white to-[#eef7f1] border-[#f0c9a0]/70 dark:from-[#2a2218] dark:via-[#1f241c] dark:to-[#1a2420] dark:border-[#8a6a45]/70";
 
   const t = await getTranslator("dashboard");
 
@@ -172,9 +181,11 @@ export default async function DashboardPage({
               {[
                 <div
                   key="empty"
-                  className="rounded-2xl border border-[#9fd4b3]/60 bg-gradient-to-br from-[#e8f6ee] via-white to-[#fff8ef] p-10 text-center shadow-lg backdrop-blur-sm"
+                  className="rounded-2xl border border-[#9fd4b3]/60 bg-gradient-to-br from-[#e8f6ee] via-white to-[#fff8ef] p-10 text-center shadow-lg backdrop-blur-sm dark:border-[#3d6b52]/70 dark:from-[#15241c] dark:via-[#1a2a22] dark:to-[#1f2a20]"
                 >
-                  <p className="text-lg text-gray-700">{t("empty")}</p>
+                  <p className="text-lg text-gray-700 dark:text-gray-200">
+                    {t("empty")}
+                  </p>
                 </div>,
               ]}
             </DashboardCardsReveal>
@@ -183,7 +194,7 @@ export default async function DashboardPage({
               {familyItems.map((item) => {
                 const stats = statsByFamily.get(item.families.id) ?? {
                   personCount: 0,
-                  birthdaysThisMonth: 0,
+                  birthdayPeople: [],
                 };
                 const locked = item.families.plan_locked;
                 const tint = locked ? lockedCardClass : activeCardClass;
@@ -199,8 +210,8 @@ export default async function DashboardPage({
                         <h3
                           className={
                             locked
-                              ? "text-2xl font-semibold text-amber-950"
-                              : "text-2xl font-semibold text-[#14532d]"
+                              ? "text-2xl font-semibold text-amber-950 dark:text-amber-100"
+                              : "text-2xl font-semibold text-[#14532d] dark:text-[#b7e6c8]"
                           }
                           style={{
                             fontFamily: "var(--font-malbat), serif",
@@ -210,16 +221,18 @@ export default async function DashboardPage({
                         </h3>
 
                         {item.families.description && (
-                          <p className="mt-2 text-gray-700">
+                          <p className="mt-2 text-gray-700 dark:text-gray-300">
                             {item.families.description}
                           </p>
                         )}
 
-                        <p className="mt-3 text-sm text-gray-600">
+                        <p className="mt-3 text-sm text-gray-600 dark:text-gray-400">
                           {t("role")}:{" "}
                           <strong
                             className={
-                              locked ? "text-amber-800" : "text-[#1f7a45]"
+                              locked
+                                ? "text-amber-800 dark:text-amber-200"
+                                : "text-[#1f7a45] dark:text-[#8fd4a8]"
                             }
                           >
                             {t(`roles.${item.role}`)}
@@ -230,17 +243,16 @@ export default async function DashboardPage({
                           <span
                             className={
                               locked
-                                ? "rounded-full bg-amber-600/12 px-3 py-1 text-sm font-medium text-amber-950"
-                                : "rounded-full bg-[#1f7a45]/12 px-3 py-1 text-sm font-medium text-[#14532d]"
+                                ? "rounded-full bg-amber-600/12 px-3 py-1 text-sm font-medium text-amber-950 dark:bg-amber-400/15 dark:text-amber-100"
+                                : "rounded-full bg-[#1f7a45]/12 px-3 py-1 text-sm font-medium text-[#14532d] dark:bg-[#1f7a45]/25 dark:text-[#b7e6c8]"
                             }
                           >
                             {t("persons", { count: stats.personCount })}
                           </span>
-                          <span className="rounded-full bg-amber-500/15 px-3 py-1 text-sm font-medium text-amber-900">
-                            {t("birthdays", {
-                              count: stats.birthdaysThisMonth,
-                            })}
-                          </span>
+                          <BirthdaysThisMonthBadge
+                            people={stats.birthdayPeople}
+                            locked={locked}
+                          />
                         </div>
 
                         {locked && (

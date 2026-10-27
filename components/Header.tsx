@@ -35,7 +35,7 @@ export default async function Header({
       className={
         glass
           ? "relative z-50 border-b border-white/10 bg-[#0c1a12]/82 backdrop-blur-md"
-          : "relative z-50 border-b bg-white"
+          : "relative z-50 border-b border-[var(--border)] bg-[var(--header-bg)]"
       }
     >
       <div className="flex items-center justify-between gap-3 px-6 py-4">
