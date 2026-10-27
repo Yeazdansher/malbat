@@ -238,7 +238,7 @@ export default function PersonDetailsDialog({
             className="absolute top-4 right-4 rounded-lg bg-white/10 px-3 py-2 text-sm text-white hover:bg-white/20"
             aria-label={t("closePhoto")}
           >
-            ×
+            Ã—
           </button>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
