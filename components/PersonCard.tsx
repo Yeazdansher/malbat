@@ -37,11 +37,11 @@ export default function PersonCard({
     `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
 
   return (
-    <div className="relative w-[270px] rounded-md border border-gray-300 bg-white p-4 shadow-sm">
+    <div className="relative w-[270px] rounded-md border border-gray-300 bg-white p-4 text-gray-900 shadow-sm dark:border-[var(--border)] dark:bg-[var(--card-bg)] dark:text-[var(--card-text)]">
       {canEdit && !hasParents && (
         <button
           type="button"
-          className="nodrag nopan nowheel absolute z-20 left-1/2 top-0 flex h-8 w-8 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border bg-white text-base leading-none hover:bg-green-100"
+          className="nodrag nopan nowheel absolute z-20 left-1/2 top-0 flex h-8 w-8 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-gray-300 bg-white text-base leading-none hover:bg-green-100 dark:border-[var(--border)] dark:bg-[var(--card-bg)] dark:hover:bg-[#1f7a45]/25"
           title={t("addParents")}
           aria-label={t("addParents")}
           onPointerDown={(event) => event.stopPropagation()}
@@ -59,7 +59,7 @@ export default function PersonCard({
         <>
           <button
             type="button"
-            className="nodrag nopan nowheel absolute z-20 left-0 top-1/2 flex h-8 w-8 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border bg-white text-base leading-none hover:bg-green-100"
+            className="nodrag nopan nowheel absolute z-20 left-0 top-1/2 flex h-8 w-8 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-gray-300 bg-white text-base leading-none hover:bg-green-100 dark:border-[var(--border)] dark:bg-[var(--card-bg)] dark:hover:bg-[#1f7a45]/25"
             title={t("addSiblings")}
             aria-label={t("addSiblings")}
             onPointerDown={(event) => event.stopPropagation()}
@@ -75,7 +75,7 @@ export default function PersonCard({
           {gender !== "female" && (
             <button
               type="button"
-              className="nodrag nopan nowheel absolute z-20 right-0 top-1/2 flex h-8 w-8 translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border bg-white text-base leading-none hover:bg-green-100"
+              className="nodrag nopan nowheel absolute z-20 right-0 top-1/2 flex h-8 w-8 translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-gray-300 bg-white text-base leading-none hover:bg-green-100 dark:border-[var(--border)] dark:bg-[var(--card-bg)] dark:hover:bg-[#1f7a45]/25"
               title={t("addPartner")}
               aria-label={t("addPartner")}
               onPointerDown={(event) => event.stopPropagation()}
@@ -123,12 +123,12 @@ export default function PersonCard({
                   : "?"}
             </span>
 
-            <h3 className="font-semibold leading-5">
+            <h3 className="font-semibold leading-5 text-gray-900 dark:text-[var(--card-text)]">
               {firstName} {lastName}
             </h3>
           </div>
 
-          <div className="mt-3 flex items-center gap-2 text-gray-600">
+          <div className="mt-3 flex items-center gap-2 text-gray-600 dark:text-[var(--muted-text)]">
             <span className="text-lg">{isDeceased ? "✝" : "🎂"}</span>
             <span>{t("years", { count: age })}</span>
           </div>
@@ -144,7 +144,7 @@ export default function PersonCard({
             event.stopPropagation();
             onOpenDetails();
           }}
-          className="nodrag nopan nowheel w-full rounded border border-gray-300 py-2 text-sm transition hover:bg-gray-100"
+          className="nodrag nopan nowheel w-full rounded border border-gray-300 py-2 text-sm text-gray-900 transition hover:bg-gray-100 dark:border-[var(--border)] dark:text-[var(--card-text)] dark:hover:bg-[#1f7a45]/20"
         >
           {t("furtherDetails")}
         </button>

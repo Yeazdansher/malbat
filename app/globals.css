@@ -63,3 +63,30 @@ body {
   color: var(--card-text);
   border-color: var(--border);
 }
+
+html[data-theme="dark"] .react-flow {
+  background-color: var(--page-bg);
+}
+
+html[data-theme="dark"] .react-flow__controls-button {
+  background: var(--card-bg);
+  border-bottom-color: var(--border);
+  fill: var(--card-text);
+}
+
+html[data-theme="dark"] .react-flow__controls-button:hover {
+  background: #1f7a4525;
+}
+
+html[data-theme="dark"] input:not([type="checkbox"]):not([type="radio"]),
+html[data-theme="dark"] textarea,
+html[data-theme="dark"] select {
+  background-color: var(--page-bg);
+  color: var(--card-text);
+  border-color: var(--border);
+}
+
+html[data-theme="dark"] input::placeholder,
+html[data-theme="dark"] textarea::placeholder {
+  color: var(--muted-text);
+}

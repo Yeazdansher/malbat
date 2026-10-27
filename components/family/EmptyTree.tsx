@@ -19,13 +19,15 @@ export default function EmptyTree({
 
   return (
     <>
-      <div className="flex h-[650px] items-center justify-center rounded-2xl border-2 border-dashed border-gray-300 bg-white">
+      <div className="flex h-[650px] items-center justify-center rounded-2xl border-2 border-dashed border-gray-300 bg-white text-gray-900 dark:border-[var(--border)] dark:bg-[var(--card-bg)] dark:text-[var(--card-text)]">
         <div className="text-center">
           <div className="text-7xl">👨‍👩‍👧‍👦</div>
 
           <h2 className="mt-6 text-2xl font-semibold">{t("emptyTitle")}</h2>
 
-          <p className="mt-2 text-gray-600">{t("emptyBody")}</p>
+          <p className="mt-2 text-gray-600 dark:text-[var(--muted-text)]">
+            {t("emptyBody")}
+          </p>
 
           {canEdit && (
             <button

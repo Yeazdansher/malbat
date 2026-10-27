@@ -287,24 +287,26 @@ const [deleteOpen, setDeleteOpen] =
 
   if (persons.length === 0) {
     return (
-      <div className="flex min-h-0 flex-1 items-center justify-center bg-[#f3f4f6] p-6">
+      <div className="flex min-h-0 flex-1 items-center justify-center bg-[var(--page-bg)] p-6">
         <EmptyTree familyId={familyId} canEdit={canEdit} />
       </div>
     );
   }
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col bg-[#f3f4f6]">
-      <div className="flex shrink-0 flex-wrap items-center gap-3 border-b border-gray-200 bg-white px-4 py-3">
+    <div className="flex min-h-0 flex-1 flex-col bg-[var(--page-bg)]">
+      <div className="flex shrink-0 flex-wrap items-center gap-3 border-b border-gray-200 bg-white px-4 py-3 dark:border-[var(--border)] dark:bg-[var(--card-bg)]">
         <div className="min-w-0 flex-1">
           <h1
-            className="truncate text-2xl font-semibold text-gray-900"
+            className="truncate text-2xl font-semibold text-gray-900 dark:text-[var(--card-text)]"
             style={{ fontFamily: "var(--font-malbat), serif" }}
           >
             {familyName}
           </h1>
           {personLimitLabel && (
-            <p className="text-sm text-gray-500">{personLimitLabel}</p>
+            <p className="text-sm text-gray-500 dark:text-[var(--muted-text)]">
+              {personLimitLabel}
+            </p>
           )}
         </div>
 
@@ -333,24 +335,24 @@ const [deleteOpen, setDeleteOpen] =
               }
             }}
             placeholder={tSearch("searchPlaceholder")}
-            className="w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-green-700 focus:outline-none"
+            className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-gray-900 placeholder:text-gray-500 focus:border-green-700 focus:outline-none dark:border-[var(--border)] dark:bg-[var(--page-bg)] dark:text-[var(--card-text)] dark:placeholder:text-[var(--muted-text)]"
           />
 
           {searchOpen && searchQuery.trim() && (
-            <div className="absolute z-20 mt-2 max-h-72 w-full overflow-y-auto rounded-xl border bg-white py-2 shadow-lg">
+            <div className="absolute z-20 mt-2 max-h-72 w-full overflow-y-auto rounded-xl border border-gray-200 bg-white py-2 text-gray-900 shadow-lg dark:border-[var(--border)] dark:bg-[var(--card-bg)] dark:text-[var(--card-text)]">
               {searchResults.length > 0 ? (
                 searchResults.map((person) => (
                   <button
                     key={person.id}
                     type="button"
                     onClick={() => focusPerson(person)}
-                    className="block w-full px-4 py-3 text-left hover:bg-gray-100"
+                    className="block w-full px-4 py-3 text-left hover:bg-gray-100 dark:hover:bg-[#1f7a45]/20"
                   >
                     {person.first_name} {person.last_name}
                   </button>
                 ))
               ) : (
-                <p className="px-4 py-3 text-sm text-gray-500">
+                <p className="px-4 py-3 text-sm text-gray-500 dark:text-[var(--muted-text)]">
                   {tSearch("searchNoResults")}
                 </p>
               )}
@@ -376,7 +378,7 @@ const [deleteOpen, setDeleteOpen] =
             className={
               arrangeMode
                 ? "inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-amber-600 text-white hover:bg-amber-700"
-                : "inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-100"
+                : "inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-100 dark:border-[var(--border)] dark:text-[var(--card-text)] dark:hover:bg-[#1f7a45]/20"
             }
           >
             <PencilIcon className="h-5 w-5" />
@@ -385,12 +387,14 @@ const [deleteOpen, setDeleteOpen] =
 
         {canEdit && arrangeMode && (
           <div className="flex flex-wrap items-center gap-3">
-            <p className="text-sm text-gray-600">{tSearch("arrangeHint")}</p>
+            <p className="text-sm text-gray-600 dark:text-[var(--muted-text)]">
+              {tSearch("arrangeHint")}
+            </p>
             <button
               type="button"
               disabled={confirmPending}
               onClick={requestAutoLayout}
-              className="rounded-lg border border-gray-300 px-3 py-2 text-sm hover:bg-gray-100 disabled:opacity-60"
+              className="rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 hover:bg-gray-100 disabled:opacity-60 dark:border-[var(--border)] dark:text-[var(--card-text)] dark:hover:bg-[#1f7a45]/20"
             >
               {tSearch("autoLayout")}
             </button>
@@ -447,11 +451,11 @@ const [deleteOpen, setDeleteOpen] =
 
       {confirmIntent && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50">
-          <div className="w-full max-w-lg rounded-2xl bg-white p-8 shadow-xl">
-            <h2 className="text-2xl font-bold text-green-700">
+          <div className="surface-card w-full max-w-lg rounded-2xl border p-8 shadow-xl">
+            <h2 className="text-2xl font-bold text-green-700 dark:text-[#8fd4a8]">
               {tSearch("arrangeSaveTitle")}
             </h2>
-            <p className="mt-4 text-gray-700">
+            <p className="mt-4 text-gray-700 dark:text-[var(--muted-text)]">
               {confirmIntent === "autoLayout"
                 ? tSearch("autoLayoutConfirmBody")
                 : tSearch("arrangeSaveBody")}
@@ -464,7 +468,7 @@ const [deleteOpen, setDeleteOpen] =
                 type="button"
                 disabled={confirmPending}
                 onClick={handleConfirmNo}
-                className="rounded-lg border px-5 py-3 hover:bg-gray-100 disabled:opacity-60"
+                className="rounded-lg border border-[var(--border)] px-5 py-3 text-[var(--card-text)] hover:bg-[var(--page-bg)] disabled:opacity-60"
               >
                 {tSearch("arrangeSaveNo")}
               </button>

@@ -37,7 +37,7 @@ function DetailRow({
   value: string;
 }) {
   return (
-    <p className="text-[15px] leading-7 text-gray-900">
+    <p className="text-[15px] leading-7 text-gray-900 dark:text-[var(--card-text)]">
       <span className="font-semibold">{label}</span>
       <span className="ms-3 font-normal">{value}</span>
     </p>
@@ -103,7 +103,7 @@ export default function PersonDetailsDialog({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-      <div className="max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-2xl bg-white p-8 shadow-xl sm:p-10">
+      <div className="max-h-[90vh] w-full max-w-3xl overflow-y-auto surface-card rounded-2xl border p-8 shadow-xl sm:p-10">
         <div className="flex items-center gap-5">
           {photoUrl ? (
             <button
@@ -127,10 +127,12 @@ export default function PersonDetailsDialog({
           )}
 
           <div>
-            <h2 className="text-3xl font-bold tracking-tight text-gray-900">
+            <h2 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-[var(--card-text)]">
               {fullName}
             </h2>
-            <p className="mt-1 text-gray-500">{genderLabel}</p>
+            <p className="mt-1 text-gray-500 dark:text-[var(--muted-text)]">
+              {genderLabel}
+            </p>
           </div>
         </div>
 
@@ -177,8 +179,10 @@ export default function PersonDetailsDialog({
         </div>
 
         <div className="mt-8">
-          <p className="font-semibold text-gray-900">{t("notes")}</p>
-          <div className="mt-2 min-h-28 whitespace-pre-wrap rounded-md border border-gray-800 bg-white p-4 text-gray-800">
+          <p className="font-semibold text-gray-900 dark:text-[var(--card-text)]">
+            {t("notes")}
+          </p>
+          <div className="mt-2 min-h-28 whitespace-pre-wrap rounded-md border border-gray-800 bg-white p-4 text-gray-800 dark:border-[var(--border)] dark:bg-[var(--page-bg)] dark:text-[var(--card-text)]">
             {notes?.trim() ? notes : "-"}
           </div>
         </div>
@@ -212,7 +216,7 @@ export default function PersonDetailsDialog({
             <button
               type="button"
               onClick={onClose}
-              className="rounded-lg border border-gray-800 px-5 py-3 text-gray-900 transition hover:bg-gray-100"
+              className="rounded-lg border border-gray-800 px-5 py-3 text-gray-900 transition hover:bg-gray-100 dark:border-[var(--border)] dark:text-[var(--card-text)] dark:hover:bg-[#1f7a45]/20"
             >
               {t("close")}
             </button>
@@ -234,7 +238,7 @@ export default function PersonDetailsDialog({
             className="absolute top-4 right-4 rounded-lg bg-white/10 px-3 py-2 text-sm text-white hover:bg-white/20"
             aria-label={t("closePhoto")}
           >
-            Ã—
+            ×
           </button>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img

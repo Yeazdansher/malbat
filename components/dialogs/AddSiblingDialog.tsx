@@ -44,8 +44,8 @@ export default function AddSiblingDialog({
   return (
     <>
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-        <div className="w-full max-w-lg rounded-2xl bg-white p-8 shadow-xl">
-          <h2 className="text-2xl font-bold text-green-700">
+        <div className="w-full max-w-lg surface-card rounded-2xl border p-8 shadow-xl">
+          <h2 className="text-2xl font-bold text-green-700 dark:text-[#8fd4a8]">
             {t("addSiblingTitle")}
           </h2>
 

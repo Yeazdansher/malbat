@@ -64,7 +64,7 @@ export default function PartnershipNode(props: NodeProps) {
         <div
           className={
             canEdit
-              ? "flex h-8 w-8 items-center justify-center rounded-full border bg-white text-base leading-none shadow-sm"
+              ? "flex h-8 w-8 items-center justify-center rounded-full border border-gray-300 bg-white text-base leading-none shadow-sm dark:border-[var(--border)] dark:bg-[var(--card-bg)]"
               : "h-2 w-2 rounded-full bg-gray-400"
           }
           title={canEdit ? addChildLabel : undefined}
