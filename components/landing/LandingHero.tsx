@@ -81,30 +81,18 @@ export default function LandingHero() {
 
         <div className="flex items-end justify-between gap-4 pt-8 text-sm text-white/55">
           <p>
-            {(() => {
-              const label = t("byCompany", { company: COMPANY_NAME });
-              if (!COMPANY_URL) {
-                return label;
-              }
-              const index = label.indexOf(COMPANY_NAME);
-              if (index < 0) {
-                return label;
-              }
-              return (
-                <>
-                  {label.slice(0, index)}
-                  <a
-                    href={COMPANY_URL}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-white/70 underline-offset-2 hover:text-white hover:underline"
-                  >
-                    {COMPANY_NAME}
-                  </a>
-                  {label.slice(index + COMPANY_NAME.length)}
-                </>
-              );
-            })()}
+            {COMPANY_URL ? (
+              <a
+                href={COMPANY_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-white/55 underline-offset-2 hover:text-white/80 hover:underline"
+              >
+                {COMPANY_NAME}
+              </a>
+            ) : (
+              COMPANY_NAME
+            )}
           </p>
           <p>{tCommon("version", { version: APP_VERSION })}</p>
         </div>
