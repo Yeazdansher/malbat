@@ -26,7 +26,8 @@
     "tagline": "Connect families · Preserve stories",
     "login": "Log in",
     "register": "Sign up",
-    "imageAlt": "Multi-generation family under a tree in evening light"
+    "imageAlt": "Multi-generation family under a tree in evening light",
+    "byCompany": "a product of {company}"
   },
   "login": {
     "title": "Welcome back",

@@ -26,7 +26,8 @@
     "tagline": "Familien verbinden · Geschichten bewahren",
     "login": "Anmelden",
     "register": "Registrieren",
-    "imageAlt": "Mehrgenerationenfamilie unter einem Baum im Abendlicht"
+    "imageAlt": "Mehrgenerationenfamilie unter einem Baum im Abendlicht",
+    "byCompany": "ein Produkt von {company}"
   },
   "login": {
     "title": "Willkommen zurück",

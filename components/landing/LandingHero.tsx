@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 
 import LocaleSwitcher from "@/components/LocaleSwitcher";
+import { COMPANY_NAME, COMPANY_URL } from "@/lib/company";
 import { useTranslations } from "@/lib/i18n/client";
 import { APP_VERSION } from "@/lib/version";
 import LandingBackdrop, { LandingBrand } from "./LandingBackdrop";
@@ -78,8 +79,34 @@ export default function LandingHero() {
           </div>
         </div>
 
-        <div className="flex justify-end pt-8 text-sm text-white/55">
-          {tCommon("version", { version: APP_VERSION })}
+        <div className="flex items-end justify-between gap-4 pt-8 text-sm text-white/55">
+          <p>
+            {(() => {
+              const label = t("byCompany", { company: COMPANY_NAME });
+              if (!COMPANY_URL) {
+                return label;
+              }
+              const index = label.indexOf(COMPANY_NAME);
+              if (index < 0) {
+                return label;
+              }
+              return (
+                <>
+                  {label.slice(0, index)}
+                  <a
+                    href={COMPANY_URL}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-white/70 underline-offset-2 hover:text-white hover:underline"
+                  >
+                    {COMPANY_NAME}
+                  </a>
+                  {label.slice(index + COMPANY_NAME.length)}
+                </>
+              );
+            })()}
+          </p>
+          <p>{tCommon("version", { version: APP_VERSION })}</p>
         </div>
       </main>
     </LandingBackdrop>
