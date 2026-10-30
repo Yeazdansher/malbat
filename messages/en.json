@@ -99,6 +99,9 @@
     "notificationsSaved": "Notification preference saved.",
     "privacy": "Privacy",
     "version": "Version",
+    "about": "About us",
+    "aboutBody": "MALBAT is a product of {company}.",
+    "footerCredit": "© 2026 MALBAT · a product of {company}",
     "comingSoon": "Coming soon"
   },
   "profile": {

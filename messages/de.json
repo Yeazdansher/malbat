@@ -99,6 +99,9 @@
     "notificationsSaved": "Benachrichtigungseinstellung gespeichert.",
     "privacy": "Datenschutz",
     "version": "Version",
+    "about": "Über uns",
+    "aboutBody": "MALBAT ist ein Produkt von {company}.",
+    "footerCredit": "© 2026 MALBAT · ein Produkt von {company}",
     "comingSoon": "Demnächst"
   },
   "profile": {

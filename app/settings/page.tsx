@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import Header from "@/components/Header";
 import DesignSetting from "@/components/settings/DesignSetting";
 import NotificationsSetting from "@/components/settings/NotificationsSetting";
+import { COMPANY_NAME, COMPANY_URL } from "@/lib/company";
 import { getTranslator } from "@/lib/i18n/server";
 import { getCurrentProfile } from "@/lib/profile";
 import { createClient } from "@/lib/supabase/server";
@@ -47,6 +48,9 @@ export default async function SettingsPage() {
       : null;
   const initialTheme = profileTheme ?? cookieTheme ?? defaultTheme;
 
+  const aboutBody = t("aboutBody", { company: COMPANY_NAME });
+  const companyIndex = aboutBody.indexOf(COMPANY_NAME);
+
   return (
     <main className="surface-page min-h-screen">
       <Header
@@ -70,14 +74,30 @@ export default async function SettingsPage() {
             <span className="text-[var(--muted-text)]">v{APP_VERSION}</span>
           </div>
 
+          <div className="border-b border-[var(--border)] pb-4">
+            <p className="font-medium">{t("about")}</p>
+            <p className="mt-2 text-sm text-[var(--muted-text)]">
+              {COMPANY_URL && companyIndex >= 0 ? (
+                <>
+                  {aboutBody.slice(0, companyIndex)}
+                  <a
+                    href={COMPANY_URL}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="font-semibold text-green-700 underline-offset-2 hover:underline dark:text-[#8fd4a8]"
+                  >
+                    {COMPANY_NAME}
+                  </a>
+                  {aboutBody.slice(companyIndex + COMPANY_NAME.length)}
+                </>
+              ) : (
+                aboutBody
+              )}
+            </p>
+          </div>
+
           <div className="pt-4 text-center text-sm text-[var(--muted-text)]">
-            © 2026{" "}
-            <span
-              className="font-semibold tracking-[0.06em]"
-              style={{ fontFamily: "var(--font-malbat), serif" }}
-            >
-              MALBAT
-            </span>
+            {t("footerCredit", { company: COMPANY_NAME })}
           </div>
         </div>
       </div>

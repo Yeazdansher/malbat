@@ -99,6 +99,9 @@
     "notificationsSaved": "تم حفظ إعداد الإشعارات.",
     "privacy": "الخصوصية",
     "version": "الإصدار",
+    "about": "من نحن",
+    "aboutBody": "MALBAT منتج من {company}.",
+    "footerCredit": "© 2026 MALBAT · منتج من {company}",
     "comingSoon": "قريبًا"
   },
   "profile": {
