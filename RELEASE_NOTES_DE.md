@@ -1,3 +1,16 @@
+## MALBAT v1.4.1
+
+YS-Tech-Zuordnung und Feinschliff.
+
+### Neu
+- Einstellungen: **Über uns** — MALBAT ist ein Produkt von YS-Tech
+- Startseite: YS-Tech unten links; Kopfzeile als **MAL[Icon]BAT** mit Wachstums-Animation
+
+### Hinweise
+- Live: https://malbat.vercel.app
+
+---
+
 ## MALBAT v1.4.0
 
 Dunkles Design und Geburtstagsliste auf dem Dashboard.
