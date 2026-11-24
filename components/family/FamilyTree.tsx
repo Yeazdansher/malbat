@@ -298,28 +298,30 @@ const [deleteOpen, setDeleteOpen] =
   return (
     <div className="flex min-h-0 flex-1 flex-col bg-[var(--page-bg)]">
       <div className="flex shrink-0 flex-wrap items-center gap-3 border-b border-gray-200 bg-white px-4 py-3 dark:border-[var(--border)] dark:bg-[var(--card-bg)]">
-        <div className="min-w-0 flex-1">
-          <h1
-            className="truncate text-2xl font-semibold text-gray-900 dark:text-[var(--card-text)]"
-            style={{ fontFamily: "var(--font-malbat), serif" }}
+        <div className="flex min-w-0 items-center gap-3">
+          <div className="min-w-0">
+            <h1
+              className="truncate text-2xl font-semibold text-gray-900 dark:text-[var(--card-text)]"
+              style={{ fontFamily: "var(--font-malbat), serif" }}
+            >
+              {familyName}
+            </h1>
+            {personLimitLabel && (
+              <p className="text-sm text-gray-500 dark:text-[var(--muted-text)]">
+                {personLimitLabel}
+              </p>
+            )}
+          </div>
+
+          <Link
+            href={`/family/${familyId}/memories`}
+            className="inline-flex h-10 shrink-0 items-center rounded-lg border border-gray-300 px-3 text-sm font-medium text-gray-900 hover:bg-gray-100 dark:border-[var(--border)] dark:text-[var(--card-text)] dark:hover:bg-[#1f7a45]/20"
           >
-            {familyName}
-          </h1>
-          {personLimitLabel && (
-            <p className="text-sm text-gray-500 dark:text-[var(--muted-text)]">
-              {personLimitLabel}
-            </p>
-          )}
+            {tMemories("navButton")}
+          </Link>
         </div>
 
-        <Link
-          href={`/family/${familyId}/memories`}
-          className="inline-flex h-10 shrink-0 items-center rounded-lg border border-gray-300 px-3 text-sm font-medium text-gray-900 hover:bg-gray-100 dark:border-[var(--border)] dark:text-[var(--card-text)] dark:hover:bg-[#1f7a45]/20"
-        >
-          {tMemories("navButton")}
-        </Link>
-
-        <div className="relative w-full max-w-sm sm:w-80">
+        <div className="relative w-full max-w-sm sm:ml-auto sm:w-80">
           <label htmlFor="person-search" className="sr-only">
             {tSearch("searchLabel")}
           </label>

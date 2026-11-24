@@ -2,7 +2,8 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import Header from "@/components/Header";
-import CreateAlbumForm from "@/components/family/memories/CreateAlbumForm";
+import FamilyPhotoTimeline from "@/components/family/memories/FamilyPhotoTimeline";
+import UploadFamilyPhotoForm from "@/components/family/memories/UploadFamilyPhotoForm";
 import { canEditFamily } from "@/lib/family-permissions";
 import type { FamilyRole } from "@/lib/invitations";
 import { getLocale } from "@/lib/i18n/get-locale";
@@ -16,33 +17,15 @@ type PageProps = {
   }>;
 };
 
-type AlbumRow = {
+type PhotoRow = {
   id: string;
-  title: string;
-  description: string | null;
-  event_date: string | null;
-  created_at: string;
-};
-
-type CoverRow = {
-  album_id: string;
   url: string;
-  sort_order: number;
+  caption: string | null;
+  taken_at: string | null;
   created_at: string;
 };
 
-function formatEventDate(value: string | null, locale: string) {
-  if (!value) return null;
-  const date = new Date(`${value}T00:00:00`);
-  if (Number.isNaN(date.getTime())) return value;
-  return new Intl.DateTimeFormat(locale, {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  }).format(date);
-}
-
-export default async function FamilyMemoriesPage({ params }: PageProps) {
+export default async function FamilyPhotosPage({ params }: PageProps) {
   const { id: familyId } = await params;
   const supabase = await createClient();
 
@@ -92,33 +75,12 @@ export default async function FamilyMemoriesPage({ params }: PageProps) {
   const role = membership.role as FamilyRole;
   const canEdit = canEditFamily(role);
 
-  const { data: albums, error: albumsError } = await supabase
-    .from("family_memory_albums")
-    .select("id, title, description, event_date, created_at")
+  const { data: photos, error: photosError } = await supabase
+    .from("family_memory_photos")
+    .select("id, url, caption, taken_at, created_at")
     .eq("family_id", familyId)
-    .order("event_date", { ascending: false, nullsFirst: false })
+    .order("taken_at", { ascending: false, nullsFirst: false })
     .order("created_at", { ascending: false });
-
-  const albumIds = (albums ?? []).map((album) => album.id);
-  let covers: CoverRow[] = [];
-
-  if (albumIds.length > 0) {
-    const { data: photoRows } = await supabase
-      .from("family_memory_photos")
-      .select("album_id, url, sort_order, created_at")
-      .in("album_id", albumIds)
-      .order("sort_order", { ascending: true })
-      .order("created_at", { ascending: true });
-
-    covers = (photoRows as CoverRow[] | null) ?? [];
-  }
-
-  const coverByAlbum = new Map<string, string>();
-  for (const photo of covers) {
-    if (!coverByAlbum.has(photo.album_id)) {
-      coverByAlbum.set(photo.album_id, photo.url);
-    }
-  }
 
   return (
     <main className="surface-page min-h-screen">
@@ -139,70 +101,32 @@ export default async function FamilyMemoriesPage({ params }: PageProps) {
               {t("subtitle")}
             </p>
           </div>
-          {canEdit && <CreateAlbumForm familyId={familyId} />}
+          <Link
+            href={`/family/${familyId}`}
+            className="inline-flex h-10 items-center rounded-lg border border-[var(--border)] px-4 text-sm font-medium text-[var(--card-text)] hover:bg-[var(--page-bg)]"
+          >
+            {t("backToTree")}
+          </Link>
         </div>
 
-        {albumsError && (
+        {canEdit && <UploadFamilyPhotoForm familyId={familyId} />}
+
+        {photosError && (
           <div className="mt-6 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-900">
             {t("loadError")}
           </div>
         )}
 
-        {(albums as AlbumRow[] | null)?.length ? (
-          <ul className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-            {(albums as AlbumRow[]).map((album) => {
-              const cover = coverByAlbum.get(album.id);
-              const eventLabel = formatEventDate(album.event_date, locale);
-
-              return (
-                <li key={album.id}>
-                  <Link
-                    href={`/family/${familyId}/memories/${album.id}`}
-                    className="surface-card group block overflow-hidden rounded-2xl border shadow-sm transition hover:border-green-700/40"
-                  >
-                    {cover ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        src={cover}
-                        alt=""
-                        className="aspect-[4/3] w-full object-cover transition group-hover:brightness-95"
-                      />
-                    ) : (
-                      <div className="flex aspect-[4/3] w-full items-center justify-center bg-[var(--page-bg)] text-sm text-[var(--muted-text)]">
-                        {t("coverPlaceholder")}
-                      </div>
-                    )}
-                    <div className="p-4">
-                      <h2 className="truncate text-lg font-semibold text-[var(--card-text)]">
-                        {album.title}
-                      </h2>
-                      {eventLabel && (
-                        <p className="mt-1 text-sm text-[var(--muted-text)]">
-                          {eventLabel}
-                        </p>
-                      )}
-                      {album.description && (
-                        <p className="mt-2 line-clamp-2 text-sm text-[var(--muted-text)]">
-                          {album.description}
-                        </p>
-                      )}
-                    </div>
-                  </Link>
-                </li>
-              );
-            })}
-          </ul>
-        ) : (
-          !albumsError && (
-            <div className="mt-10 rounded-2xl border border-dashed border-[var(--border)] px-6 py-16 text-center">
-              <p className="text-lg font-medium text-[var(--card-text)]">
-                {t("emptyAlbumsTitle")}
-              </p>
-              <p className="mt-2 text-[var(--muted-text)]">
-                {canEdit ? t("emptyAlbumsEditor") : t("emptyAlbumsViewer")}
-              </p>
-            </div>
-          )
+        {!photosError && (
+          <FamilyPhotoTimeline
+            familyId={familyId}
+            photos={(photos as PhotoRow[] | null) ?? []}
+            canEdit={canEdit}
+            locale={locale}
+            emptyMessage={
+              canEdit ? t("emptyPhotosEditor") : t("emptyPhotosViewer")
+            }
+          />
         )}
       </div>
     </main>
