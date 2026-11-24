@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 
 import {
   deleteFamilyPhoto,
@@ -26,7 +26,10 @@ type Props = {
 
 type TimelineGroup = {
   key: string;
-  label: string;
+  year: string | null;
+  dayLabel: string;
+  monthLabel: string;
+  fullLabel: string;
   photos: FamilyPhoto[];
 };
 
@@ -41,11 +44,58 @@ function formatTakenAt(value: string | null, locale: string, unknownLabel: strin
   }).format(date);
 }
 
+function buildDateLabels(
+  value: string | null,
+  locale: string,
+  unknownLabel: string
+) {
+  if (!value) {
+    return {
+      year: null,
+      dayLabel: "–",
+      monthLabel: unknownLabel,
+      fullLabel: unknownLabel,
+    };
+  }
+
+  const date = new Date(`${value}T00:00:00`);
+  if (Number.isNaN(date.getTime())) {
+    return {
+      year: null,
+      dayLabel: "–",
+      monthLabel: value,
+      fullLabel: value,
+    };
+  }
+
+  return {
+    year: String(date.getFullYear()),
+    dayLabel: String(date.getDate()),
+    monthLabel: new Intl.DateTimeFormat(locale, { month: "short" }).format(date),
+    fullLabel: formatTakenAt(value, locale, unknownLabel),
+  };
+}
+
 function todayDateInputValue() {
   const now = new Date();
   const month = String(now.getMonth() + 1).padStart(2, "0");
   const day = String(now.getDate()).padStart(2, "0");
   return `${now.getFullYear()}-${month}-${day}`;
+}
+
+function sortPhotosByTimeline(photos: FamilyPhoto[]): FamilyPhoto[] {
+  return photos.slice().sort((a, b) => {
+    if (a.taken_at && b.taken_at) {
+      const byDate = b.taken_at.localeCompare(a.taken_at);
+      if (byDate !== 0) return byDate;
+    } else if (a.taken_at) {
+      return -1;
+    } else if (b.taken_at) {
+      return 1;
+    }
+
+    return b.created_at.localeCompare(a.created_at);
+  });
 }
 
 function groupPhotosByDate(
@@ -55,7 +105,7 @@ function groupPhotosByDate(
 ): TimelineGroup[] {
   const groups = new Map<string, TimelineGroup>();
 
-  for (const photo of photos) {
+  for (const photo of sortPhotosByTimeline(photos)) {
     const key = photo.taken_at ?? "unknown";
     const existing = groups.get(key);
     if (existing) {
@@ -63,14 +113,36 @@ function groupPhotosByDate(
       continue;
     }
 
+    const labels = buildDateLabels(photo.taken_at, locale, unknownLabel);
     groups.set(key, {
       key,
-      label: formatTakenAt(photo.taken_at, locale, unknownLabel),
+      year: labels.year,
+      dayLabel: labels.dayLabel,
+      monthLabel: labels.monthLabel,
+      fullLabel: labels.fullLabel,
       photos: [photo],
     });
   }
 
-  return Array.from(groups.values());
+  return Array.from(groups.values()).sort((a, b) => {
+    if (a.key === "unknown") return 1;
+    if (b.key === "unknown") return -1;
+    return b.key.localeCompare(a.key);
+  });
+}
+
+function photoGridClass(count: number) {
+  if (count === 1) {
+    return "grid max-w-lg grid-cols-1";
+  }
+  if (count === 2) {
+    return "grid max-w-3xl grid-cols-2 gap-3";
+  }
+  return "grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4";
+}
+
+function isFrameworkError(message: string) {
+  return /Minified React error/i.test(message);
 }
 
 export default function FamilyPhotoTimeline({
@@ -81,14 +153,19 @@ export default function FamilyPhotoTimeline({
   emptyMessage,
 }: Props) {
   const t = useTranslations("memories");
+  const [items, setItems] = useState(photos);
   const [lightboxId, setLightboxId] = useState<string | null>(null);
   const [captionDraft, setCaptionDraft] = useState("");
   const [takenAtDraft, setTakenAtDraft] = useState("");
   const [error, setError] = useState("");
   const [pending, startTransition] = useTransition();
 
-  const lightboxPhoto = photos.find((photo) => photo.id === lightboxId) ?? null;
-  const groups = groupPhotosByDate(photos, locale, t("unknownDate"));
+  useEffect(() => {
+    setItems(photos);
+  }, [photos]);
+
+  const lightboxPhoto = items.find((photo) => photo.id === lightboxId) ?? null;
+  const groups = groupPhotosByDate(items, locale, t("unknownDate"));
 
   function openLightbox(photo: FamilyPhoto) {
     setLightboxId(photo.id);
@@ -102,7 +179,7 @@ export default function FamilyPhotoTimeline({
     setError("");
   }
 
-  if (photos.length === 0) {
+  if (items.length === 0) {
     return (
       <div className="mt-10 rounded-2xl border border-dashed border-[var(--border)] px-6 py-16 text-center text-[var(--muted-text)]">
         {emptyMessage}
@@ -111,38 +188,83 @@ export default function FamilyPhotoTimeline({
   }
 
   return (
-    <div className="mt-10 space-y-10">
-      {groups.map((group) => (
-        <section key={group.key}>
-          <h2 className="mb-4 text-lg font-semibold text-[var(--card-text)]">
-            {group.label}
-          </h2>
-          <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
-            {group.photos.map((photo) => (
-              <li key={photo.id}>
-                <button
-                  type="button"
-                  onClick={() => openLightbox(photo)}
-                  className="group block w-full overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--page-bg)] focus:outline-none focus-visible:ring-2 focus-visible:ring-green-700"
-                  aria-label={photo.caption || t("enlargePhoto")}
-                >
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={photo.url}
-                    alt={photo.caption || ""}
-                    className="aspect-square w-full object-cover transition group-hover:brightness-95"
-                  />
-                  {photo.caption && (
-                    <p className="truncate px-2 py-1.5 text-left text-xs text-[var(--muted-text)]">
-                      {photo.caption}
-                    </p>
-                  )}
-                </button>
-              </li>
-            ))}
-          </ul>
-        </section>
-      ))}
+    <div className="mt-12">
+      <ol className="relative">
+        <div
+          aria-hidden
+          className="absolute top-4 bottom-4 left-[1.35rem] w-px bg-gradient-to-b from-[#1f7a45]/55 via-[var(--border)] to-transparent sm:left-[1.6rem]"
+        />
+
+        {groups.map((group, index) => {
+          const prevYear = index > 0 ? groups[index - 1]?.year : null;
+          const showYear = Boolean(group.year) && group.year !== prevYear;
+
+          return (
+            <li key={group.key} className="relative pb-12 last:pb-2">
+              {showYear && (
+                <div className="mb-8 flex items-center gap-4 pl-14 sm:pl-16">
+                  <p
+                    className="text-3xl font-semibold tracking-tight text-green-800 dark:text-[#8fd4a8]"
+                    style={{ fontFamily: "var(--font-malbat), serif" }}
+                  >
+                    {group.year}
+                  </p>
+                  <div className="h-px flex-1 bg-[var(--border)]" />
+                </div>
+              )}
+
+              <div className="flex gap-4 sm:gap-6">
+                <div className="relative z-[1] flex w-12 shrink-0 flex-col items-center">
+                  <div className="flex h-12 w-12 flex-col items-center justify-center rounded-full border border-[#1f7a45]/30 bg-[var(--card-bg)] shadow-[0_0_0_4px_var(--page-bg)]">
+                    <span className="text-base leading-none font-semibold text-[var(--card-text)]">
+                      {group.dayLabel}
+                    </span>
+                    <span className="mt-0.5 text-[10px] leading-none tracking-wide text-[#1f7a45] uppercase dark:text-[#8fd4a8]">
+                      {group.monthLabel}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="min-w-0 flex-1 pt-1">
+                  <h2 className="sr-only">{group.fullLabel}</h2>
+                  <p className="mb-3 text-sm text-[var(--muted-text)]">
+                    {group.fullLabel}
+                    <span className="mx-2 text-[var(--border)]">·</span>
+                    {group.photos.length === 1
+                      ? t("photoCountOne")
+                      : t("photoCountMany", { count: group.photos.length })}
+                  </p>
+
+                  <ul className={photoGridClass(group.photos.length)}>
+                    {group.photos.map((photo) => (
+                      <li key={photo.id}>
+                        <button
+                          type="button"
+                          onClick={() => openLightbox(photo)}
+                          className="group relative block w-full overflow-hidden rounded-2xl bg-[var(--card-bg)] ring-1 ring-[var(--border)] transition duration-300 hover:-translate-y-0.5 hover:ring-[#1f7a45]/40 hover:shadow-[0_12px_30px_-18px_rgba(31,122,69,0.55)] focus:outline-none focus-visible:ring-2 focus-visible:ring-green-700"
+                          aria-label={photo.caption || t("enlargePhoto")}
+                        >
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={photo.url}
+                            alt={photo.caption || ""}
+                            className="aspect-[4/5] w-full object-cover transition duration-500 group-hover:scale-[1.03]"
+                          />
+                          {photo.caption && (
+                            <span className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent px-3 pt-8 pb-2.5 text-left text-xs text-white opacity-0 transition group-hover:opacity-100">
+                              <span className="line-clamp-2">{photo.caption}</span>
+                            </span>
+                          )}
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+            </li>
+          );
+        })}
+      </ol>
 
       {lightboxPhoto && (
         <div
@@ -204,6 +326,8 @@ export default function FamilyPhotoTimeline({
                     disabled={pending}
                     onClick={() => {
                       setError("");
+                      const nextCaption = captionDraft.trim() || null;
+                      const nextTakenAt = takenAtDraft.trim() || null;
                       const data = new FormData();
                       data.set("caption", captionDraft);
                       data.set("taken_at", takenAtDraft);
@@ -214,13 +338,39 @@ export default function FamilyPhotoTimeline({
                             lightboxPhoto.id,
                             data
                           );
+                          setItems((current) =>
+                            sortPhotosByTimeline(
+                              current.map((photo) =>
+                                photo.id === lightboxPhoto.id
+                                  ? {
+                                      ...photo,
+                                      caption: nextCaption,
+                                      taken_at: nextTakenAt,
+                                    }
+                                  : photo
+                              )
+                            )
+                          );
                           closeLightbox();
                         } catch (err) {
                           const message =
                             err instanceof Error
                               ? err.message
                               : t("saveFailed");
-                          if (/Minified React error/i.test(message)) {
+                          if (isFrameworkError(message)) {
+                            setItems((current) =>
+                              sortPhotosByTimeline(
+                                current.map((photo) =>
+                                  photo.id === lightboxPhoto.id
+                                    ? {
+                                        ...photo,
+                                        caption: nextCaption,
+                                        taken_at: nextTakenAt,
+                                      }
+                                    : photo
+                                )
+                              )
+                            );
                             closeLightbox();
                             return;
                           }
@@ -240,16 +390,23 @@ export default function FamilyPhotoTimeline({
                         return;
                       }
                       setError("");
+                      const photoId = lightboxPhoto.id;
                       startTransition(async () => {
                         try {
-                          await deleteFamilyPhoto(familyId, lightboxPhoto.id);
+                          await deleteFamilyPhoto(familyId, photoId);
+                          setItems((current) =>
+                            current.filter((photo) => photo.id !== photoId)
+                          );
                           closeLightbox();
                         } catch (err) {
                           const message =
                             err instanceof Error
                               ? err.message
                               : t("deleteFailed");
-                          if (/Minified React error/i.test(message)) {
+                          if (isFrameworkError(message)) {
+                            setItems((current) =>
+                              current.filter((photo) => photo.id !== photoId)
+                            );
                             closeLightbox();
                             return;
                           }

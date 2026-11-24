@@ -53,7 +53,9 @@ async function removeStoragePaths(
   }
 }
 
-export async function uploadFamilyPhoto(familyId: string, formData: FormData) {
+const MAX_PHOTOS_PER_UPLOAD = 20;
+
+export async function uploadFamilyPhotos(familyId: string, formData: FormData) {
   const supabase = await createClient();
 
   const {
@@ -66,69 +68,97 @@ export async function uploadFamilyPhoto(familyId: string, formData: FormData) {
 
   await requireFamilyEditor(supabase, familyId);
 
-  const validated = validateImageFile(
-    formData.get("photo") instanceof File
-      ? (formData.get("photo") as File)
-      : null,
-    MAX_FAMILY_PHOTO_BYTES
-  );
+  const files = formData
+    .getAll("photos")
+    .filter((entry): entry is File => entry instanceof File && entry.size > 0);
 
-  if (!validated.ok) {
-    throw new Error(validated.error);
+  if (files.length === 0) {
+    throw new Error("Bitte wähle mindestens ein Bild aus.");
   }
 
-  const { file, type } = validated;
+  if (files.length > MAX_PHOTOS_PER_UPLOAD) {
+    throw new Error(
+      `Es können höchstens ${MAX_PHOTOS_PER_UPLOAD} Fotos auf einmal hochgeladen werden.`
+    );
+  }
+
   const caption = String(formData.get("caption") ?? "").trim();
   const takenAt = parseTakenAt(String(formData.get("taken_at") ?? ""));
 
-  const photoId = crypto.randomUUID();
-  const ext = extensionForImageType(type);
-  const storagePath = `${familyId}/${photoId}.${ext}`;
+  let uploaded = 0;
+  const failures: string[] = [];
 
-  const { error: uploadError } = await supabase.storage
-    .from(MEMORIES_BUCKET)
-    .upload(storagePath, file, {
-      upsert: false,
-      contentType: type,
-      cacheControl: "3600",
-    });
+  for (const file of files) {
+    const validated = validateImageFile(file, MAX_FAMILY_PHOTO_BYTES);
+    if (!validated.ok) {
+      failures.push(`${file.name}: ${validated.error}`);
+      continue;
+    }
 
-  if (uploadError) {
-    console.error("uploadFamilyPhoto (upload):", uploadError);
+    const { file: image, type } = validated;
+    const photoId = crypto.randomUUID();
+    const ext = extensionForImageType(type);
+    const storagePath = `${familyId}/${photoId}.${ext}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from(MEMORIES_BUCKET)
+      .upload(storagePath, image, {
+        upsert: false,
+        contentType: type,
+        cacheControl: "3600",
+      });
+
+    if (uploadError) {
+      console.error("uploadFamilyPhotos (upload):", uploadError);
+      failures.push(`${file.name}: Upload fehlgeschlagen.`);
+      continue;
+    }
+
+    const {
+      data: { publicUrl },
+    } = supabase.storage.from(MEMORIES_BUCKET).getPublicUrl(storagePath);
+
+    const { error: insertError } = await supabase
+      .from("family_memory_photos")
+      .insert({
+        id: photoId,
+        family_id: familyId,
+        storage_path: storagePath,
+        url: `${publicUrl}?v=${Date.now()}`,
+        caption: caption || null,
+        taken_at: takenAt,
+        uploaded_by: user.id,
+      });
+
+    if (insertError) {
+      console.error("uploadFamilyPhotos (insert):", insertError);
+      await removeStoragePaths(supabase, [storagePath]);
+      failures.push(
+        `${file.name}: ${insertError.message?.trim() || "Speichern fehlgeschlagen."}`
+      );
+      continue;
+    }
+
+    uploaded += 1;
+  }
+
+  if (uploaded > 0) {
+    revalidatePath(photosPath(familyId));
+    revalidatePath(`/family/${familyId}`);
+  }
+
+  if (uploaded === 0) {
     throw new Error(
-      "Das Foto konnte nicht hochgeladen werden. Bitte versuche es erneut."
+      failures[0] ||
+        "Die Fotos konnten nicht hochgeladen werden. Bitte versuche es erneut."
     );
   }
 
-  const {
-    data: { publicUrl },
-  } = supabase.storage.from(MEMORIES_BUCKET).getPublicUrl(storagePath);
-
-  const { error: insertError } = await supabase
-    .from("family_memory_photos")
-    .insert({
-      id: photoId,
-      family_id: familyId,
-      storage_path: storagePath,
-      url: `${publicUrl}?v=${Date.now()}`,
-      caption: caption || null,
-      taken_at: takenAt,
-      uploaded_by: user.id,
-    });
-
-  if (insertError) {
-    console.error("uploadFamilyPhoto (insert):", insertError);
-    await removeStoragePaths(supabase, [storagePath]);
-    const detail = insertError.message?.trim();
+  if (failures.length > 0) {
     throw new Error(
-      detail
-        ? `Speichern fehlgeschlagen: ${detail}`
-        : "Das Foto wurde hochgeladen, konnte aber nicht gespeichert werden."
+      `${uploaded} Foto(s) hochgeladen, ${failures.length} fehlgeschlagen. ${failures[0]}`
     );
   }
-
-  revalidatePath(photosPath(familyId));
-  revalidatePath(`/family/${familyId}`);
 }
 
 export async function updateFamilyPhoto(

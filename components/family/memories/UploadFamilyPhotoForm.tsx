@@ -2,7 +2,7 @@
 
 import { useRef, useState, useTransition } from "react";
 
-import { uploadFamilyPhoto } from "@/app/family/[id]/memories/actions";
+import { uploadFamilyPhotos } from "@/app/family/[id]/memories/actions";
 import { useTranslations } from "@/lib/i18n/client";
 import {
   MAX_FAMILY_PHOTO_BYTES,
@@ -12,6 +12,8 @@ import {
 type Props = {
   familyId: string;
 };
+
+const MAX_PHOTOS_PER_UPLOAD = 20;
 
 function todayDateInputValue() {
   const now = new Date();
@@ -39,26 +41,38 @@ export default function UploadFamilyPhotoForm({ familyId }: Props) {
       className="surface-card mt-8 space-y-4 rounded-2xl border p-6 shadow-sm"
       action={(formData) => {
         setError("");
-        const validated = validateImageFile(
-          formData.get("photo") instanceof File
-            ? (formData.get("photo") as File)
-            : null,
-          MAX_FAMILY_PHOTO_BYTES
-        );
-        if (!validated.ok) {
-          setError(validated.error);
+
+        const files = formData
+          .getAll("photos")
+          .filter(
+            (entry): entry is File => entry instanceof File && entry.size > 0
+          );
+
+        if (files.length === 0) {
+          setError(t("uploadEmpty"));
           return;
+        }
+
+        if (files.length > MAX_PHOTOS_PER_UPLOAD) {
+          setError(t("uploadTooMany", { max: MAX_PHOTOS_PER_UPLOAD }));
+          return;
+        }
+
+        for (const file of files) {
+          const validated = validateImageFile(file, MAX_FAMILY_PHOTO_BYTES);
+          if (!validated.ok) {
+            setError(`${file.name}: ${validated.error}`);
+            return;
+          }
         }
 
         startTransition(async () => {
           try {
-            await uploadFamilyPhoto(familyId, formData);
+            await uploadFamilyPhotos(familyId, formData);
             formRef.current?.reset();
           } catch (err) {
             const message =
               err instanceof Error ? err.message : t("uploadFailed");
-            // revalidatePath can surface RSC errors on the action promise;
-            // the upload itself may still have succeeded.
             if (isFrameworkError(message)) {
               formRef.current?.reset();
               return;
@@ -79,9 +93,10 @@ export default function UploadFamilyPhotoForm({ familyId }: Props) {
           </label>
           <input
             id="photo-file"
-            name="photo"
+            name="photos"
             type="file"
             accept="image/jpeg,image/png,image/webp"
+            multiple
             required
             className="w-full rounded-lg border border-[var(--border)] bg-[var(--page-bg)] px-3 py-2 text-[var(--card-text)] file:mr-3 file:rounded-md file:border-0 file:bg-[#1f7a45] file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-white focus:border-green-700 focus:outline-none"
           />
@@ -102,6 +117,9 @@ export default function UploadFamilyPhotoForm({ familyId }: Props) {
             max={maxDate}
             className="w-full rounded-lg border border-[var(--border)] bg-[var(--page-bg)] px-3 py-2 text-[var(--card-text)] focus:border-green-700 focus:outline-none"
           />
+          <p className="mt-1 text-sm text-[var(--muted-text)]">
+            {t("takenAtBatchHint")}
+          </p>
         </div>
 
         <div>
