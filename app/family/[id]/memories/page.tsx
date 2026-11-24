@@ -1,9 +1,9 @@
 import { redirect } from "next/navigation";
 
 import Header from "@/components/Header";
+import AddPhotosButton from "@/components/family/memories/AddPhotosButton";
 import BackToTreeLink from "@/components/family/memories/BackToTreeLink";
 import FamilyPhotoTimeline from "@/components/family/memories/FamilyPhotoTimeline";
-import UploadFamilyPhotoForm from "@/components/family/memories/UploadFamilyPhotoForm";
 import { canEditFamily } from "@/lib/family-permissions";
 import type { FamilyRole } from "@/lib/invitations";
 import { getLocale } from "@/lib/i18n/get-locale";
@@ -104,18 +104,19 @@ export default async function FamilyPhotosPage({ params }: PageProps) {
         profile={profile}
       />
 
-      <div className="mx-auto max-w-5xl px-4 py-10">
+      <div className="w-full max-w-5xl px-4 py-10 sm:px-6">
         <div className="flex flex-wrap items-end justify-between gap-4">
-          <div>
-            <p className="text-sm text-[var(--muted-text)]">{family.name}</p>
-            <h1 className="mt-1 text-3xl font-bold text-green-700 dark:text-[#8fd4a8]">
-              {t("title")}
-            </h1>
+          <div className="flex flex-wrap items-end gap-3">
+            <div>
+              <p className="text-sm text-[var(--muted-text)]">{family.name}</p>
+              <h1 className="mt-1 text-3xl font-bold text-green-700 dark:text-[#8fd4a8]">
+                {t("title")}
+              </h1>
+            </div>
+            {canEdit && <AddPhotosButton familyId={familyId} />}
           </div>
           <BackToTreeLink familyId={familyId} label={t("backToTree")} />
         </div>
-
-        {canEdit && <UploadFamilyPhotoForm familyId={familyId} />}
 
         {photosError && (
           <div className="mt-6 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-900">

@@ -399,6 +399,7 @@
     "loadError": "Could not load photos.",
     "emptyPhotosEditor": "Upload the first photo and optionally add a date.",
     "emptyPhotosViewer": "There are no family photos yet.",
+    "addPhotos": "Add photo",
     "uploadPhoto": "Upload photos",
     "uploading": "Uploading…",
     "photoFile": "Photos",

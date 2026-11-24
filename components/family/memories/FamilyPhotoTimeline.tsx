@@ -133,12 +133,12 @@ function groupPhotosByDate(
 
 function photoGridClass(count: number) {
   if (count === 1) {
-    return "grid max-w-lg grid-cols-1";
+    return "grid w-full max-w-xs grid-cols-1 justify-items-start";
   }
   if (count === 2) {
-    return "grid max-w-3xl grid-cols-2 gap-3";
+    return "grid w-full max-w-xl grid-cols-2 gap-3 justify-items-start";
   }
-  return "grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4";
+  return "grid w-full grid-cols-2 gap-3 justify-items-start sm:grid-cols-3 lg:grid-cols-4";
 }
 
 function isFrameworkError(message: string) {
@@ -188,11 +188,11 @@ export default function FamilyPhotoTimeline({
   }
 
   return (
-    <div className="mt-12">
+    <div className="mt-10">
       <ol className="relative">
         <div
           aria-hidden
-          className="absolute top-4 bottom-4 left-[1.35rem] w-px bg-gradient-to-b from-[#1f7a45]/55 via-[var(--border)] to-transparent sm:left-[1.6rem]"
+          className="absolute top-4 bottom-4 left-6 w-px bg-gradient-to-b from-[#1f7a45]/55 via-[var(--border)] to-transparent"
         />
 
         {groups.map((group, index) => {
@@ -200,22 +200,25 @@ export default function FamilyPhotoTimeline({
           const showYear = Boolean(group.year) && group.year !== prevYear;
 
           return (
-            <li key={group.key} className="relative pb-12 last:pb-2">
+            <li key={group.key} className="relative pb-10 last:pb-2">
               {showYear && (
-                <div className="mb-8 flex items-center gap-4 pl-14 sm:pl-16">
+                <div className="mb-6 flex items-center gap-3 pl-14">
                   <p
                     className="text-3xl font-semibold tracking-tight text-green-800 dark:text-[#8fd4a8]"
                     style={{ fontFamily: "var(--font-malbat), serif" }}
                   >
                     {group.year}
                   </p>
-                  <div className="h-px flex-1 bg-[var(--border)]" />
+                  <div className="h-px max-w-xs flex-1 bg-[var(--border)]" />
                 </div>
               )}
 
-              <div className="flex gap-4 sm:gap-6">
+              <div className="flex items-start gap-4">
                 <div className="relative z-[1] flex w-12 shrink-0 flex-col items-center">
-                  <div className="flex h-12 w-12 flex-col items-center justify-center rounded-full border border-[#1f7a45]/30 bg-[var(--card-bg)] shadow-[0_0_0_4px_var(--page-bg)]">
+                  <div
+                    className="flex h-12 w-12 flex-col items-center justify-center rounded-full border border-[#1f7a45]/30 bg-[var(--card-bg)] shadow-[0_0_0_4px_var(--page-bg)]"
+                    title={group.fullLabel}
+                  >
                     <span className="text-base leading-none font-semibold text-[var(--card-text)]">
                       {group.dayLabel}
                     </span>
@@ -227,17 +230,10 @@ export default function FamilyPhotoTimeline({
 
                 <div className="min-w-0 flex-1 pt-1">
                   <h2 className="sr-only">{group.fullLabel}</h2>
-                  <p className="mb-3 text-sm text-[var(--muted-text)]">
-                    {group.fullLabel}
-                    <span className="mx-2 text-[var(--border)]">·</span>
-                    {group.photos.length === 1
-                      ? t("photoCountOne")
-                      : t("photoCountMany", { count: group.photos.length })}
-                  </p>
 
                   <ul className={photoGridClass(group.photos.length)}>
                     {group.photos.map((photo) => (
-                      <li key={photo.id}>
+                      <li key={photo.id} className="w-full">
                         <button
                           type="button"
                           onClick={() => openLightbox(photo)}

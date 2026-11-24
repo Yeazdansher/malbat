@@ -11,6 +11,8 @@ import {
 
 type Props = {
   familyId: string;
+  embedded?: boolean;
+  onSuccess?: () => void;
 };
 
 const MAX_PHOTOS_PER_UPLOAD = 20;
@@ -28,7 +30,11 @@ function isFrameworkError(message: string) {
   );
 }
 
-export default function UploadFamilyPhotoForm({ familyId }: Props) {
+export default function UploadFamilyPhotoForm({
+  familyId,
+  embedded = false,
+  onSuccess,
+}: Props) {
   const t = useTranslations("memories");
   const formRef = useRef<HTMLFormElement>(null);
   const [error, setError] = useState("");
@@ -38,7 +44,11 @@ export default function UploadFamilyPhotoForm({ familyId }: Props) {
   return (
     <form
       ref={formRef}
-      className="surface-card mt-8 space-y-4 rounded-2xl border p-6 shadow-sm"
+      className={
+        embedded
+          ? "space-y-4"
+          : "surface-card mt-8 space-y-4 rounded-2xl border p-6 shadow-sm"
+      }
       action={(formData) => {
         setError("");
 
@@ -70,11 +80,13 @@ export default function UploadFamilyPhotoForm({ familyId }: Props) {
           try {
             await uploadFamilyPhotos(familyId, formData);
             formRef.current?.reset();
+            onSuccess?.();
           } catch (err) {
             const message =
               err instanceof Error ? err.message : t("uploadFailed");
             if (isFrameworkError(message)) {
               formRef.current?.reset();
+              onSuccess?.();
               return;
             }
             setError(message);
@@ -82,9 +94,11 @@ export default function UploadFamilyPhotoForm({ familyId }: Props) {
         });
       }}
     >
-      <h2 className="text-lg font-semibold text-green-700 dark:text-[#8fd4a8]">
-        {t("uploadPhoto")}
-      </h2>
+      {!embedded && (
+        <h2 className="text-lg font-semibold text-green-700 dark:text-[#8fd4a8]">
+          {t("uploadPhoto")}
+        </h2>
+      )}
 
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="sm:col-span-2">
