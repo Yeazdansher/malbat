@@ -58,7 +58,7 @@ values (
   'family-memories',
   'family-memories',
   true,
-  2097152,
+  10485760,
   array['image/jpeg', 'image/png', 'image/webp']
 )
 on conflict (id) do update

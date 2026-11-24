@@ -404,7 +404,7 @@
     "photoFile": "Photo",
     "takenAt": "Date",
     "unknownDate": "No date",
-    "uploadHint": "JPEG, PNG or WebP, max. 2 MB",
+    "uploadHint": "JPEG, PNG or WebP, max. 10 MB",
     "uploadFailed": "Upload failed.",
     "enlargePhoto": "Enlarge photo",
     "closePhoto": "Close",

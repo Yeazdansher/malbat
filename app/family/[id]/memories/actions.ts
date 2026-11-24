@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { requireFamilyEditor } from "@/lib/family-permissions";
 import {
   extensionForImageType,
+  MAX_FAMILY_PHOTO_BYTES,
   validateImageFile,
 } from "@/lib/storage/images";
 
@@ -68,7 +69,8 @@ export async function uploadFamilyPhoto(familyId: string, formData: FormData) {
   const validated = validateImageFile(
     formData.get("photo") instanceof File
       ? (formData.get("photo") as File)
-      : null
+      : null,
+    MAX_FAMILY_PHOTO_BYTES
   );
 
   if (!validated.ok) {

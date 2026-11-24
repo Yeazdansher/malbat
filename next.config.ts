@@ -1,10 +1,10 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  // Default Server-Action-Limit ist 1 MB — Profil-/Personenfotos erlauben bis 2 MB.
+  // Default Server-Action-Limit ist 1 MB — Familienfotos erlauben bis 10 MB.
   experimental: {
     serverActions: {
-      bodySizeLimit: "2mb",
+      bodySizeLimit: "10mb",
     },
   },
 };

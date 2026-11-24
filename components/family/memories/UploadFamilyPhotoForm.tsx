@@ -4,6 +4,10 @@ import { useRef, useState, useTransition } from "react";
 
 import { uploadFamilyPhoto } from "@/app/family/[id]/memories/actions";
 import { useTranslations } from "@/lib/i18n/client";
+import {
+  MAX_FAMILY_PHOTO_BYTES,
+  validateImageFile,
+} from "@/lib/storage/images";
 
 type Props = {
   familyId: string;
@@ -35,6 +39,17 @@ export default function UploadFamilyPhotoForm({ familyId }: Props) {
       className="surface-card mt-8 space-y-4 rounded-2xl border p-6 shadow-sm"
       action={(formData) => {
         setError("");
+        const validated = validateImageFile(
+          formData.get("photo") instanceof File
+            ? (formData.get("photo") as File)
+            : null,
+          MAX_FAMILY_PHOTO_BYTES
+        );
+        if (!validated.ok) {
+          setError(validated.error);
+          return;
+        }
+
         startTransition(async () => {
           try {
             await uploadFamilyPhoto(familyId, formData);

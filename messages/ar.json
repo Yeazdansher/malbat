@@ -404,7 +404,7 @@
     "photoFile": "صورة",
     "takenAt": "التاريخ",
     "unknownDate": "بدون تاريخ",
-    "uploadHint": "JPEG أو PNG أو WebP، بحد أقصى 2 ميجابايت",
+    "uploadHint": "JPEG أو PNG أو WebP، بحد أقصى 10 ميجابايت",
     "uploadFailed": "فشل الرفع.",
     "enlargePhoto": "تكبير الصورة",
     "closePhoto": "إغلاق",

@@ -1,4 +1,5 @@
 export const MAX_IMAGE_BYTES = 2 * 1024 * 1024;
+export const MAX_FAMILY_PHOTO_BYTES = 10 * 1024 * 1024;
 
 export const ALLOWED_IMAGE_TYPES = [
   "image/jpeg",
@@ -10,10 +11,14 @@ export type AllowedImageType = (typeof ALLOWED_IMAGE_TYPES)[number];
 
 export type ImageValidationCode = "empty" | "type" | "size";
 
-const IMAGE_ERROR_DE: Record<ImageValidationCode, string> = {
+function sizeErrorMessage(maxBytes: number): string {
+  const mb = Math.round(maxBytes / (1024 * 1024));
+  return `Das Bild darf höchstens ${mb} MB groß sein.`;
+}
+
+const IMAGE_ERROR_DE: Record<Exclude<ImageValidationCode, "size">, string> = {
   empty: "Bitte wähle ein Bild aus.",
   type: "Nur JPEG, PNG oder WebP sind erlaubt.",
-  size: "Das Bild darf höchstens 2 MB groß sein.",
 };
 
 export function isAllowedImageType(
@@ -34,7 +39,8 @@ export function extensionForImageType(type: AllowedImageType): string {
 }
 
 export function validateImageFile(
-  file: File | null
+  file: File | null,
+  maxBytes: number = MAX_IMAGE_BYTES
 ):
   | { ok: true; file: File; type: AllowedImageType }
   | { ok: false; code: ImageValidationCode; error: string } {
@@ -46,8 +52,8 @@ export function validateImageFile(
     return { ok: false, code: "type", error: IMAGE_ERROR_DE.type };
   }
 
-  if (file.size > MAX_IMAGE_BYTES) {
-    return { ok: false, code: "size", error: IMAGE_ERROR_DE.size };
+  if (file.size > maxBytes) {
+    return { ok: false, code: "size", error: sizeErrorMessage(maxBytes) };
   }
 
   return { ok: true, file, type: file.type };
