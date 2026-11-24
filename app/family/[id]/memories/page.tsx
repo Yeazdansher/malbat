@@ -85,8 +85,8 @@ export default async function FamilyPhotosPage({ params }: PageProps) {
   return (
     <main className="surface-page min-h-screen">
       <Header
-        backHref={`/family/${familyId}`}
-        backLabel={t("backToTree")}
+        backHref="/dashboard"
+        backLabel={tCommon("dashboard")}
         profile={profile}
       />
 
@@ -97,9 +97,6 @@ export default async function FamilyPhotosPage({ params }: PageProps) {
             <h1 className="mt-1 text-3xl font-bold text-green-700 dark:text-[#8fd4a8]">
               {t("title")}
             </h1>
-            <p className="mt-2 max-w-xl text-[var(--muted-text)]">
-              {t("subtitle")}
-            </p>
           </div>
           <Link
             href={`/family/${familyId}`}
