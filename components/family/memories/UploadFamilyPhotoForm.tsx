@@ -1,6 +1,5 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { useRef, useState, useTransition } from "react";
 
 import { uploadFamilyPhoto } from "@/app/family/[id]/memories/actions";
@@ -10,12 +9,25 @@ type Props = {
   familyId: string;
 };
 
+function todayDateInputValue() {
+  const now = new Date();
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const day = String(now.getDate()).padStart(2, "0");
+  return `${now.getFullYear()}-${month}-${day}`;
+}
+
+function isFrameworkError(message: string) {
+  return /Minified React error|NEXT_REDIRECT|NEXT_NOT_FOUND|digest/i.test(
+    message
+  );
+}
+
 export default function UploadFamilyPhotoForm({ familyId }: Props) {
   const t = useTranslations("memories");
-  const router = useRouter();
   const formRef = useRef<HTMLFormElement>(null);
   const [error, setError] = useState("");
   const [pending, startTransition] = useTransition();
+  const maxDate = todayDateInputValue();
 
   return (
     <form
@@ -27,11 +39,16 @@ export default function UploadFamilyPhotoForm({ familyId }: Props) {
           try {
             await uploadFamilyPhoto(familyId, formData);
             formRef.current?.reset();
-            router.refresh();
           } catch (err) {
-            setError(
-              err instanceof Error ? err.message : t("uploadFailed")
-            );
+            const message =
+              err instanceof Error ? err.message : t("uploadFailed");
+            // revalidatePath can surface RSC errors on the action promise;
+            // the upload itself may still have succeeded.
+            if (isFrameworkError(message)) {
+              formRef.current?.reset();
+              return;
+            }
+            setError(message);
           }
         });
       }}
@@ -67,6 +84,7 @@ export default function UploadFamilyPhotoForm({ familyId }: Props) {
             id="photo-taken-at"
             name="taken_at"
             type="date"
+            max={maxDate}
             className="w-full rounded-lg border border-[var(--border)] bg-[var(--page-bg)] px-3 py-2 text-[var(--card-text)] focus:border-green-700 focus:outline-none"
           />
         </div>

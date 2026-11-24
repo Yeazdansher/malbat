@@ -1,7 +1,7 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import Header from "@/components/Header";
+import BackToTreeLink from "@/components/family/memories/BackToTreeLink";
 import FamilyPhotoTimeline from "@/components/family/memories/FamilyPhotoTimeline";
 import UploadFamilyPhotoForm from "@/components/family/memories/UploadFamilyPhotoForm";
 import { canEditFamily } from "@/lib/family-permissions";
@@ -75,12 +75,26 @@ export default async function FamilyPhotosPage({ params }: PageProps) {
   const role = membership.role as FamilyRole;
   const canEdit = canEditFamily(role);
 
-  const { data: photos, error: photosError } = await supabase
+  const { data: photoRows, error: photosError } = await supabase
     .from("family_memory_photos")
     .select("id, url, caption, taken_at, created_at")
     .eq("family_id", familyId)
-    .order("taken_at", { ascending: false, nullsFirst: false })
     .order("created_at", { ascending: false });
+
+  if (photosError) {
+    console.error("family photos load:", photosError);
+  }
+
+  const photos = ((photoRows as PhotoRow[] | null) ?? [])
+    .slice()
+    .sort((a, b) => {
+      if (a.taken_at && b.taken_at) {
+        return b.taken_at.localeCompare(a.taken_at);
+      }
+      if (a.taken_at) return -1;
+      if (b.taken_at) return 1;
+      return b.created_at.localeCompare(a.created_at);
+    });
 
   return (
     <main className="surface-page min-h-screen">
@@ -98,12 +112,7 @@ export default async function FamilyPhotosPage({ params }: PageProps) {
               {t("title")}
             </h1>
           </div>
-          <Link
-            href={`/family/${familyId}`}
-            className="inline-flex h-10 items-center rounded-lg border border-[var(--border)] px-4 text-sm font-medium text-[var(--card-text)] hover:bg-[var(--page-bg)]"
-          >
-            {t("backToTree")}
-          </Link>
+          <BackToTreeLink familyId={familyId} label={t("backToTree")} />
         </div>
 
         {canEdit && <UploadFamilyPhotoForm familyId={familyId} />}
@@ -117,7 +126,7 @@ export default async function FamilyPhotosPage({ params }: PageProps) {
         {!photosError && (
           <FamilyPhotoTimeline
             familyId={familyId}
-            photos={(photos as PhotoRow[] | null) ?? []}
+            photos={photos}
             canEdit={canEdit}
             locale={locale}
             emptyMessage={

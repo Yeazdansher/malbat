@@ -1,6 +1,5 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 
 import {
@@ -42,6 +41,13 @@ function formatTakenAt(value: string | null, locale: string, unknownLabel: strin
   }).format(date);
 }
 
+function todayDateInputValue() {
+  const now = new Date();
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const day = String(now.getDate()).padStart(2, "0");
+  return `${now.getFullYear()}-${month}-${day}`;
+}
+
 function groupPhotosByDate(
   photos: FamilyPhoto[],
   locale: string,
@@ -75,7 +81,6 @@ export default function FamilyPhotoTimeline({
   emptyMessage,
 }: Props) {
   const t = useTranslations("memories");
-  const router = useRouter();
   const [lightboxId, setLightboxId] = useState<string | null>(null);
   const [captionDraft, setCaptionDraft] = useState("");
   const [takenAtDraft, setTakenAtDraft] = useState("");
@@ -175,6 +180,7 @@ export default function FamilyPhotoTimeline({
                 <input
                   id="edit-photo-taken-at"
                   type="date"
+                  max={todayDateInputValue()}
                   value={takenAtDraft}
                   onChange={(event) => setTakenAtDraft(event.target.value)}
                   className="rounded-lg border border-white/20 bg-white/10 px-3 py-2 text-white focus:outline-none"
@@ -208,13 +214,17 @@ export default function FamilyPhotoTimeline({
                             lightboxPhoto.id,
                             data
                           );
-                          router.refresh();
+                          closeLightbox();
                         } catch (err) {
-                          setError(
+                          const message =
                             err instanceof Error
                               ? err.message
-                              : t("saveFailed")
-                          );
+                              : t("saveFailed");
+                          if (/Minified React error/i.test(message)) {
+                            closeLightbox();
+                            return;
+                          }
+                          setError(message);
                         }
                       });
                     }}
@@ -234,13 +244,16 @@ export default function FamilyPhotoTimeline({
                         try {
                           await deleteFamilyPhoto(familyId, lightboxPhoto.id);
                           closeLightbox();
-                          router.refresh();
                         } catch (err) {
-                          setError(
+                          const message =
                             err instanceof Error
                               ? err.message
-                              : t("deleteFailed")
-                          );
+                              : t("deleteFailed");
+                          if (/Minified React error/i.test(message)) {
+                            closeLightbox();
+                            return;
+                          }
+                          setError(message);
                         }
                       });
                     }}

@@ -14,6 +14,30 @@ function photosPath(familyId: string) {
   return `/family/${familyId}/memories`;
 }
 
+function parseTakenAt(raw: string): string | null {
+  const takenAt = raw.trim();
+  if (!takenAt) {
+    return null;
+  }
+
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(takenAt)) {
+    throw new Error("Ungültiges Datum.");
+  }
+
+  const date = new Date(`${takenAt}T00:00:00`);
+  if (Number.isNaN(date.getTime())) {
+    throw new Error("Ungültiges Datum.");
+  }
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  if (date > today) {
+    throw new Error("Das Datum darf nicht in der Zukunft liegen.");
+  }
+
+  return takenAt;
+}
+
 async function removeStoragePaths(
   client: Awaited<ReturnType<typeof createClient>>,
   paths: string[]
@@ -53,7 +77,7 @@ export async function uploadFamilyPhoto(familyId: string, formData: FormData) {
 
   const { file, type } = validated;
   const caption = String(formData.get("caption") ?? "").trim();
-  const takenAt = String(formData.get("taken_at") ?? "").trim();
+  const takenAt = parseTakenAt(String(formData.get("taken_at") ?? ""));
 
   const photoId = crypto.randomUUID();
   const ext = extensionForImageType(type);
@@ -86,19 +110,23 @@ export async function uploadFamilyPhoto(familyId: string, formData: FormData) {
       storage_path: storagePath,
       url: `${publicUrl}?v=${Date.now()}`,
       caption: caption || null,
-      taken_at: takenAt || null,
+      taken_at: takenAt,
       uploaded_by: user.id,
     });
 
   if (insertError) {
     console.error("uploadFamilyPhoto (insert):", insertError);
     await removeStoragePaths(supabase, [storagePath]);
+    const detail = insertError.message?.trim();
     throw new Error(
-      "Das Foto wurde hochgeladen, konnte aber nicht gespeichert werden."
+      detail
+        ? `Speichern fehlgeschlagen: ${detail}`
+        : "Das Foto wurde hochgeladen, konnte aber nicht gespeichert werden."
     );
   }
 
   revalidatePath(photosPath(familyId));
+  revalidatePath(`/family/${familyId}`);
 }
 
 export async function updateFamilyPhoto(
@@ -119,7 +147,7 @@ export async function updateFamilyPhoto(
   await requireFamilyEditor(supabase, familyId);
 
   const caption = String(formData.get("caption") ?? "").trim();
-  const takenAt = String(formData.get("taken_at") ?? "").trim();
+  const takenAt = parseTakenAt(String(formData.get("taken_at") ?? ""));
 
   const { data: photo, error: findError } = await supabase
     .from("family_memory_photos")
@@ -136,7 +164,7 @@ export async function updateFamilyPhoto(
     .from("family_memory_photos")
     .update({
       caption: caption || null,
-      taken_at: takenAt || null,
+      taken_at: takenAt,
     })
     .eq("id", photoId)
     .eq("family_id", familyId);
