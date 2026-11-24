@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   resetFamilyLayoutOverrides,
@@ -116,6 +117,7 @@ const [deleteOpen, setDeleteOpen] =
     useState<LayoutOverrideMap | null>(null);
   const pendingArrangePositionsRef = useRef<LayoutNodePosition[]>([]);
   const tSearch = useTranslations("tree");
+  const tMemories = useTranslations("memories");
 
   const effectiveLayoutOverrides = optimisticOverrides ?? layoutOverrides;
 
@@ -309,6 +311,13 @@ const [deleteOpen, setDeleteOpen] =
             </p>
           )}
         </div>
+
+        <Link
+          href={`/family/${familyId}/memories`}
+          className="inline-flex h-10 shrink-0 items-center rounded-lg border border-gray-300 px-3 text-sm font-medium text-gray-900 hover:bg-gray-100 dark:border-[var(--border)] dark:text-[var(--card-text)] dark:hover:bg-[#1f7a45]/20"
+        >
+          {tMemories("navButton")}
+        </Link>
 
         <div className="relative w-full max-w-sm sm:w-80">
           <label htmlFor="person-search" className="sr-only">

@@ -780,6 +780,32 @@ function unexpectedDeleteError(
   return { ok: false, error: UNEXPECTED_DELETE_ERROR };
 }
 
+async function collectStoragePaths(
+  client: Awaited<ReturnType<typeof createClient>>,
+  bucket: string,
+  prefix: string
+): Promise<string[]> {
+  const { data, error } = await client.storage.from(bucket).list(prefix);
+
+  if (error || !data || data.length === 0) {
+    return [];
+  }
+
+  const paths: string[] = [];
+
+  for (const entry of data) {
+    const path = `${prefix}/${entry.name}`;
+    // Supabase marks folders with id === null.
+    if (entry.id === null) {
+      paths.push(...(await collectStoragePaths(client, bucket, path)));
+    } else {
+      paths.push(path);
+    }
+  }
+
+  return paths;
+}
+
 async function deleteFamilyStorageFiles(
   client: Awaited<ReturnType<typeof createClient>>,
   familyId: string
@@ -789,21 +815,32 @@ async function deleteFamilyStorageFiles(
     "family-documents",
     "family-images",
     "person-photos",
+    "family-memories",
     "documents",
     "images",
     "families",
   ];
 
   for (const bucket of buckets) {
-    const { data: files, error } = await client.storage
-      .from(bucket)
-      .list(familyId);
+    const paths =
+      bucket === "family-memories"
+        ? await collectStoragePaths(client, bucket, familyId)
+        : await (async () => {
+            const { data, error } = await client.storage
+              .from(bucket)
+              .list(familyId);
 
-    if (error || !files || files.length === 0) {
+            if (error || !data || data.length === 0) {
+              return [] as string[];
+            }
+
+            return data.map((file) => `${familyId}/${file.name}`);
+          })();
+
+    if (paths.length === 0) {
       continue;
     }
 
-    const paths = files.map((file) => `${familyId}/${file.name}`);
     await client.storage.from(bucket).remove(paths);
   }
 }
