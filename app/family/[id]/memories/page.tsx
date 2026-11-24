@@ -104,8 +104,8 @@ export default async function FamilyPhotosPage({ params }: PageProps) {
         profile={profile}
       />
 
-      <div className="w-full max-w-5xl px-4 py-10 sm:px-6">
-        <div className="flex flex-wrap items-end justify-between gap-4">
+      <div className="w-full px-4 py-10 sm:px-6 lg:px-8">
+        <div className="flex w-full flex-wrap items-end justify-between gap-4">
           <div className="flex flex-wrap items-end gap-3">
             <div>
               <p className="text-sm text-[var(--muted-text)]">{family.name}</p>
@@ -115,11 +115,13 @@ export default async function FamilyPhotosPage({ params }: PageProps) {
             </div>
             {canEdit && <AddPhotosButton familyId={familyId} />}
           </div>
-          <BackToTreeLink familyId={familyId} label={t("backToTree")} />
+          <div className="ml-auto">
+            <BackToTreeLink familyId={familyId} label={t("backToTree")} />
+          </div>
         </div>
 
         {photosError && (
-          <div className="mt-6 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-900">
+          <div className="mx-auto mt-6 max-w-xl rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-900">
             {t("loadError")}
           </div>
         )}

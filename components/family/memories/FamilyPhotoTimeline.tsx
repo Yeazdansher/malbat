@@ -181,14 +181,16 @@ export default function FamilyPhotoTimeline({
 
   if (items.length === 0) {
     return (
-      <div className="mt-10 rounded-2xl border border-dashed border-[var(--border)] px-6 py-16 text-center text-[var(--muted-text)]">
-        {emptyMessage}
+      <div className="mx-auto mt-16 flex w-full max-w-xl justify-center">
+        <div className="w-full rounded-2xl border border-dashed border-[var(--border)] px-6 py-16 text-center text-[var(--muted-text)]">
+          {emptyMessage}
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="mt-10">
+    <div className="mt-10 max-w-5xl">
       <ol className="relative">
         <div
           aria-hidden
